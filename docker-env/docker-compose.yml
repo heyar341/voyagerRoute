@@ -1,0 +1,36 @@
+version: "3"
+
+services:
+#Goのアプリケーション
+  app:
+    tty: true
+    build: ./go
+    volumes:
+    - ../app:/go/src/app
+    ports:
+    - 8080:80
+#mongoDB
+  db:
+    image: mongo:4.4.2-bionic
+    restart: always
+    ports:
+    - 27017:27017
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: password
+
+  mongo-express:
+    image: mongo-express
+    restart: always
+    ports:
+      - 8081:8081
+    environment:
+      ME_CONFIG_MONGODB_SERVER: db
+      ME_CONFIG_MONGODB_ADMINUSERNAME: root
+      ME_CONFIG_MONGODB_ADMINPASSWORD: password
+      ME_CONFIG_MONGODB_PORT: 27017
+    volumes:
+      - mongodb-data:/data/db
+
+volumes:
+  mongodb-data:
