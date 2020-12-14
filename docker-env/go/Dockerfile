@@ -6,6 +6,7 @@ ENV GOlllMODULE=on
 
 RUN apk add --no-cache \
     alpine-sdk \
-    git
+    git \
+    bash
 
 EXPOSE 80
