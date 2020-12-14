@@ -1,79 +1,10 @@
 package direction
 
 import (
-	"flag"
 	"googlemaps.github.io/maps"
 	"log"
 	"strings"
 )
-
-var (
-	origin                   = flag.String("origin", "", "The address or textual latitude/longitude value from which you wish to calculate directions.")
-	destination              = flag.String("destination", "", "The address or textual latitude/longitude value from which you wish to calculate directions.")
-	mode                     = flag.String("mode", "", "The travel mode for this directions request.")
-	departureTime            = flag.String("departure_time", "", "The depature time for transit mode directions request.")
-	arrivalTime              = flag.String("arrival_time", "", "The arrival time for transit mode directions request.")
-	waypoints                = flag.String("waypoints", "", "The waypoints for driving directions request, | separated.")
-	alternatives             = flag.Bool("alternatives", false, "Whether the Directions service may provide more than one route alternative in the response.")
-	avoid                    = flag.String("avoid", "", "Indicates that the calculated route(s) should avoid the indicated features, | separated.")
-	language                 = flag.String("language", "", "Specifies the language in which to return results.")
-	region                   = flag.String("region", "", "Specifies the region code, specified as a ccTLD (\"top-level domain\") two-character value.")
-	transitMode              = flag.String("transit_mode", "", "Specifies one or more preferred modes of transit, | separated. This parameter may only be specified for transit directions.")
-	transitRoutingPreference = flag.String("transit_routing_preference", "", "Specifies preferences for transit routes.")
-	trafficModel             = flag.String("traffic_model", "", "Specifies traffic prediction model when request future directions. Valid values are optimistic, best_guess, and pessimistic. Optional.")
-)
-var Req = &maps.DirectionsRequest{
-	Origin:        *origin,
-	Destination:   *destination,
-	DepartureTime: *departureTime,
-	ArrivalTime:   *arrivalTime,
-	Alternatives:  *alternatives,
-	Language:      *language,
-	Region:        *region,
-}
-func MakeRequest() *maps.DirectionsRequest {
-
-	
-	lookupMode(*mode, Req)
-	lookupTransitRoutingPreference(*transitRoutingPreference, Req)
-	lookupTrafficModel(*trafficModel, Req)
-
-	if *waypoints != "" {
-		Req.Waypoints = strings.Split(*waypoints, "|")
-	}
-
-	if *avoid != "" {
-		for _, a := range strings.Split(*avoid, "|") {
-			switch a {
-			case "tolls":
-				Req.Avoid = append(Req.Avoid, maps.AvoidTolls)
-			case "highways":
-				Req.Avoid = append(Req.Avoid, maps.AvoidHighways)
-			case "ferries":
-				Req.Avoid = append(Req.Avoid, maps.AvoidFerries)
-			default:
-				log.Fatalf("Unknown avoid restriction %s", a)
-			}
-		}
-	}
-	if *transitMode != "" {
-		for _, t := range strings.Split(*transitMode, "|") {
-			switch t {
-			case "bus":
-				Req.TransitMode = append(Req.TransitMode, maps.TransitModeBus)
-			case "subway":
-				Req.TransitMode = append(Req.TransitMode, maps.TransitModeSubway)
-			case "train":
-				Req.TransitMode = append(Req.TransitMode, maps.TransitModeTrain)
-			case "tram":
-				Req.TransitMode = append(Req.TransitMode, maps.TransitModeTram)
-			case "rail":
-				Req.TransitMode = append(Req.TransitMode, maps.TransitModeRail)
-			}
-		}
-	}
-	return Req
-}
 
 func lookupMode(mode string, r *maps.DirectionsRequest) {
 	switch mode {
@@ -92,6 +23,13 @@ func lookupMode(mode string, r *maps.DirectionsRequest) {
 	}
 }
 
+func lookupAlternatives(alternatives string, r *maps.DirectionsRequest)  {
+	if alternatives == "true" {
+		r.Alternatives = true
+	} else {
+		r.Alternatives = false
+	}
+}
 func lookupTransitRoutingPreference(transitRoutingPreference string, r *maps.DirectionsRequest) {
 	switch transitRoutingPreference {
 	case "fewer_transfers":
@@ -117,5 +55,36 @@ func lookupTrafficModel(trafficModel string, r *maps.DirectionsRequest) {
 		// ignore
 	default:
 		log.Fatalf("Unknown traffic mode %s", trafficModel)
+	}
+}
+
+func lookupAvoid(avoid string, r *maps.DirectionsRequest)  {
+	for _, a := range strings.Split(avoid, "|") {
+		switch a {
+		case "tolls":
+			r.Avoid = append(r.Avoid, maps.AvoidTolls)
+		case "highways":
+			r.Avoid = append(r.Avoid, maps.AvoidHighways)
+		case "ferries":
+			r.Avoid = append(r.Avoid, maps.AvoidFerries)
+		default:
+			log.Fatalf("Unknown avoid restriction %s", a)
+		}
+	}
+}
+func lookupTransitMode(transitMode string, r *maps.DirectionsRequest)  {
+	for _, t := range strings.Split(transitMode, "|") {
+		switch t {
+		case "bus":
+			r.TransitMode = append(r.TransitMode, maps.TransitModeBus)
+		case "subway":
+			r.TransitMode = append(r.TransitMode, maps.TransitModeSubway)
+		case "train":
+			r.TransitMode = append(r.TransitMode, maps.TransitModeTrain)
+		case "tram":
+			r.TransitMode = append(r.TransitMode, maps.TransitModeTram)
+		case "rail":
+			r.TransitMode = append(r.TransitMode, maps.TransitModeRail)
+		}
 	}
 }
