@@ -16,3 +16,6 @@
 
 #goland関係のファイル
 .idea
+
+#envファイル
+/app/env
