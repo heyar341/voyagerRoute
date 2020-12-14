@@ -6,6 +6,7 @@ import (
 	"strings"
 )
 
+//徒歩、運転、乗り換えのモード選択
 func lookupMode(mode string, r *maps.DirectionsRequest) {
 	switch mode {
 	case "driving":
@@ -23,6 +24,7 @@ func lookupMode(mode string, r *maps.DirectionsRequest) {
 	}
 }
 
+//trueの場合複数ルートを探し、falseの場合１つのルートのみ返す
 func lookupAlternatives(alternatives string, r *maps.DirectionsRequest)  {
 	if alternatives == "true" {
 		r.Alternatives = true
@@ -30,6 +32,7 @@ func lookupAlternatives(alternatives string, r *maps.DirectionsRequest)  {
 		r.Alternatives = false
 	}
 }
+//乗り換え数の少なさを優先するか、歩行距離の短さを優先するか選択
 func lookupTransitRoutingPreference(transitRoutingPreference string, r *maps.DirectionsRequest) {
 	switch transitRoutingPreference {
 	case "fewer_transfers":
@@ -42,7 +45,7 @@ func lookupTransitRoutingPreference(transitRoutingPreference string, r *maps.Dir
 		log.Fatalf("Unknown transit routing preference %s", transitRoutingPreference)
 	}
 }
-
+//最速時間、過去のデータからの最適予測時間、最も遅い場合の予測のどれか選択
 func lookupTrafficModel(trafficModel string, r *maps.DirectionsRequest) {
 	switch trafficModel {
 	case "optimistic":
@@ -57,7 +60,7 @@ func lookupTrafficModel(trafficModel string, r *maps.DirectionsRequest) {
 		log.Fatalf("Unknown traffic mode %s", trafficModel)
 	}
 }
-
+//有料道路、高速道路、フェリーを除外する場合選択
 func lookupAvoid(avoid string, r *maps.DirectionsRequest)  {
 	for _, a := range strings.Split(avoid, "|") {
 		switch a {
@@ -72,6 +75,7 @@ func lookupAvoid(avoid string, r *maps.DirectionsRequest)  {
 		}
 	}
 }
+//交通手段を選択
 func lookupTransitMode(transitMode string, r *maps.DirectionsRequest)  {
 	for _, t := range strings.Split(transitMode, "|") {
 		switch t {
