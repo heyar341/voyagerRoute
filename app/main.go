@@ -24,6 +24,8 @@ import (
 	"os"
 	"strings"
 	"time"
+	//envファイル操作用のパッケージ
+	"github.com/joho/godotenv"
 
 	"github.com/kr/pretty"
 	"googlemaps.github.io/maps"
@@ -64,6 +66,11 @@ func check(err error) {
 }
 
 func main() {
+	env_err := godotenv.Load("env/dev.env")
+	if env_err != nil{
+		panic("Can't load env file")
+	}
+	*apiKey = os.Getenv("MAP_API_KEY")
 	flag.Parse()
 
 	var client *maps.Client
