@@ -119,6 +119,7 @@ class AutocompleteDirectionsHandler {
                         }
                     }
                     //responseをRendererに渡して、ルートを描画
+                    //ドキュメントURL: https://developers.google.com/maps/documentation/javascript/reference/marker#MarkerOptions
                     me.directionsRenderer.setOptions({
                             suppressMarkers: false,
                             suppressPolylines: false,
