@@ -89,10 +89,46 @@ class AutocompleteDirectionsHandler {
                 origin: { placeId: this.originPlaceId },
                 destination: { placeId: this.destinationPlaceId },
                 travelMode: this.travelMode,
+                //↓複数ルートを返す場合、指定
+                // provideRouteAlternatives: true,
             },
             (response, status) => {
                 if (status === "OK") {
+                    //複数ルートがある場合、subRouteRendererで各ルートを薄く表示
+                    if(response.routes.length > 1) {
+                        for (var i = 0; i < response.routes.length; i++) {
+                            //jsではObjectは参照渡しなので、Object.assignを使って、値渡しにする
+                            var sub_res = Object.assign({}, response);
+                            sub_res.routes = [response.routes[i]];
+                            // 各ルートごとに、Renderオブジェクトを作成する必要がある
+                            var subRouteRenderer = new google.maps.DirectionsRenderer();
+                            //ドキュメントURL: https://developers.google.com/maps/documentation/javascript/reference/directions#DirectionsRendererOptions
+                            subRouteRenderer.setOptions({
+                                suppressMarkers: false,
+                                suppressPolylines: false,
+                                suppressInfoWindows: false,
+                                //Colorとopacity(不透明度)と太さを設定
+                                polylineOptions: {
+                                    strokeColor: '#808080',
+                                    strokeOpacity: 0.5,
+                                    strokeWeight: 7
+                                }
+                            });
+                            subRouteRenderer.setDirections(sub_res)
+                            subRouteRenderer.setMap(this.map)
+                        }
+                    }
                     //responseをRendererに渡して、ルートを描画
+                    me.directionsRenderer.setOptions({
+                            suppressMarkers: false,
+                            suppressPolylines: false,
+                            suppressInfoWindows: false,
+                            polylineOptions: {
+                                strokeColor: '#00bfff',
+                                strokeOpacity: 1.0,
+                                strokeWeight: 7
+                            }
+                        });
                     me.directionsRenderer.setDirections(response);
                 } else {
                     window.alert("Directions request failed due to " + status);
