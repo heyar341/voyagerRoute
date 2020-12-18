@@ -18,22 +18,43 @@ package main
 
 import (
 	"encoding/json"
+	"github.com/joho/godotenv"
+
 	//"fmt"
 	//"log"
 	"net/http"
-	//"os"
+	"os"
 	"app/direction"
+	"html/template"
 
 )
+var tpl *template.Template
+func init() {
+	tpl = template.Must(template.ParseGlob("test/*"))
+}
 
 func main() {
 
 	http.Handle("/favicon.ico", http.NotFoundHandler())
 	//Direction API
 	http.HandleFunc("/route_search",searchRoute)
+	http.Handle("/test/", http.StripPrefix("/test", http.FileServer(http.Dir("./test"))))
+	http.HandleFunc("/show_map",index)
+
 	http.ListenAndServe(":80",nil)
 }
 
+func index(w http.ResponseWriter, req *http.Request){
+	//API呼び出しの準備
+	env_err := godotenv.Load("env/dev.env")
+	if env_err != nil{
+		panic("Can't load env file")
+	}
+	//envファイルからAPI key取得
+	apiKey := os.Getenv("MAP_API_KEY")
+	data := map[string]string{"apiKey":apiKey}
+	tpl.ExecuteTemplate(w, "place_and_direction.html", data)
+}
 func searchRoute(w http.ResponseWriter, req *http.Request)  {
 	routes := direction.SearchRoute(req)
 	w.Header().Set("Content-Type", "application/json")
