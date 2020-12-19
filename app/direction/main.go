@@ -18,7 +18,7 @@ var Req = &maps.DirectionsRequest{
 	Region:        "JP",
 }
 
-func SearchRoute(req *http.Request) []maps.Route{
+func SearchRoute(req *http.Request) ([]maps.Route,[]maps.GeocodedWaypoint){
 	//API呼び出しの準備
 	env_err := godotenv.Load("env/dev.env")
 	if env_err != nil{
@@ -48,7 +48,7 @@ func SearchRoute(req *http.Request) []maps.Route{
 	check(err)
 	pretty.Println(waypoints)
 	pretty.Println(routes)
-	return routes
+	return routes, waypoints
 }
 
 //エラーチェック
