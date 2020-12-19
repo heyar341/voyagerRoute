@@ -17,15 +17,11 @@
 package main
 
 import (
-	"encoding/json"
+	//"encoding/json"
 	"github.com/joho/godotenv"
-	"googlemaps.github.io/maps"
-
-	//"fmt"
-	//"log"
 	"net/http"
 	"os"
-	"app/direction"
+	//"app/direction"
 	"html/template"
 
 )
@@ -39,15 +35,10 @@ func main() {
 	http.Handle("/favicon.ico", http.NotFoundHandler())
 	//Direction API
 	http.HandleFunc("/route_search_query",routeQuery)
-	http.HandleFunc("/route_search",searchRoute)
 	http.Handle("/test/", http.StripPrefix("/test", http.FileServer(http.Dir("./test"))))
 	http.HandleFunc("/show_map",index)
-	http.HandleFunc("/jsoncheck",jsoncheck)
 
 	http.ListenAndServe(":80",nil)
-}
-func jsoncheck(w http.ResponseWriter, req *http.Request)  {
-	tpl.ExecuteTemplate(w, "jsoncheck.html", nil)
 }
 
 func routeQuery(w http.ResponseWriter, req *http.Request)  {
@@ -63,13 +54,4 @@ func index(w http.ResponseWriter, req *http.Request){
 	apiKey := os.Getenv("MAP_API_KEY")
 	data := map[string]string{"apiKey":apiKey}
 	tpl.ExecuteTemplate(w, "place_and_direction.html", data)
-}
-func searchRoute(w http.ResponseWriter, req *http.Request)  {
-	routes,waypoint := direction.SearchRoute(req)
-	response := struct {
-		Routes            []maps.Route            `json:"routes"`
-		GeocodedWaypoints []maps.GeocodedWaypoint `json:"geocoded_waypoints"`
-	}{Routes: routes,GeocodedWaypoints: waypoint}
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
 }
