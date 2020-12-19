@@ -1,0 +1,2 @@
+MAPS javascript APIとMAPS Direction APIでは、Response形式が違うので、
+DirectionRendererにDirection APIのResponseを渡してもレンダリングされない。

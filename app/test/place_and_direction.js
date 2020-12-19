@@ -13,6 +13,7 @@ function initMap() {
 
 class AutocompleteDirectionsHandler {
     constructor(map) {
+        this.resp = JSON;
         this.map = map;
         this.originPlaceId = "";
         this.destinationPlaceId = "";
@@ -80,6 +81,7 @@ class AutocompleteDirectionsHandler {
         });
     }
     route() {
+        console.log(this.resp)
         if (!this.originPlaceId || !this.destinationPlaceId) {
             return;
         }
@@ -130,6 +132,9 @@ class AutocompleteDirectionsHandler {
                                 strokeWeight: 7
                             }
                         });
+                    this.resp = response;
+                    console.log(response)
+                    console.log(typeof response)
                     me.directionsRenderer.setDirections(response);
                 } else {
                     window.alert("Directions request failed due to " + status);
