@@ -27,7 +27,7 @@ import (
 )
 var tpl *template.Template
 func init() {
-	tpl = template.Must(template.ParseGlob("test/*"))
+	tpl = template.Must(template.ParseGlob("templates/route_search/*"))
 }
 
 func main() {
@@ -35,7 +35,7 @@ func main() {
 	http.Handle("/favicon.ico", http.NotFoundHandler())
 	//Direction API
 	http.HandleFunc("/route_search_query",routeQuery)
-	http.Handle("/test/", http.StripPrefix("/test", http.FileServer(http.Dir("./test"))))
+	http.Handle("/templates/", http.StripPrefix("/templates", http.FileServer(http.Dir("./templates"))))
 	http.HandleFunc("/show_map",index)
 
 	http.ListenAndServe(":80",nil)
@@ -53,5 +53,5 @@ func index(w http.ResponseWriter, req *http.Request){
 	//envファイルからAPI key取得
 	apiKey := os.Getenv("MAP_API_KEY")
 	data := map[string]string{"apiKey":apiKey}
-	tpl.ExecuteTemplate(w, "place_and_direction.html", data)
+	tpl.ExecuteTemplate(w, "place_and_direction_improve.html", data)
 }
