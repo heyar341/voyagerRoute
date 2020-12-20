@@ -13,39 +13,39 @@
     <script src="templates/route_search/place_and_direction_improve.js"></script>
 </head>
 <body>
-<div style="display: none">
+<div id="left-panel">
     <input
             id="origin-input"
-            class="controls"
+            class="auto-c controls"
             type="text"
-            placeholder="Enter an origin location"
+            placeholder="出発地を入力してください"
     />
-<br>
+    <br>
     <input
             id="destination-input"
-            class="controls"
+            class="auto-c controls"
             type="text"
-            placeholder="Enter a destination location"
+            placeholder="目的地を入力してください"
     />
 
-    <div id="mode-selector" class="controls">
         <input
                 type="radio"
                 name="type"
                 id="changemode-walking"
                 checked="checked"
         />
-        <label for="changemode-walking">Walking</label>
+        <label for="changemode-walking">徒歩</label>
 
         <input type="radio" name="type" id="changemode-transit" />
-        <label for="changemode-transit">Transit</label>
+        <label for="changemode-transit">公共交通機関</label>
 
         <input type="radio" name="type" id="changemode-driving" />
-        <label for="changemode-driving">Driving</label>
+        <label for="changemode-driving">自動車</label>
     </div>
 </div>
-<div id="left-panel"></div>
-<div id="right-panel"></div>
+<div id="right-panel">
+    <p>経路の詳細</p>
+</div>
 <div id="map"></div>
 </body>
 </html>
