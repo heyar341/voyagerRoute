@@ -32,7 +32,7 @@ body {
     margin-left: 12px;
     padding: 0 11px 0 13px;
     text-overflow: ellipsis;
-    width: 200px;
+    width: 250px;
 }
 
 #origin-input:focus,
@@ -75,14 +75,14 @@ body {
 #right-panel {
     height: 100%;
     float: right;
-    width: 390px;
+    width: 20%;
     overflow: auto;
 }
 
 #left-panel {
     height: 100%;
     float: left;
-    width: 390px;
+    width: 300px;
     overflow: auto;
 }
 @media print {
@@ -95,4 +95,16 @@ body {
         float: none;
         width: auto;
     }
+}
+
+.auto-c#origin-input{
+    position: fixed!important;
+    top: 2rem!important;
+    left: 10px!important;
+}
+
+.auto-c#destination-input{
+    position: fixed!important;
+    top: 6rem!important;
+    left: 10px!important;
 }
