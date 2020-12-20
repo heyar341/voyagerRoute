@@ -26,6 +26,13 @@ class AutocompleteDirectionsHandler {
         const destinationInput = document.getElementById("destination-input");
         const modeSelector = document.getElementById("mode-selector");
         const originAutocomplete = new google.maps.places.Autocomplete(originInput);
+        // Auto Completeを地図上でない場所で使うときのドキュメントURL:
+        //https://developers.google.com/maps/documentation/javascript/places-autocomplete?hl=en#places-searchbox
+
+        //SearchBoxを使う場合、Detailまで返ってくるから、料金高くなる可能性あり
+
+        // var input = document.getElementById('searchTextField');
+        // var searchBox = new google.maps.places.SearchBox(input);
         // Specify just the place data fields that you need.
         originAutocomplete.setFields(["place_id"]);
         const destinationAutocomplete = new google.maps.places.Autocomplete(
@@ -66,7 +73,6 @@ class AutocompleteDirectionsHandler {
         autocomplete.bindTo("bounds", this.map);
         autocomplete.addListener("place_changed", () => {
             const place = autocomplete.getPlace();
-
             if (!place.place_id) {
                 window.alert("Please select an option from the dropdown list.");
                 return;
@@ -81,7 +87,6 @@ class AutocompleteDirectionsHandler {
         });
     }
     route() {
-        console.log(this.resp)
         if (!this.originPlaceId || !this.destinationPlaceId) {
             return;
         }
