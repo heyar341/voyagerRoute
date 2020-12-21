@@ -99,18 +99,6 @@ body {
     }
 }
 
-.auto-c#origin-input{
-    position: fixed!important;
-    top: 2rem!important;
-    left: 10px!important;
-}
-
-.auto-c#destination-input{
-    position: fixed!important;
-    top: 7rem!important;
-    left: 10px!important;
-}
-
 #serach-box{
     margin-left: 10px;
 }
