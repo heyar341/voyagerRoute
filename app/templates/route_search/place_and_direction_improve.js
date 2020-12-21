@@ -5,8 +5,8 @@
 function initMap() {
     const map = new google.maps.Map(document.getElementById("map"), {
         mapTypeControl: false,
-        center: { lat: -33.8688, lng: 151.2195 },
-        zoom: 13,
+        center: { lat: 35.6816228, lng: 139.765199 },
+        zoom: 10,
         //streetViewを無効化
         streetViewControl: false,
     });
@@ -28,11 +28,9 @@ class AutocompleteDirectionsHandler {
         const destinationInput = document.getElementById("destination-input");
         const modeSelector = document.getElementById("mode-selector");
         const originAutocomplete = new google.maps.places.Autocomplete(originInput);
-        // Auto Completeを地図上でない場所で使うときのドキュメントURL:
+        // Auto Completeを画面のmap上でない場所で使うときのドキュメントURL:
         //https://developers.google.com/maps/documentation/javascript/places-autocomplete?hl=en#places-searchbox
-
         //SearchBoxを使う場合、Detailまで返ってくるから、料金高くなる可能性あり
-
         // var input = document.getElementById('searchTextField');
         // var searchBox = new google.maps.places.SearchBox(input);
         // Specify just the place data fields that you need.
