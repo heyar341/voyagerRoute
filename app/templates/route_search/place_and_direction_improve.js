@@ -7,6 +7,8 @@ function initMap() {
         mapTypeControl: false,
         center: { lat: -33.8688, lng: 151.2195 },
         zoom: 13,
+        //streetViewを無効化
+        streetViewControl: false,
     });
     new AutocompleteDirectionsHandler(map);
 }
