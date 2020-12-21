@@ -1,50 +1,75 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Place Autocomplete and Directions</title>
+    <title>ルート検索</title>
+    {{/*GoogleMaps APIの呼び出し*/}}
     <script src="https://polyfill.io/v3/polyfill.min.js?features=default"></script>
     <script
             src="https://maps.googleapis.com/maps/api/js?key={{.apiKey}}&callback=initMap&libraries=places&v=weekly"
             defer
     ></script>
+    {{/*jQueryの呼び出し*/}}
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-
+    {{/*bootStrapの呼び出し*/}}
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
     <link rel="stylesheet" type="text/css" href="templates/route_search/style_improve.css" />
     <script src="templates/route_search/place_and_direction_improve.js"></script>
 </head>
 <body>
 <div id="left-panel">
-    <input
-            id="origin-input"
-            class="auto-c controls"
-            type="text"
-            placeholder="出発地を入力してください"
-    />
-    <br>
-    <input
-            id="destination-input"
-            class="auto-c controls"
-            type="text"
-            placeholder="目的地を入力してください"
-    />
-
+    <h2 class="mx-auto mt-3" style="width: 200px">ルート検索</h2>
+    <hr color="white">
+    <div id="serach-box">
+        <span class="d-block mt-3">出発地：</span>
         <input
-                type="radio"
-                name="type"
-                id="changemode-walking"
-                checked="checked"
+                id="origin-input"
+                class="auto-c controls"
+                type="text"
+                placeholder="出発地を入力してください"
         />
-        <label for="changemode-walking">徒歩</label>
+        <br>
+        <span class="d-block mt-3">目的地：</span>
+        <input
+                id="destination-input"
+                class="auto-c controls"
+                type="text"
+                placeholder="目的地を入力してください"
+        />
+        <br>
+        <input id="specify-route-options" class="mt-3" type="checkbox">経路オプションを指定する</input>
+        <div id="route-options">
+        <hr class="mt-2">
+        <span>移動方法：</span>
+        <br>
+        <input type="radio" name="type" id="changemode-walking"/>
+        <label class="mr-2" for="changemode-walking">徒歩</label>
 
-        <input type="radio" name="type" id="changemode-transit" />
-        <label for="changemode-transit">公共交通機関</label>
+        <input type="radio" name="type" id="changemode-transit"/>
+        <label class="mr-2" for="changemode-transit">公共交通機関</label>
 
-        <input type="radio" name="type" id="changemode-driving" />
+        <input type="radio" name="type" id="changemode-driving"/>
         <label for="changemode-driving">自動車</label>
+        </div>
+        <div id="transit-time" style="display: none">
+            <span>時間指定：</span>
+            <br>
+            <input type="radio" name="deparitime" id="transit-time"/>
+            <label class="mr-2" for="transit-time">出発時間</label>
+            <input type="radio" name="deparitime" id="transit-time"/>
+            <label for="transit-time">到着時間</label>
+            <input type="date">
+            <input type="time">
+        </div>
+        <br>
+        <div id="driving-option" style="display: none"><span>運転時オプション：</span>
+            <br>
+            <input type="checkbox" name="driveing-option-select" id="driving-option"/>有料道路を使用しない
+            <br>
+            <input type="checkbox" name="driveing-option-select" id="driving-option"/>高速道路を使用しない</div>
     </div>
-</div>
 <div id="right-panel">
     <p>経路の詳細</p>
+</div>
 </div>
 <div id="map"></div>
 </body>

@@ -13,7 +13,6 @@ body {
 }
 
 .controls {
-    margin-top: 10px;
     border: 1px solid transparent;
     border-radius: 2px 0 0 2px;
     box-sizing: border-box;
@@ -73,15 +72,19 @@ body {
 }
 
 #right-panel {
-    height: 100%;
-    float: right;
-    width: 20%;
+    /*height: 100%;*/
+    /*float: right;*/
+    /*width: 20%;*/
+    color: black;
+    height: available;
+    width: 100%;
+    background-color: white;
     overflow: auto;
 }
 
 #left-panel {
     color: white;
-    height: 100%;
+    height: auto;
     float: left;
     width: 300px;
     overflow: auto;
