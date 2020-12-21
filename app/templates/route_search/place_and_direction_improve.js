@@ -55,16 +55,29 @@ class AutocompleteDirectionsHandler {
     setupClickListener(id, mode) {
         const radioButton = document.getElementById(id);
         radioButton.addEventListener("click", () => {
+            if(id == "changemode-transit"){
+                document.getElementById("transit-time").style.display = "block"
+            }
+            else if(id != "changemode-transit"){
+                document.getElementById("transit-time").style.display = "none"
+            }
+            if(id == "changemode-driving"){
+                document.getElementById("driving-option").style.display = "block"
+            }
+            else if(id != "changemode-driving"){
+                document.getElementById("driving-option").style.display = "none"
+            }
             this.travelMode = mode;
             this.route();
         });
     }
+
     setupPlaceChangedListener(autocomplete, mode) {
         autocomplete.bindTo("bounds", this.map);
         autocomplete.addListener("place_changed", () => {
             const place = autocomplete.getPlace();
             if (!place.place_id) {
-                window.alert("Please select an option from the dropdown list.");
+                window.alert("表示された選択肢の中から選んでください。");
                 return;
             }
 
