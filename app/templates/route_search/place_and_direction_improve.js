@@ -10,6 +10,11 @@ function initMap() {
         //streetViewを無効化
         streetViewControl: false,
     });
+    var today = new Date();
+    var yyyy = today.getFullYear();
+    var mm = ("0"+(today.getMonth()+1)).slice(-2);
+    var dd = ("0"+today.getDate()).slice(-2);
+    document.getElementById("date").value=yyyy+'-'+mm+'-'+dd;
     new AutocompleteDirectionsHandler(map);
 }
 
@@ -17,8 +22,10 @@ class AutocompleteDirectionsHandler {
     constructor(map) {
         this.resp = {};
         this.map = map;
+        this.directionsRequest = {};
         this.originPlaceId = "";
         this.destinationPlaceId = "";
+        this.transitTime = new Date();
         this.travelMode = google.maps.TravelMode.WALKING;
         this.directionsService = new google.maps.DirectionsService();
         this.directionsRenderer = new google.maps.DirectionsRenderer();
@@ -26,7 +33,6 @@ class AutocompleteDirectionsHandler {
         this.directionsRenderer.setPanel(document.getElementById("right-panel"));
         const originInput = document.getElementById("origin-input");
         const destinationInput = document.getElementById("destination-input");
-        const modeSelector = document.getElementById("mode-selector");
         const originAutocomplete = new google.maps.places.Autocomplete(originInput);
         // Specify just the place data fields that you need.
         originAutocomplete.setFields(["place_id"]);
@@ -35,23 +41,21 @@ class AutocompleteDirectionsHandler {
         );
         // Specify just the place data fields that you need.
         destinationAutocomplete.setFields(["place_id"]);
-        this.setupClickListener(
-            "changemode-walking",
-            google.maps.TravelMode.WALKING
-        );
-        this.setupClickListener(
-            "changemode-transit",
-            google.maps.TravelMode.TRANSIT
-        );
-        this.setupClickListener(
-            "changemode-driving",
-            google.maps.TravelMode.DRIVING
-        );
+        //EventListenerの設定
+        this.setupClickListener("changemode-walking",google.maps.TravelMode.WALKING);
+        this.setupClickListener("changemode-transit", google.maps.TravelMode.TRANSIT);
+        this.setupClickListener("changemode-driving", google.maps.TravelMode.DRIVING);
         this.setupPlaceChangedListener(originAutocomplete, "ORIG");
         this.setupPlaceChangedListener(destinationAutocomplete, "DEST");
+        this.setupOptionListener("date");
+        this.setupOptionListener("time");
+        this.setupOptionListener("avoid-toll");
+        this.setupOptionListener("avoid-highway");
+        
+
     }
-    // Sets a listener on a radio button to change the filter type on Places
-    // Autocomplete.
+
+    //経路オプションのラジオボタンが押されたら発火
     setupClickListener(id, mode) {
         const radioButton = document.getElementById(id);
         radioButton.addEventListener("click", () => {
@@ -71,7 +75,7 @@ class AutocompleteDirectionsHandler {
             this.route();
         });
     }
-
+    //出発地と目的地の入力があった場合、発火
     setupPlaceChangedListener(autocomplete, mode) {
         autocomplete.bindTo("bounds", this.map);
         autocomplete.addListener("place_changed", () => {
@@ -89,19 +93,55 @@ class AutocompleteDirectionsHandler {
             this.route();
         });
     }
+    setupOptionListener(id) {
+        const optionChange = document.getElementById(id);
+        optionChange.addEventListener("change", ()=>{
+           this.route();
+        });
+    }
+    
     route() {
         if (!this.originPlaceId || !this.destinationPlaceId) {
             return;
         }
         const me = this;
-        this.directionsService.route(
+        this.directionsRequest =
             {
-                origin: { placeId: this.originPlaceId },
-                destination: { placeId: this.destinationPlaceId },
-                travelMode: this.travelMode,
-                //↓複数ルートを返す場合、指定
-                // provideRouteAlternatives: true,
-            },
+            origin: { placeId: this.originPlaceId },
+            destination: { placeId: this.destinationPlaceId },
+            travelMode: this.travelMode,
+            //↓複数ルートを返す場合、指定
+            // provideRouteAlternatives: true,
+            }
+        if(document.getElementById("specify-route-options").checked){
+            if(document.getElementById("changemode-transit").checked){
+                this.directionsRequest.transitOptions = {}
+                if(document.getElementById("depart-time").checked){
+                    console.log(new Date(document.getElementById("date").value +
+                        "T" +    document.getElementById("time").value));
+                    console.log(document.getElementById("time").value);
+                    this.directionsRequest.transitOptions.departureTime =
+                        new Date(document.getElementById("date").value +
+                        "T" +    document.getElementById("time").value);
+                }
+                else if(document.getElementById("arrival-time").checked){
+                    this.directionsRequest.transitOptions.arrivalTime =
+                        new Date(document.getElementById("date").value +
+                        "T" +    document.getElementById("time").value);
+                }
+                this.directionsRequest.transitOptions.routingPreference = 'FEWER_TRANSFERS';
+            }
+            else if(document.getElementById("changemode-driving").checked){
+                if(document.getElementById("avoid-toll").checked){
+                    this.directionsRequest.avoidTolls = true;
+                }
+                if(document.getElementById("avoid-highway").checked){
+                    this.directionsRequest.avoidHighways = true;
+                }
+            }
+        }
+        this.directionsService.route(
+            this.directionsRequest,
             (response, status) => {
                 if (status === "OK") {
                     //複数ルートがある場合、subRouteRendererで各ルートを薄く表示
@@ -141,11 +181,10 @@ class AutocompleteDirectionsHandler {
                             }
                         });
                     this.resp = response;
-                    console.log(response)
-                    console.log(typeof response)
                     me.directionsRenderer.setDirections(response);
+
                 } else {
-                    window.alert("Directions request failed due to " + status);
+                    window.alert("検索結果はありません");
                 }
             }
         );

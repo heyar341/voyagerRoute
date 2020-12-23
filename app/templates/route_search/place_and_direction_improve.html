@@ -53,19 +53,19 @@
         <div id="transit-time" style="display: none">
             <span>時間指定：</span>
             <br>
-            <input type="radio" name="deparitime" id="transit-time"/>
-            <label class="mr-2" for="transit-time">出発時間</label>
-            <input type="radio" name="deparitime" id="transit-time"/>
-            <label for="transit-time">到着時間</label>
-            <input type="date">
-            <input type="time">
+            <input type="radio" name="deparitime" id="depart-time"/>
+            <label class="mr-2" for="depart-time">出発時間</label>
+            <input type="radio" name="deparitime" id="arrival-time"/>
+            <label for="arrival-time">到着時間</label>
+            <input type="date" id="date">
+            <input type="time" id="time">
         </div>
         <br>
         <div id="driving-option" style="display: none"><span>運転時オプション：</span>
             <br>
-            <input type="checkbox" name="driveing-option-select" id="driving-option"/>有料道路を使用しない
+            <input type="checkbox" name="driveing-option-select" id="avoid-toll"/>有料道路を使用しない
             <br>
-            <input type="checkbox" name="driveing-option-select" id="driving-option"/>高速道路を使用しない</div>
+            <input type="checkbox" name="driveing-option-select" id="avoid-highway"/>高速道路を使用しない</div>
     </div>
 <div id="right-panel">
     <p>経路の詳細</p>
