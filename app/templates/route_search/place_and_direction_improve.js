@@ -15,6 +15,7 @@ function initMap() {
     var mm = ("0"+(today.getMonth()+1)).slice(-2);
     var dd = ("0"+today.getDate()).slice(-2);
     document.getElementById("date").value=yyyy+'-'+mm+'-'+dd;
+    document.getElementById("date").min=yyyy+'-'+mm+'-'+dd;
     new AutocompleteDirectionsHandler(map);
 }
 
@@ -25,12 +26,12 @@ class AutocompleteDirectionsHandler {
         this.directionsRequest = {};
         this.originPlaceId = "";
         this.destinationPlaceId = "";
-        this.transitTime = new Date();
         this.travelMode = google.maps.TravelMode.WALKING;
         this.directionsService = new google.maps.DirectionsService();
         this.directionsRenderer = new google.maps.DirectionsRenderer();
         this.directionsRenderer.setMap(map);
         this.directionsRenderer.setPanel(document.getElementById("right-panel"));
+        this.poly = [];
         const originInput = document.getElementById("origin-input");
         const destinationInput = document.getElementById("destination-input");
         const originAutocomplete = new google.maps.places.Autocomplete(originInput);
@@ -51,7 +52,7 @@ class AutocompleteDirectionsHandler {
         this.setupOptionListener("time");
         this.setupOptionListener("avoid-toll");
         this.setupOptionListener("avoid-highway");
-        this.setUpRouteSelectedListener(this.directionsRenderer);
+        this.setUpRouteSelectedListener(this,this.directionsRenderer);
 
     }
 
@@ -96,13 +97,45 @@ class AutocompleteDirectionsHandler {
     setupOptionListener(id) {
         const optionChange = document.getElementById(id);
         optionChange.addEventListener("change", ()=>{
-           this.route();
+            if (document.getElementById("specify-route-options").checked) {
+                this.route();
+            }
+            else {return ;}
         });
     }
-    setUpRouteSelectedListener(directionsRenderer) {
+
+    //複数ルートがある場合、パネルのルートを押したら発火
+    setUpRouteSelectedListener(obj,directionsRenderer) {
         google.maps.event.addListener(directionsRenderer, 'routeindex_changed', function () {
-            //current routeIndex
-            console.log(this.getRouteIndex());
+            var target = directionsRenderer.getRouteIndex();
+            for(var i = 0; i < obj.poly.length; i++){
+                if(i == target){
+                    obj.poly[i].setOptions({
+                        //選択したルートの場合、色を#00bfffに変更
+                        polylineOptions: {
+                                strokeColor: '#00bfff',
+                                strokeOpacity: 1.0,
+                                strokeWeight: 7,
+                            //青ラインを一番上に表示するため、zIndexを他のルートより大きくする。
+                            zIndex: 1
+                        }
+                    });
+                }
+                else{
+                    obj.poly[i].setOptions({
+                        //選択したルート以外の場合、色を#808080に設定(選択されている場合青だから、
+                        //元に戻すためには、全てのルートについて#808080に設定する必要あり。)
+                        polylineOptions: {
+                            strokeColor: '#808080',
+                            strokeOpacity: 0.7,
+                            strokeWeight: 7,
+                            //青ラインを一番上に表示するため、zIndexを最小にする
+                            zIndex: 0
+                        }
+                    });
+                }
+                obj.poly[i].setMap(obj.map);
+            }
         });
         }
     route() {
@@ -145,47 +178,42 @@ class AutocompleteDirectionsHandler {
                 }
             }
         }
+
+        //Directions Serviceを使ったルート検索メソッド
         this.directionsService.route(
             this.directionsRequest,
             (response, status) => {
                 if (status === "OK") {
                     //複数ルートがある場合、subRouteRendererで各ルートを薄く表示
-                    if(response.routes.length > 1) {
-                        for (var i = 0; i < response.routes.length; i++) {
-                            //jsではObjectは参照渡しなので、Object.assignを使って、値渡しにする
-                            var sub_res = Object.assign({}, response);
-                            sub_res.routes = [response.routes[i]];
-                            // 各ルートごとに、Renderオブジェクトを作成する必要がある
-                            var subRouteRenderer = new google.maps.DirectionsRenderer();
-                            //ドキュメントURL: https://developers.google.com/maps/documentation/javascript/reference/directions#DirectionsRendererOptions
-                            subRouteRenderer.setOptions({
-                                suppressMarkers: false,
-                                suppressPolylines: false,
-                                suppressInfoWindows: false,
-                                //Colorとopacity(不透明度)と太さを設定
-                                polylineOptions: {
-                                    strokeColor: '#808080',
-                                    strokeOpacity: 0.5,
-                                    strokeWeight: 7
-                                }
-                            });
-                            subRouteRenderer.setDirections(sub_res)
-                            subRouteRenderer.setMap(this.map)
+                    if(me.poly.length > 0){
+                        for(var i = 0;i<me.poly.length;i++){
+                            me.poly[i].setMap(null);
                         }
+                        me.poly = [];
                     }
-                    //responseをRendererに渡して、ルートを描画
-                    //ドキュメントURL: https://developers.google.com/maps/documentation/javascript/reference/marker#MarkerOptions
-                    me.directionsRenderer.setOptions({
-                            suppressMarkers: false,
-                            suppressPolylines: false,
-                            suppressInfoWindows: false,
+                    for (var i = 0; i < response.routes.length; i++) {
+                        //jsではObjectは参照渡しなので、Object.assignを使って、値渡しにする
+                        var sub_res = Object.assign({}, response);
+                        sub_res.routes = [response.routes[i]];
+                        // Rendererは１つのラインしか描画できないので、各ルートごとにRenderオブジェクトを作成する必要がある
+                        var subRouteRenderer = new google.maps.DirectionsRenderer();
+                        //ドキュメントURL: https://developers.google.com/maps/documentation/javascript/reference/directions#DirectionsRendererOptions
+                        subRouteRenderer.setOptions({
+                            //Colorとopacity(不透明度)と太さを設定
                             polylineOptions: {
-                                strokeColor: '#00bfff',
-                                strokeOpacity: 1.0,
+                                strokeColor: '#808080',
+                                strokeOpacity: 0.5,
                                 strokeWeight: 7
                             }
                         });
-                    this.resp = response;
+                        subRouteRenderer.setDirections(sub_res);
+                        subRouteRenderer.setMap(this.map);
+                        me.poly.push(subRouteRenderer);
+                    }
+                    //responseをRendererに渡して、パネルにルートを表示
+                    me.directionsRenderer.setOptions({
+                            suppressPolylines: true,
+                        });
                     me.directionsRenderer.setDirections(response);
 
                 } else {
