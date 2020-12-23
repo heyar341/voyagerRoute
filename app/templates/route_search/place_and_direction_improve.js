@@ -51,7 +51,7 @@ class AutocompleteDirectionsHandler {
         this.setupOptionListener("time");
         this.setupOptionListener("avoid-toll");
         this.setupOptionListener("avoid-highway");
-        
+        this.setUpRouteSelectedListener(this.directionsRenderer);
 
     }
 
@@ -99,7 +99,12 @@ class AutocompleteDirectionsHandler {
            this.route();
         });
     }
-    
+    setUpRouteSelectedListener(directionsRenderer) {
+        google.maps.event.addListener(directionsRenderer, 'routeindex_changed', function () {
+            //current routeIndex
+            console.log(this.getRouteIndex());
+        });
+        }
     route() {
         if (!this.originPlaceId || !this.destinationPlaceId) {
             return;
@@ -111,7 +116,7 @@ class AutocompleteDirectionsHandler {
             destination: { placeId: this.destinationPlaceId },
             travelMode: this.travelMode,
             //↓複数ルートを返す場合、指定
-            // provideRouteAlternatives: true,
+            provideRouteAlternatives: true,
             }
         if(document.getElementById("specify-route-options").checked){
             if(document.getElementById("changemode-transit").checked){
