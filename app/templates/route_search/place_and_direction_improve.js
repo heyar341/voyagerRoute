@@ -10,6 +10,10 @@ function initMap() {
         //streetViewを無効化
         streetViewControl: false,
     });
+    $('.toggle-title').on('click', function(){
+        $(this).toggleClass('active');
+        $(this).next().slideToggle();
+    });
     var today = new Date();
     var yyyy = today.getFullYear();
     var mm = ("0"+(today.getMonth()+1)).slice(-2);
@@ -107,6 +111,9 @@ class AutocompleteDirectionsHandler {
     //複数ルートがある場合、パネルのルートを押したら発火
     setUpRouteSelectedListener(obj,directionsRenderer) {
         google.maps.event.addListener(directionsRenderer, 'routeindex_changed', function () {
+            // console.log(directionsRenderer.directions);
+            console.log(directionsRenderer);
+
             var target = directionsRenderer.getRouteIndex();
             for(var i = 0; i < obj.poly.length; i++){
                 if(i == target){
@@ -215,6 +222,7 @@ class AutocompleteDirectionsHandler {
                             suppressPolylines: true,
                         });
                     me.directionsRenderer.setDirections(response);
+                    console.log(me.directionsRenderer);
 
                 } else {
                     window.alert("検索結果はありません");
