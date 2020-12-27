@@ -16,125 +16,15 @@
 
     <link rel="stylesheet" type="text/css" href="templates/route_search/style_improve.css"/>
     <script src="templates/route_search/place_and_direction_improve.js"></script>
+    <script src="templates/route_search/route_html_tpl.js"></script>
+
 </head>
 <body>
 <div id="left-panel">
     <div id="search-box">
-{{/*   ルート１の要素     */}}
-        <h2 class="toggle-title ml-3 pt-3">ルート1</h2>
-        <div class="search-fields">
-            <hr color="white">
-            <div id="required-fields">
-                <input
-                        id="origin-input"
-                        class="auto-c controls"
-                        type="text"
-                        placeholder="出発地を入力"
-                />
-                <br><br>
-                <input
-                        id="destination-input"
-                        class="auto-c controls"
-                        type="text"
-                        placeholder="目的地を入力"
-                />
-                <br>
-                <div id="route-options">
-                    <span>移動方法：</span>
-                    <br>
-                    <input type="radio" name="type" id="changemode-walking"/>
-                    <label class="mr-2" for="changemode-walking">徒歩</label>
-
-                    <input type="radio" name="type" id="changemode-transit"/>
-                    <label class="mr-2" for="changemode-transit">公共交通機関</label>
-
-                    <input type="radio" name="type" id="changemode-driving"/>
-                    <label for="changemode-driving">自動車</label>
-                </div>
-            </div>
-            <hr class="mt-2">
-            <div id="option-fields">
-                <div id="transit-time" style="display: none">
-                    <span>時間指定：</span>
-                    <br>
-                    <input type="radio" name="deparitime" id="depart-time"/>
-                    <label class="mr-2" for="depart-time">出発時間</label>
-                    <input type="radio" name="deparitime" id="arrival-time"/>
-                    <label for="arrival-time">到着時間</label>
-                    <br>
-                    <input type="date" id="date">
-                    <input type="time" id="time">
-                </div>
-                <div id="driving-option" style="display: none"><span>運転時オプション：</span>
-                    <br>
-                    <input type="checkbox" name="driveing-option-select" id="avoid-toll"/>有料道路を使用しない
-                    <br>
-                    <input type="checkbox" name="driveing-option-select" id="avoid-highway"/>高速道路を使用しない
-                </div>
-            </div>
-            <hr color="white">
-        </div>
-
-{{/*   ルート2の要素     */}}
-        <h2 class="toggle-title ml-3 pt-3">ルート2</h2>
-        <div class="search-fields" style="display: none">
-            <hr color="white">
-            <div id="required-fields">
-                <input
-                        id="origin-input"
-                        class="auto-c controls"
-                        type="text"
-                        placeholder="出発地を入力"
-                />
-                <br><br>
-                <input
-                        id="destination-input"
-                        class="auto-c controls"
-                        type="text"
-                        placeholder="目的地を入力"
-                />
-                <br>
-                <div id="route-options">
-                    <span>移動方法：</span>
-                    <br>
-                    <input type="radio" name="type" id="changemode-walking"/>
-                    <label class="mr-2" for="changemode-walking">徒歩</label>
-
-                    <input type="radio" name="type" id="changemode-transit"/>
-                    <label class="mr-2" for="changemode-transit">公共交通機関</label>
-
-                    <input type="radio" name="type" id="changemode-driving"/>
-                    <label for="changemode-driving">自動車</label>
-                </div>
-            </div>
-            <hr class="mt-2">
-            <div id="option-fields">
-                <div id="transit-time" style="display: none">
-                    <span>時間指定：</span>
-                    <br>
-                    <input type="radio" name="deparitime" id="depart-time"/>
-                    <label class="mr-2" for="depart-time">出発時間</label>
-                    <input type="radio" name="deparitime" id="arrival-time"/>
-                    <label for="arrival-time">到着時間</label>
-                    <br>
-                    <input type="date" id="date">
-                    <input type="time" id="time">
-                </div>
-                <div id="driving-option" style="display: none"><span>運転時オプション：</span>
-                    <br>
-                    <input type="checkbox" name="driveing-option-select" id="avoid-toll"/>有料道路を使用しない
-                    <br>
-                    <input type="checkbox" name="driveing-option-select" id="avoid-highway"/>高速道路を使用しない
-                </div>
-            </div>
-        </div>
-        <h2 class="toggle-title">aaaa</h2>
-        <div style="display: none"><p>aaa</p></div>
-
     </div>
-    <div id="right-panel">
-        <p>経路の詳細</p>
-    </div>
+    <input type="button" id="add-route" value="ルート追加">
+
 </div>
 <div id="map"></div>
 </body>
