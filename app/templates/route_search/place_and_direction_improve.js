@@ -50,6 +50,19 @@ function initMap() {
 
 class AutocompleteDirectionsHandler {
     constructor(map,routeNum) {
+        /**
+         * Assign the project to an employee.
+         * @param {String} routeNum - ルートのIndex番号
+         * @param {string} colorCode - ルートごとのカラーコード
+         * @param {Object} map - google mapオブジェクト
+         * @param {Object} directionRequest - directionServiceの引数に指定するオブジェクト
+         * @param {String} originPlaceId - Autocomplete Serviceで地名から変換された地点ID
+         * @param {String} destinationPlaceId - Autocomplete Serviceで地名から変換された地点ID
+         * @param {Array} poly - ルートごとのdirectionRendererオブジェクトの配列
+         * @param {Object} travelMode - directionsRequestのオプションフィールド
+         * @param {Object} directionsService - google maps API Javascriptのオブジェクト
+         * @param {Object} directionsRenderer - レンダリング機能を提供するオブジェクト
+         */
         this.routeNum = routeNum;
         this.colorCode = colorMap[parseInt(routeNum)];
         this.map = map;
@@ -60,18 +73,20 @@ class AutocompleteDirectionsHandler {
         this.travelMode = google.maps.TravelMode.TRANSIT;
         this.directionsService = new google.maps.DirectionsService();
         this.directionsRenderer = new google.maps.DirectionsRenderer();
+        //初期設定
         this.directionsRenderer.setMap(map);
         this.directionsRenderer.setPanel(document.getElementById("route-detail-panel" + this.routeNum));
         const originInput = document.getElementById("origin-input" + this.routeNum);
         const destinationInput = document.getElementById("destination-input" + this.routeNum);
         const originAutocomplete = new google.maps.places.Autocomplete(originInput);
-        // Specify just the place data fields that you need.
+        //Places detailは高額料金がかかるので、必要なフィールドを指定して、料金を下げる
         originAutocomplete.setFields(["place_id"]);
         const destinationAutocomplete = new google.maps.places.Autocomplete(
             destinationInput
         );
-        // Specify just the place data fields that you need.
+        //Places detailは高額料金がかかるので、必要なフィールドを指定して、料金を下げる
         destinationAutocomplete.setFields(["place_id"]);
+
         //EventListenerの設定
         this.setupClickListener("changemode-walking" + this.routeNum,google.maps.TravelMode.WALKING);
         this.setupClickListener("changemode-transit" + this.routeNum, google.maps.TravelMode.TRANSIT);
@@ -134,10 +149,10 @@ class AutocompleteDirectionsHandler {
 
     //複数ルートがある場合、パネルのルートを押したら発火
     setUpRouteSelectedListener(obj,directionsRenderer) {
+        //documentに明記されていない
         google.maps.event.addListener(directionsRenderer, 'routeindex_changed', function () {
             document.getElementById("route-decide" + obj.routeNum).style.display = "block";
             var target = directionsRenderer.getRouteIndex();
-            // console.log(directionsRenderer);
             for(var i = 0; i < obj.poly.length; i++){
                 if(i == target){
                     obj.poly[i].setOptions({
@@ -146,21 +161,21 @@ class AutocompleteDirectionsHandler {
                                 strokeColor: obj.colorCode,
                                 strokeOpacity: 1.0,
                                 strokeWeight: 7,
-                            //青ラインを一番上に表示するため、zIndexを他のルートより大きくする。
-                            zIndex: 1
+                            //色付きラインを一番上に表示するため、zIndexを他のルートより大きくする。
+                            zIndex: parseInt(obj.routeNum) + 1
                         }
                     });
                 }
                 else{
                     obj.poly[i].setOptions({
-                        //選択したルート以外の場合、色を#808080に設定(選択されている場合青だから、
+                        //選択したルート以外の場合、色を#808080に設定(選択されている場合、色付きだから、
                         //元に戻すためには、全てのルートについて#808080に設定する必要あり。)
                         polylineOptions: {
                             strokeColor: '#808080',
                             strokeOpacity: 0.7,
                             strokeWeight: 7,
-                            //青ラインを一番上に表示するため、zIndexを最小にする
-                            zIndex: 0
+                            //色付きラインを一番上に表示するため、zIndexを小さくする
+                            zIndex: parseInt(obj.routeNum)
                         }
                     });
                 }
@@ -190,6 +205,7 @@ class AutocompleteDirectionsHandler {
                 }
         });
     }
+    //directions Serviceを使用し、ルート検索
     route() {
         if (!this.originPlaceId || !this.destinationPlaceId) {
             return;
@@ -203,8 +219,10 @@ class AutocompleteDirectionsHandler {
             //↓複数ルートを返す場合、指定
             provideRouteAlternatives: true,
             }
+            //公共交通機関を選択した場合
             if(document.getElementById("changemode-transit" + this.routeNum).checked){
                 this.directionsRequest.transitOptions = {}
+                //出発時間を指定した場合
                 if(document.getElementById("depart-time" + this.routeNum).checked){
                     console.log(new Date(document.getElementById("date" + this.routeNum).value +
                         "T" +    document.getElementById("time" + this.routeNum).value));
@@ -213,6 +231,7 @@ class AutocompleteDirectionsHandler {
                         new Date(document.getElementById("date" + this.routeNum).value +
                         "T" +    document.getElementById("time" + this.routeNum).value);
                 }
+                //到着時間を指定した場合
                 else if(document.getElementById("arrival-time" + this.routeNum).checked){
                     this.directionsRequest.transitOptions.arrivalTime =
                         new Date(document.getElementById("date" + this.routeNum).value +
@@ -220,10 +239,13 @@ class AutocompleteDirectionsHandler {
                 }
                 this.directionsRequest.transitOptions.routingPreference = 'FEWER_TRANSFERS';
             }
+            //自動車ルートを指定した場合
             else if(document.getElementById("changemode-driving" + this.routeNum).checked){
+                //有料道路不使用の場合
                 if(document.getElementById("avoid-toll" + this.routeNum).checked){
                     this.directionsRequest.avoidTolls = true;
                 }
+                //高速道路不使用の場合
                 if(document.getElementById("avoid-highway" + this.routeNum).checked){
                     this.directionsRequest.avoidHighways = true;
                 }
@@ -234,7 +256,7 @@ class AutocompleteDirectionsHandler {
             this.directionsRequest,
             (response, status) => {
                 if (status === "OK") {
-                    //複数ルートがある場合、subRouteRendererで各ルートを薄く表示
+                    //検索結果表示前に、現在の表示を全て削除
                     if(me.poly.length > 0){
                         for(var i = 0;i<me.poly.length;i++){
                             me.poly[i].setMap(null);
