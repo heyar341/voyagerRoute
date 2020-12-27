@@ -1,7 +1,8 @@
-// This example requires the Places library. Include the libraries=places
-// parameter when you first load the API. For example:
-// <script
-// src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=places">
+//ルート番号
+var routeID = 0;
+//ルート描画時の線の色を指定
+const colorMap = {0:"#00bfff",1:"#c8e300",2:"#9543de",3:"#00db30",4:"#b09856",5:"#00deda",6:"#eb86d5",7:"#83b300",8:"#ffb300",9:"#de0000"}
+
 function initMap() {
     const map = new google.maps.Map(document.getElementById("map"), {
         mapTypeControl: false,
@@ -10,34 +11,57 @@ function initMap() {
         //streetViewを無効化
         streetViewControl: false,
     });
-    $('.toggle-title').on('click', function(){
-        $(this).toggleClass('active');
-        $(this).next().slideToggle();
-    });
+    //現在時刻を取得し、時間指定要素に挿入
     var today = new Date();
     var yyyy = today.getFullYear();
     var mm = ("0"+(today.getMonth()+1)).slice(-2);
     var dd = ("0"+today.getDate()).slice(-2);
-    document.getElementById("date").value=yyyy+'-'+mm+'-'+dd;
-    document.getElementById("date").min=yyyy+'-'+mm+'-'+dd;
-    new AutocompleteDirectionsHandler(map);
+
+    //１番目のルート要素をHTMLに追加
+    $('#search-box').append(genSearchBox(routeID,colorMap[routeID]));
+    document.getElementById("date" + String(routeID)).value=yyyy+'-'+mm+'-'+dd;
+    document.getElementById("date" + String(routeID)).min=yyyy+'-'+mm+'-'+dd;
+    //AutocompleteとDiretionsServiceのインスタンス化
+    new AutocompleteDirectionsHandler(map,String(routeID));
+    $('.toggle-title').on('click', function () {
+        $(this).toggleClass('active');
+        $(this).next().slideToggle();
+    });
+
+    //ボタンが押されたら２番目以降のルート要素をHTMLに追加
+    $("#add-route").on("click", function () {
+        routeID++;
+        $('#search-box').append(genSearchBox(routeID,colorMap[routeID]));
+        document.getElementById("date" + String(routeID)).value=yyyy+'-'+mm+'-'+dd;
+        document.getElementById("date" + String(routeID)).min=yyyy+'-'+mm+'-'+dd;
+        new AutocompleteDirectionsHandler(map,String(routeID));
+        $('.toggle-title').on('click', function () {
+            $('.toggle-title').off("click");
+            $('.toggle-title').on('click', function () {
+                //activeの場合、CSSで下矢印を表示する
+                $(this).toggleClass('active');
+                $(this).next().slideToggle();
+            });
+        });
+    });
 }
 
 class AutocompleteDirectionsHandler {
-    constructor(map) {
-        this.resp = {};
+    constructor(map,routeNum) {
+        this.routeNum = routeNum;
+        this.colorCode = colorMap[parseInt(routeNum)];
         this.map = map;
         this.directionsRequest = {};
         this.originPlaceId = "";
         this.destinationPlaceId = "";
-        this.travelMode = google.maps.TravelMode.WALKING;
+        this.poly = [];
+        this.travelMode = google.maps.TravelMode.TRANSIT;
         this.directionsService = new google.maps.DirectionsService();
         this.directionsRenderer = new google.maps.DirectionsRenderer();
         this.directionsRenderer.setMap(map);
-        this.directionsRenderer.setPanel(document.getElementById("right-panel"));
-        this.poly = [];
-        const originInput = document.getElementById("origin-input");
-        const destinationInput = document.getElementById("destination-input");
+        this.directionsRenderer.setPanel(document.getElementById("route-detail-panel" + this.routeNum));
+        const originInput = document.getElementById("origin-input" + this.routeNum);
+        const destinationInput = document.getElementById("destination-input" + this.routeNum);
         const originAutocomplete = new google.maps.places.Autocomplete(originInput);
         // Specify just the place data fields that you need.
         originAutocomplete.setFields(["place_id"]);
@@ -47,15 +71,15 @@ class AutocompleteDirectionsHandler {
         // Specify just the place data fields that you need.
         destinationAutocomplete.setFields(["place_id"]);
         //EventListenerの設定
-        this.setupClickListener("changemode-walking",google.maps.TravelMode.WALKING);
-        this.setupClickListener("changemode-transit", google.maps.TravelMode.TRANSIT);
-        this.setupClickListener("changemode-driving", google.maps.TravelMode.DRIVING);
+        this.setupClickListener("changemode-walking" + this.routeNum,google.maps.TravelMode.WALKING);
+        this.setupClickListener("changemode-transit" + this.routeNum, google.maps.TravelMode.TRANSIT);
+        this.setupClickListener("changemode-driving" + this.routeNum, google.maps.TravelMode.DRIVING);
         this.setupPlaceChangedListener(originAutocomplete, "ORIG");
         this.setupPlaceChangedListener(destinationAutocomplete, "DEST");
-        this.setupOptionListener("date");
-        this.setupOptionListener("time");
-        this.setupOptionListener("avoid-toll");
-        this.setupOptionListener("avoid-highway");
+        this.setupOptionListener("date" + this.routeNum);
+        this.setupOptionListener("time" + this.routeNum);
+        this.setupOptionListener("avoid-toll" + this.routeNum);
+        this.setupOptionListener("avoid-highway" + this.routeNum);
         this.setUpRouteSelectedListener(this,this.directionsRenderer);
 
     }
@@ -64,17 +88,17 @@ class AutocompleteDirectionsHandler {
     setupClickListener(id, mode) {
         const radioButton = document.getElementById(id);
         radioButton.addEventListener("click", () => {
-            if(id == "changemode-transit"){
-                document.getElementById("transit-time").style.display = "block"
+            if(id == "changemode-transit" + this.routeNum){
+                document.getElementById("transit-time" + this.routeNum).style.display = "block"
             }
-            else if(id != "changemode-transit"){
-                document.getElementById("transit-time").style.display = "none"
+            else if(id != "changemode-transit" + this.routeNum){
+                document.getElementById("transit-time" + this.routeNum).style.display = "none"
             }
-            if(id == "changemode-driving"){
-                document.getElementById("driving-option").style.display = "block"
+            if(id == "changemode-driving" + this.routeNum){
+                document.getElementById("driving-option" + this.routeNum).style.display = "block"
             }
-            else if(id != "changemode-driving"){
-                document.getElementById("driving-option").style.display = "none"
+            else if(id != "changemode-driving" + this.routeNum){
+                document.getElementById("driving-option" + this.routeNum).style.display = "none"
             }
             this.travelMode = mode;
             this.route();
@@ -100,12 +124,9 @@ class AutocompleteDirectionsHandler {
     }
     setupOptionListener(id) {
         const optionChange = document.getElementById(id);
-        optionChange.addEventListener("change", ()=>{
-            if (document.getElementById("specify-route-options").checked) {
+        optionChange.addEventListener("change", ()=> {
                 this.route();
-            }
-            else {return ;}
-        });
+            });
     }
 
     //複数ルートがある場合、パネルのルートを押したら発火
@@ -118,9 +139,9 @@ class AutocompleteDirectionsHandler {
             for(var i = 0; i < obj.poly.length; i++){
                 if(i == target){
                     obj.poly[i].setOptions({
-                        //選択したルートの場合、色を#00bfffに変更
+                        //選択したルートの場合、色をcolorCodeに従って変更
                         polylineOptions: {
-                                strokeColor: '#00bfff',
+                                strokeColor: obj.colorCode,
                                 strokeOpacity: 1.0,
                                 strokeWeight: 7,
                             //青ラインを一番上に表示するため、zIndexを他のルートより大きくする。
@@ -158,33 +179,31 @@ class AutocompleteDirectionsHandler {
             //↓複数ルートを返す場合、指定
             provideRouteAlternatives: true,
             }
-        if(document.getElementById("specify-route-options").checked){
-            if(document.getElementById("changemode-transit").checked){
+            if(document.getElementById("changemode-transit" + this.routeNum).checked){
                 this.directionsRequest.transitOptions = {}
-                if(document.getElementById("depart-time").checked){
-                    console.log(new Date(document.getElementById("date").value +
-                        "T" +    document.getElementById("time").value));
-                    console.log(document.getElementById("time").value);
+                if(document.getElementById("depart-time" + this.routeNum).checked){
+                    console.log(new Date(document.getElementById("date" + this.routeNum).value +
+                        "T" +    document.getElementById("time" + this.routeNum).value));
+                    console.log(document.getElementById("time" + this.routeNum).value);
                     this.directionsRequest.transitOptions.departureTime =
-                        new Date(document.getElementById("date").value +
-                        "T" +    document.getElementById("time").value);
+                        new Date(document.getElementById("date" + this.routeNum).value +
+                        "T" +    document.getElementById("time" + this.routeNum).value);
                 }
-                else if(document.getElementById("arrival-time").checked){
+                else if(document.getElementById("arrival-time" + this.routeNum).checked){
                     this.directionsRequest.transitOptions.arrivalTime =
-                        new Date(document.getElementById("date").value +
-                        "T" +    document.getElementById("time").value);
+                        new Date(document.getElementById("date" + this.routeNum).value +
+                        "T" +    document.getElementById("time" + this.routeNum).value);
                 }
                 this.directionsRequest.transitOptions.routingPreference = 'FEWER_TRANSFERS';
             }
-            else if(document.getElementById("changemode-driving").checked){
-                if(document.getElementById("avoid-toll").checked){
+            else if(document.getElementById("changemode-driving" + this.routeNum).checked){
+                if(document.getElementById("avoid-toll" + this.routeNum).checked){
                     this.directionsRequest.avoidTolls = true;
                 }
-                if(document.getElementById("avoid-highway").checked){
+                if(document.getElementById("avoid-highway" + this.routeNum).checked){
                     this.directionsRequest.avoidHighways = true;
                 }
             }
-        }
 
         //Directions Serviceを使ったルート検索メソッド
         this.directionsService.route(
