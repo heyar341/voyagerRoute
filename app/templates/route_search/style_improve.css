@@ -22,16 +22,15 @@ body {
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
 }
 
-#origin-input,
-#destination-input {
+.input-fields {
     background-color: #fff;
     font-family: Roboto;
     font-size: 15px;
     font-weight: 300;
-    margin-left: 12px;
+    /*margin-left: 12px;*/
     padding: 0 11px 0 13px;
     text-overflow: ellipsis;
-    width: 250px;
+    width: 350px;
 }
 
 #origin-input:focus,
@@ -52,26 +51,27 @@ body {
     font-weight: 300;
 }
 
-#right-panel {
+.route-detail {
     font-family: "Roboto", "sans-serif";
     line-height: 30px;
     padding-left: 10px;
+    padding-right: 10px;
 }
 
-#right-panel select,
-#right-panel input {
-    font-size: 15px;
+.route-detail select,
+.route-detail input {
+    font-size: 10px;
 }
 
-#right-panel select {
+.route-detail select {
     width: 100%;
 }
 
-#right-panel i {
-    font-size: 12px;
+.route-detail i {
+    font-size: 10px;
 }
 
-#right-panel {
+.route-detail {
     /*height: 100%;*/
     /*float: right;*/
     /*width: 20%;*/
@@ -84,11 +84,11 @@ body {
 
 #left-panel {
     color: white;
-    height: auto;
+    height: 100%;
     float: left;
-    width: 300px;
+    width: 400px;
     overflow: auto;
-    background-color: #1A73E8;
+    /*background-color: #1A73E8;*/
 }
 @media print {
     #map {
@@ -96,12 +96,36 @@ body {
         margin: 0;
     }
 
-    #right-panel {
+    .route-detail {
         float: none;
         width: auto;
     }
 }
 
-#serach-box{
+#search-box{
+    /*margin-left: 10px;*/
+}
+
+.adp-substep{
+    font-size: 14px;
+}
+
+#search-box{
+    background-color: #1A73E8;
+}
+#required-fields,#option-fields{
     margin-left: 10px;
+}
+
+#option-fields{
+    min-height: 90px;
+}
+
+.adp-text,.adp-summary,.adp-substep,.adp-marker2,.adp-placemark{
+    display: none;
+}
+.warnbox-content {
+    background: #fff1a8;
+    padding: 5px 6px;
+    font-size: 13px;
 }
