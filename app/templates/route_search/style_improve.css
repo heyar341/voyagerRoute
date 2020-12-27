@@ -22,12 +22,12 @@ body {
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
 }
 
+/*出発地と目的地のinput要素*/
 .input-fields {
     background-color: #fff;
     font-family: Roboto;
     font-size: 15px;
     font-weight: 300;
-    /*margin-left: 12px;*/
     padding: 0 11px 0 13px;
     text-overflow: ellipsis;
     width: 350px;
@@ -51,13 +51,7 @@ body {
     font-weight: 300;
 }
 
-.route-detail {
-    font-family: "Roboto", "sans-serif";
-    line-height: 30px;
-    padding-left: 10px;
-    padding-right: 10px;
-}
-
+/*ルート一覧表示パネル*/
 .route-detail select,
 .route-detail input {
     font-size: 10px;
@@ -72,42 +66,24 @@ body {
 }
 
 .route-detail {
-    /*height: 100%;*/
-    /*float: right;*/
-    /*width: 20%;*/
     color: black;
     height: available;
     width: 100%;
     background-color: white;
     overflow: auto;
+    font-family: "Roboto", "sans-serif";
+    line-height: 30px;
+    padding-left: 10px;
+    padding-right: 10px;
 }
 
+/*ルート検索用のパネル*/
 #left-panel {
     color: white;
     height: 100%;
     float: left;
     width: 400px;
     overflow: auto;
-    /*background-color: #1A73E8;*/
-}
-@media print {
-    #map {
-        height: 500px;
-        margin: 0;
-    }
-
-    .route-detail {
-        float: none;
-        width: auto;
-    }
-}
-
-#search-box{
-    /*margin-left: 10px;*/
-}
-
-.adp-substep{
-    font-size: 14px;
 }
 
 #search-box{
@@ -121,9 +97,29 @@ body {
     min-height: 90px;
 }
 
+@media print {
+    #map {
+        height: 500px;
+        margin: 0;
+    }
+
+    .route-detail {
+        float: none;
+        width: auto;
+    }
+}
+
+/*経路の詳細を表示する場合*/
+/*.adp-substep{*/
+/*    font-size: 14px;*/
+/*}*/
+
+/*経路の詳細を非表示に設定*/
 .adp-text,.adp-summary,.adp-substep,.adp-marker2,.adp-placemark{
     display: none;
 }
+
+/*徒歩ルートの注意書き*/
 .warnbox-content {
     background: #fff1a8;
     padding: 5px 6px;
