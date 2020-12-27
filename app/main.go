@@ -34,16 +34,12 @@ func main() {
 
 	http.Handle("/favicon.ico", http.NotFoundHandler())
 	//Direction API
-	http.HandleFunc("/route_search_query",routeQuery)
 	http.Handle("/templates/", http.StripPrefix("/templates", http.FileServer(http.Dir("./templates"))))
 	http.HandleFunc("/show_map",index)
 
 	http.ListenAndServe(":80",nil)
 }
 
-func routeQuery(w http.ResponseWriter, req *http.Request)  {
-	tpl.ExecuteTemplate(w, "direction.html", nil)
-}
 func index(w http.ResponseWriter, req *http.Request){
 	//API呼び出しの準備
 	env_err := godotenv.Load("env/dev.env")
