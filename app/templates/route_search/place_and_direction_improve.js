@@ -1,7 +1,9 @@
 //ルート番号
 var routeID = 0;
 //ルート描画時の線の色を指定
-const colorMap = {0:"#00bfff",1:"#c8e300",2:"#9543de",3:"#00db30",4:"#b09856",5:"#00deda",6:"#eb86d5",7:"#83b300",8:"#ffb300",9:"#de0000"}
+const colorMap = {0:"#00bfff",1:"#c8e300",2:"#9543de",3:"#00db30",4:"#4586b5",5:"#00deda",6:"#eb86d5",7:"#83b300",8:"#ffb300",9:"#de0000"}
+const routeMap = {0:"",1:"",2:"",3:"",4:"",5:"",6:"",7:"",8:"",9:""}
+
 
 function initMap() {
     const map = new google.maps.Map(document.getElementById("map"), {
@@ -81,6 +83,7 @@ class AutocompleteDirectionsHandler {
         this.setupOptionListener("avoid-toll" + this.routeNum);
         this.setupOptionListener("avoid-highway" + this.routeNum);
         this.setUpRouteSelectedListener(this,this.directionsRenderer);
+        this.setUpDecideRouteListener(this,this.directionsRenderer);
 
     }
 
@@ -132,10 +135,9 @@ class AutocompleteDirectionsHandler {
     //複数ルートがある場合、パネルのルートを押したら発火
     setUpRouteSelectedListener(obj,directionsRenderer) {
         google.maps.event.addListener(directionsRenderer, 'routeindex_changed', function () {
-            // console.log(directionsRenderer.directions);
-            console.log(directionsRenderer);
-
+            document.getElementById("route-decide" + obj.routeNum).style.display = "block";
             var target = directionsRenderer.getRouteIndex();
+            // console.log(directionsRenderer);
             for(var i = 0; i < obj.poly.length; i++){
                 if(i == target){
                     obj.poly[i].setOptions({
@@ -166,6 +168,28 @@ class AutocompleteDirectionsHandler {
             }
         });
         }
+    setUpDecideRouteListener(obj,directionsRenderer) {
+            document.getElementById("route-decide" + obj.routeNum).addEventListener("click",function () {
+                var target = directionsRenderer.getRouteIndex();
+                //ルートを決定したら、toggleを閉じる
+                $('#toggle-'+obj.routeNum).next().slideToggle();
+                //directionsRendererから目的のルート情報を取得してrouteObjインスタンスを作成
+                var ruoteOjb = {
+                    geocoded_waypoints: directionsRenderer.directions.geocoded_waypoints,
+                    request: directionsRenderer.directions.request,
+                    routes: [directionsRenderer.directions.routes[target]],
+                    status: directionsRenderer.directions.status,
+                    __proto__: directionsRenderer.directions.__proto__
+                }
+                //選択したルートオブジェクトをrouteMapに追加
+                routeMap[parseInt(obj.routeNum)] = ruoteOjb;
+                for(var i = 0; i < obj.poly.length; i++){
+                    if(i != target){
+                        obj.poly[i].setMap(null);
+                    }
+                }
+        });
+    }
     route() {
         if (!this.originPlaceId || !this.destinationPlaceId) {
             return;
@@ -241,10 +265,10 @@ class AutocompleteDirectionsHandler {
                             suppressPolylines: true,
                         });
                     me.directionsRenderer.setDirections(response);
-                    console.log(me.directionsRenderer);
-
                 } else {
+                    document.getElementById("route-decide"+me.routeNum).style.display = "none";
                     window.alert("検索結果はありません");
+
                 }
             }
         );

@@ -1,5 +1,5 @@
 function genSearchBox(routeId,color) {
-    var route_html_tpl = `<h2 class="toggle-title pl-3 pt-3 mb-0" style="background-color: ${color}">ルート${routeId + 1}</h2>
+    var route_html_tpl = `<h2 class="toggle-title pl-3 pt-3 mb-0" id="toggle-${routeId}" style="background-color: ${color}">ルート${routeId + 1}</h2>
         <div class="search-fields">
             <hr color="white" class="mt-0">
             <div id="required-fields">
@@ -50,10 +50,11 @@ function genSearchBox(routeId,color) {
                     <input type="checkbox" name="driveing-option-select${routeId}" id="avoid-highway${routeId}"/>高速道路を使用しない
                 </div>
             </div>
-<!--            <hr color="white">-->
              <div id="route-detail-panel${routeId}" class="route-detail">
             </div>
-
+            <div style="background-color: white; padding-bottom: 10px">
+             <button class="btn-primary mx-auto" id="route-decide${routeId}" style="display: none">選択したルートで決定</button>
+             </div>
         </div>`
     return route_html_tpl
 }
