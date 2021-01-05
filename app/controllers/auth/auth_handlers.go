@@ -44,6 +44,7 @@ func Register(w http.ResponseWriter, req *http.Request){
 	if err != nil {
 		msg := "エラ〜が発生しました。もう一度操作をしなおしてください。"
 		http.Error(w,msg,http.StatusInternalServerError)
+		log.Fatal(err)
 		return
 	}
 	//DBに保存
@@ -86,6 +87,7 @@ func Register(w http.ResponseWriter, req *http.Request){
 		return
 	}
 
+	//Cookieの設定
 	c := &http.Cookie{
 		Name: "sessionId",
 		Value: signedStr,
@@ -124,10 +126,11 @@ func Login(w http.ResponseWriter, req *http.Request){
 	//DBからのレスポンスを挿入する変数
 	var user userData
 	err = usersCollection.FindOne(ctx,bson.D{{"username",uName}}).Decode(&user)
-	if err == mongo.ErrNoDocuments {
-		log.Println("ドキュメントが見つかりません")
-	} else if err != nil {
-		log.Fatal(err)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			log.Fatal("ドキュメントが見つかりません")
+		}
+	log.Fatal(err)
 	}
 	storedPass := user.Password
 	//DB内のハッシュ化されたパスワードと入力されたパスワードの一致を確認
@@ -139,5 +142,54 @@ func Login(w http.ResponseWriter, req *http.Request){
 	}
 	//一致した場合
 	http.Redirect(w,req,"/",http.StatusSeeOther)
+
+}
+
+func Logout(w http.ResponseWriter, req *http.Request) {
+	if req.Method != "POST" {
+		http.Redirect(w,req, "/",http.StatusSeeOther)
+	}
+	//Cookieからセッション情報取得
+	c, err := req.Cookie("sessionId")
+	//Cookieが設定されてない場合
+	if err != nil {
+		c = &http.Cookie{
+			Name: "sessionId",
+			Value: "",
+		}
+	}
+
+	sesId,err := parseToken(c.Value)
+	if err != nil {
+		msg := "ログインしていません"
+		http.Redirect(w,req,"/?msg="+msg,http.StatusSeeOther)
+		log.Println(err)
+		return
+	}
+
+	if sesId != "" {
+		//DBから読み込み
+		client, ctx, err := dbhandler.Connect()
+		//処理終了後に切断
+		defer client.Disconnect(ctx)
+		database := client.Database("googroutes")
+		usersCollection := database.Collection("sessions")
+		//DBからのレスポンスを挿入する変数
+		err = usersCollection.FindOneAndDelete(ctx,bson.D{{"sessionid",sesId}})
+		if err != nil {
+			msg := "エラ〜が発生しました。"
+			http.Redirect(w,req,"/?msg="+msg,http.StatusSeeOther)
+			if err == mongo.ErrNoDocuments {
+				log.Fatal("Couldn't find a document")
+			}
+			log.Fatal(err)
+			return
+		}
+	}
+
+	c.MaxAge = -1
+	http.SetCookie(w,c)
+	msg := "ログアウトしました"
+	http.Redirect(w,req,"/?msg="+msg,http.StatusSeeOther)
 
 }
