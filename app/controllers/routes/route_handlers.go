@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 	"log"
 	"html/template"
 	"io/ioutil"
@@ -25,11 +24,7 @@ type RoutesRequest struct {
 	Routes map[string] interface{} `json:"routes" bson:"routes"`
 }
 
-type SessionData struct {
-	ID primitive.ObjectID `json:"id" bson:"_id"`
-	SessionId string `json:"sessionid" bson:"sessionid"`
-	UserId primitive.ObjectID `json:"userid" bson:"userid"`
-}
+
 
 func init()  {
 	route_tpl = template.Must(template.ParseGlob("templates/route_search/*"))
@@ -67,22 +62,7 @@ func SaveRoutes(w http.ResponseWriter, req *http.Request) {
 	}
 	var userId primitive.ObjectID
 	if sesId != "" {
-		//DBから読み込み
-		client, ctx, err := dbhandler.Connect()
-		//処理終了後に切断
-		defer client.Disconnect(ctx)
-		database := client.Database("googroutes")
-		sessionsCollection := database.Collection("sessions")
-		//DBからのレスポンスを挿入する変数
-		var sesData SessionData
-		err = sessionsCollection.FindOne(ctx,bson.D{{"sessionid",sesId}}).Decode(&sesData)
-		if err != nil {
-			if err == mongo.ErrNoDocuments {
-				log.Fatal("ドキュメントが見つかりません")
-			}
-			log.Fatal(err)
-		}
-		userId = sesData.UserId
+		userId,err = auth.GetLoginUserID(sesId)
 	}
 
 	//DBに保存
