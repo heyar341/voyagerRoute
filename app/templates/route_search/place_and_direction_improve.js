@@ -4,6 +4,35 @@ var routeID = 0;
 const colorMap = {0:"#00bfff",1:"#c8e300",2:"#9543de",3:"#00db30",4:"#4586b5",5:"#00deda",6:"#eb86d5",7:"#83b300",8:"#ffb300",9:"#de0000"}
 const routeMap = {0:"",1:"",2:"",3:"",4:"",5:"",6:"",7:"",8:"",9:""}
 
+//Ajax通信
+$(function(){
+    $("#save-route").click(function() {
+        // 多重送信を防ぐため通信完了までボタンをdisableにする
+        var button = $(this);
+        button.attr("disabled", true);
+
+        $.ajax({
+            url: "/routes_save", // 通信先のURL
+            type: "POST",		// 使用するHTTPメソッド
+            data: JSON.stringify(routeMap),
+            contentType: 'application/json',
+            dataType: "json", // responseのデータの種類
+            timespan: 1000,	// 通信のタイムアウトの設定(ミリ秒)
+            //通信成功
+        }).done(function(data,textStatus,jqXHR){
+            alert("ルートの保存に成功しました。");
+            //通信失敗
+        }).fail(function(xhr, status, error){// HTTPエラー時
+            alert("Server Error. Pleasy try again later.");
+            //通信終了後
+        }).always(function(arg1, status, arg2){
+            //status が "success" の場合は always(data, status, xhr) となるが
+            //、"success" 以外の場合は always(xhr, status, error)となる。
+            button.attr("disabled", false);  // ボタンを再び enableにする
+        });
+    });
+});
+
 
 function initMap() {
     const map = new google.maps.Map(document.getElementById("map"), {
@@ -296,3 +325,4 @@ class AutocompleteDirectionsHandler {
         );
     }
 }
+
