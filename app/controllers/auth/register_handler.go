@@ -60,8 +60,8 @@ func Register(w http.ResponseWriter, req *http.Request){
 	//DBに保存
 	sessionsCollection := database.Collection("sessions")
 	_, err = sessionsCollection.InsertOne(ctx,bson.D{
-		{"sessionid",sesId},
-		{"userid",userDocId},
+		{"session_id",sesId},
+		{"user_id",userDocId},
 	})
 	if err != nil {
 		msg := "エラ〜が発生しました。もう一度操作をしなおしてください。"

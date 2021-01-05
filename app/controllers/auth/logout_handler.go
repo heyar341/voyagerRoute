@@ -39,7 +39,7 @@ func Logout(w http.ResponseWriter, req *http.Request) {
 		sessionsCollection := database.Collection("sessions")
 		//DBからのレスポンスを挿入する変数
 		var deletedDocument bson.M
-		err = sessionsCollection.FindOneAndDelete(ctx,bson.D{{"sessionid",sesId}}).Decode(&deletedDocument)
+		err = sessionsCollection.FindOneAndDelete(ctx,bson.D{{"session_id",sesId}}).Decode(&deletedDocument)
 		if err != nil {
 			msg := "エラ〜が発生しました。"
 			http.Redirect(w,req,"/?msg="+msg,http.StatusSeeOther)
