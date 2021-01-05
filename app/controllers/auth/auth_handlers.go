@@ -53,7 +53,7 @@ func Register(w http.ResponseWriter, req *http.Request){
 	defer client.Disconnect(ctx)
 	database := client.Database("googroutes")
 	usersCollection := database.Collection("users")
-	userDocId, err := usersCollection.InsertOne(ctx,bson.D{
+	insRes, err := usersCollection.InsertOne(ctx,bson.D{
 		{"username",uName},
 		{"password",securedPass},
 	})
@@ -63,7 +63,7 @@ func Register(w http.ResponseWriter, req *http.Request){
 		log.Fatal(err)
 		return
 	}
-
+	userDocId := insRes.InsertedID
 	//固有のセッションIDを作成
 	sesId := uuid.New().String()
 	//DBに保存
@@ -159,7 +159,7 @@ func Logout(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	sesId,err := parseToken(c.Value)
+	sesId,err := ParseToken(c.Value)
 	if err != nil {
 		msg := "ログインしていません"
 		http.Redirect(w,req,"/?msg="+msg,http.StatusSeeOther)
@@ -173,9 +173,10 @@ func Logout(w http.ResponseWriter, req *http.Request) {
 		//処理終了後に切断
 		defer client.Disconnect(ctx)
 		database := client.Database("googroutes")
-		usersCollection := database.Collection("sessions")
+		sessionsCollection := database.Collection("sessions")
 		//DBからのレスポンスを挿入する変数
-		err = usersCollection.FindOneAndDelete(ctx,bson.D{{"sessionid",sesId}})
+		var deletedDocument bson.M
+		err = sessionsCollection.FindOneAndDelete(ctx,bson.D{{"sessionid",sesId}}).Decode(&deletedDocument)
 		if err != nil {
 			msg := "エラ〜が発生しました。"
 			http.Redirect(w,req,"/?msg="+msg,http.StatusSeeOther)
