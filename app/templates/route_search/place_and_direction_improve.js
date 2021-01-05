@@ -2,11 +2,15 @@
 var routeID = 0;
 //ルート描画時の線の色を指定
 const colorMap = {0:"#00bfff",1:"#c8e300",2:"#9543de",3:"#00db30",4:"#4586b5",5:"#00deda",6:"#eb86d5",7:"#83b300",8:"#ffb300",9:"#de0000"}
-const routeMap = {0:"",1:"",2:"",3:"",4:"",5:"",6:"",7:"",8:"",9:""}
+const routeMap = {
+                    "title":"",
+                    "routes": {"0": "", "1": "", "2": "", "3": "", "4": "", "5": "", "6": "", "7": "", "8": "", "9": ""}
+                }
 
 //Ajax通信
 $(function(){
     $("#save-route").click(function() {
+        routeMap["title"] = document.getElementById("route-name").value;
         // 多重送信を防ぐため通信完了までボタンをdisableにする
         var button = $(this);
         button.attr("disabled", true);
@@ -226,7 +230,7 @@ class AutocompleteDirectionsHandler {
                     __proto__: directionsRenderer.directions.__proto__
                 }
                 //選択したルートオブジェクトをrouteMapに追加
-                routeMap[parseInt(obj.routeNum)] = ruoteOjb;
+                routeMap["routes"][obj.routeNum] = ruoteOjb;
                 for(var i = 0; i < obj.poly.length; i++){
                     if(i != target){
                         obj.poly[i].setMap(null);
