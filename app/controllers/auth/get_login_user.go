@@ -11,15 +11,14 @@ import (
 
 type SessionData struct {
 	ID primitive.ObjectID `json:"id" bson:"_id"`
-	SessionId string `json:"sessionid" bson:"sessionid"`
-	UserId primitive.ObjectID `json:"userid" bson:"userid"`
+	SessionId string `json:"session_id" bson:"session_id"`
+	UserId primitive.ObjectID `json:"user_id" bson:"user_id"`
 }
 
 func GetLoginUserID(sessionId string) (primitive.ObjectID, error) {
 	//DBから読み込み
 	client, ctx, err := dbhandler.Connect()
 	if err != nil {
-		log.Fatal(err)
 		return primitive.NilObjectID, err
 	}
 	//処理終了後に切断
@@ -28,12 +27,11 @@ func GetLoginUserID(sessionId string) (primitive.ObjectID, error) {
 	sessionsCollection := database.Collection("sessions")
 	//DBからのレスポンスを挿入する変数
 	var sesData SessionData
-	err = sessionsCollection.FindOne(ctx, bson.D{{"sessionid", sessionId}}).Decode(&sesData)
+	err = sessionsCollection.FindOne(ctx, bson.D{{"session_id", sessionId}}).Decode(&sesData)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			log.Fatal("ドキュメントが見つかりません")
 		}
-		log.Fatal(err)
 		return primitive.NilObjectID, err
 	}
 	return sesData.UserId, nil

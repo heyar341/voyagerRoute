@@ -63,6 +63,12 @@ func SaveRoutes(w http.ResponseWriter, req *http.Request) {
 	var userId primitive.ObjectID
 	if sesId != "" {
 		userId,err = auth.GetLoginUserID(sesId)
+		if err != nil {
+			msg := "エラ〜が発生しました。もう一度操作をしなおしてください。"
+			http.Error(w,msg,http.StatusInternalServerError)
+			log.Fatal(err)
+			return
+		}
 	}
 
 	//DBに保存
