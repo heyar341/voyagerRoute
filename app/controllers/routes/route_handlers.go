@@ -41,7 +41,6 @@ func SaveRoutes(w http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		http.Error(w, "aa", http.StatusInternalServerError)
 	}
-	msg := ResponseMsg{Msg: ""}
 
 	//Cookieからセッション情報取得
 	c, err := req.Cookie("sessionId")
@@ -55,7 +54,7 @@ func SaveRoutes(w http.ResponseWriter, req *http.Request) {
 
 	sesId,err := auth.ParseToken(c.Value)
 	if err != nil {
-		msg := "ログインしていません"
+		msg := "セッション情報が不正です。"
 		http.Redirect(w,req,"/?msg="+msg,http.StatusSeeOther)
 		log.Println(err)
 		return
@@ -89,6 +88,7 @@ func SaveRoutes(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
+	msg := ResponseMsg{Msg: ""}
 	respJson ,err := json.Marshal(msg)
 	if err != nil{
 		http.Error(w,"問題が発生しました。もう一度操作しなおしてください",http.StatusInternalServerError)
