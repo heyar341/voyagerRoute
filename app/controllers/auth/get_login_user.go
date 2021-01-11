@@ -3,8 +3,6 @@ package auth
 import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-	"log"
 	"app/dbhandler"
 
 )
@@ -16,23 +14,20 @@ type SessionData struct {
 }
 
 func GetLoginUserID(sessionId string) (primitive.ObjectID, error) {
+	sesDoc := bson.D{{"session_id", sessionId}}
 	//DBから読み込み
-	client, ctx, err := dbhandler.Connect()
+	resp, err := dbhandler.Find("googroutes", "sessions", sesDoc)
 	if err != nil {
 		return primitive.NilObjectID, err
 	}
-	//処理終了後に切断
-	defer client.Disconnect(ctx)
-	database := client.Database("googroutes")
-	sessionsCollection := database.Collection("sessions")
-	//DBからのレスポンスを挿入する変数
+	//DBから取得した値をmarshal
+	bsonByte,err := bson.Marshal(resp)
+	if err != nil {
+		return primitive.NilObjectID, err
+	}
 	var sesData SessionData
-	err = sessionsCollection.FindOne(ctx, bson.D{{"session_id", sessionId}}).Decode(&sesData)
-	if err != nil {
-		if err == mongo.ErrNoDocuments {
-			log.Fatal("ドキュメントが見つかりません")
-		}
-		return primitive.NilObjectID, err
-	}
+	//marshalした値をUnmarshalして、userに代入
+	bson.Unmarshal(bsonByte, &sesData)
+
 	return sesData.UserId, nil
 }
