@@ -69,18 +69,13 @@ func SaveRoutes(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 	}
-
-	//DBに保存
-	client, ctx, err := dbhandler.Connect()
-	//処理終了後に切断
-	defer client.Disconnect(ctx)
-	database := client.Database("googroutes")
-	routesCollection := database.Collection("routes")
-	_, err = routesCollection.InsertOne(ctx,bson.D{
+	document := bson.D{
 		{"user_id",userId},
 		{"title",reqFields.Title},
 		{"routes",reqFields.Routes},
-	})
+	}
+	//DBに保存
+	_, err = dbhandler.Insert("googroutes", "routes", document)
 	if err != nil {
 		msg := "エラ〜が発生しました。もう一度操作をしなおしてください。"
 		http.Error(w,msg,http.StatusInternalServerError)
