@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 	"log"
 	"html/template"
 	"io/ioutil"
@@ -25,11 +24,7 @@ type RoutesRequest struct {
 	Routes map[string] interface{} `json:"routes" bson:"routes"`
 }
 
-type SessionData struct {
-	ID primitive.ObjectID `json:"id" bson:"_id"`
-	SessionId string `json:"sessionid" bson:"sessionid"`
-	UserId primitive.ObjectID `json:"userid" bson:"userid"`
-}
+
 
 func init()  {
 	route_tpl = template.Must(template.ParseGlob("templates/route_search/*"))
@@ -46,7 +41,6 @@ func SaveRoutes(w http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		http.Error(w, "aa", http.StatusInternalServerError)
 	}
-	msg := ResponseMsg{Msg: ""}
 
 	//Cookieからセッション情報取得
 	c, err := req.Cookie("sessionId")
@@ -60,29 +54,20 @@ func SaveRoutes(w http.ResponseWriter, req *http.Request) {
 
 	sesId,err := auth.ParseToken(c.Value)
 	if err != nil {
-		msg := "ログインしていません"
+		msg := "セッション情報が不正です。"
 		http.Redirect(w,req,"/?msg="+msg,http.StatusSeeOther)
 		log.Println(err)
 		return
 	}
 	var userId primitive.ObjectID
 	if sesId != "" {
-		//DBから読み込み
-		client, ctx, err := dbhandler.Connect()
-		//処理終了後に切断
-		defer client.Disconnect(ctx)
-		database := client.Database("googroutes")
-		sessionsCollection := database.Collection("sessions")
-		//DBからのレスポンスを挿入する変数
-		var sesData SessionData
-		err = sessionsCollection.FindOne(ctx,bson.D{{"sessionid",sesId}}).Decode(&sesData)
+		userId,err = auth.GetLoginUserID(sesId)
 		if err != nil {
-			if err == mongo.ErrNoDocuments {
-				log.Fatal("ドキュメントが見つかりません")
-			}
+			msg := "エラ〜が発生しました。もう一度操作をしなおしてください。"
+			http.Error(w,msg,http.StatusInternalServerError)
 			log.Fatal(err)
+			return
 		}
-		userId = sesData.UserId
 	}
 
 	//DBに保存
@@ -103,6 +88,7 @@ func SaveRoutes(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
+	msg := ResponseMsg{Msg: ""}
 	respJson ,err := json.Marshal(msg)
 	if err != nil{
 		http.Error(w,"問題が発生しました。もう一度操作しなおしてください",http.StatusInternalServerError)
