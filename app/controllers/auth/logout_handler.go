@@ -2,7 +2,6 @@ package auth
 
 import (
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
 	"log"
 	"net/http"
 	"app/dbhandler"
@@ -32,21 +31,11 @@ func Logout(w http.ResponseWriter, req *http.Request) {
 
 	if sesId != "" {
 		//DBから読み込み
-		client, ctx, err := dbhandler.Connect()
-		//処理終了後に切断
-		defer client.Disconnect(ctx)
-		database := client.Database("googroutes")
-		sessionsCollection := database.Collection("sessions")
-		//DBからのレスポンスを挿入する変数
-		var deletedDocument bson.M
-		err = sessionsCollection.FindOneAndDelete(ctx,bson.D{{"session_id",sesId}}).Decode(&deletedDocument)
+		sesDoc := bson.D{{"session_id",sesId}}
+		err = dbhandler.Delete("googroutes", "sessions", sesDoc)
 		if err != nil {
 			msg := "エラ〜が発生しました。"
 			http.Redirect(w,req,"/?msg="+msg,http.StatusSeeOther)
-			if err == mongo.ErrNoDocuments {
-				log.Fatal("Couldn't find a document")
-			}
-			log.Fatal(err)
 			return
 		}
 	}

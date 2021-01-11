@@ -3,8 +3,6 @@ package auth
 import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-	"log"
 	"net/http"
 	"net/url"
 	"golang.org/x/crypto/bcrypt"
@@ -37,22 +35,20 @@ func Login(w http.ResponseWriter, req *http.Request){
 		http.Redirect(w,req,"/register/?msg="+msg,http.StatusSeeOther)
 		return
 	}
-	//DBから読み込み
-	client, ctx, err := dbhandler.Connect()
-	//処理終了後に切断
-	defer client.Disconnect(ctx)
-	database := client.Database("googroutes")
-	usersCollection := database.Collection("users")
-
-	//DBからのレスポンスを挿入する変数
-	var user userData
-	err = usersCollection.FindOne(ctx,bson.D{{"username",uName}}).Decode(&user)
+	//取得するドキュメントの条件
+	userDoc := bson.D{{"username",uName}}
+	//DBから取得
+	resp, err := dbhandler.Find("googroutes", "users", userDoc)
 	if err != nil {
-		if err == mongo.ErrNoDocuments {
-			log.Fatal("ドキュメントが見つかりません")
-		}
-		log.Fatal(err)
+		msg := "ユーザー名またはパスワードが正しくありません。"
+		http.Redirect(w,req,"/?msg="+msg,http.StatusSeeOther)
 	}
+	//DBから取得した値をmarshal
+	bsonByte,_ := bson.Marshal(resp)
+	var user userData
+	//marshalした値をUnmarshalして、userに代入
+	bson.Unmarshal(bsonByte, &user)
+
 	storedPass := user.Password
 	//DB内のハッシュ化されたパスワードと入力されたパスワードの一致を確認
 	err = bcrypt.CompareHashAndPassword(storedPass,[]byte(password))

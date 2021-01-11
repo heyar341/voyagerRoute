@@ -38,31 +38,31 @@ func Register(w http.ResponseWriter, req *http.Request){
 		log.Fatal(err)
 		return
 	}
-	//DBに保存
-	client, ctx, err := dbhandler.Connect()
-	//処理終了後に切断
-	defer client.Disconnect(ctx)
-	database := client.Database("googroutes")
-	usersCollection := database.Collection("users")
-	insRes, err := usersCollection.InsertOne(ctx,bson.D{
+
+	//userをDBに保存
+	//保存するドキュメント
+	userDoc := bson.D{
 		{"username",uName},
 		{"password",securedPass},
-	})
+	}
+	//DBに保存
+	insertRes, err := dbhandler.Insert("googroutes", "users", userDoc)
 	if err != nil {
 		msg := "エラ〜が発生しました。もう一度操作をしなおしてください。"
 		http.Error(w,msg,http.StatusInternalServerError)
 		log.Fatal(err)
 		return
 	}
-	userDocId := insRes.InsertedID
+	//insertResから、userのドキュメントIDを取得
+	userDocId := insertRes.InsertedID
 	//固有のセッションIDを作成
 	sesId := uuid.New().String()
-	//DBに保存
-	sessionsCollection := database.Collection("sessions")
-	_, err = sessionsCollection.InsertOne(ctx,bson.D{
+	//sessionをDBに保存
+	sesDoc := bson.D{
 		{"session_id",sesId},
 		{"user_id",userDocId},
-	})
+	}
+	_, err = dbhandler.Insert("googroutes", "sessions", sesDoc)
 	if err != nil {
 		msg := "エラ〜が発生しました。もう一度操作をしなおしてください。"
 		http.Error(w,msg,http.StatusInternalServerError)
