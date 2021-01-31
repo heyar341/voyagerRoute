@@ -299,6 +299,13 @@ class AutocompleteDirectionsHandler {
                         }
                         me.poly = [];
                     }
+
+                    if(response.request.travelMode == "TRANSIT" && response.routes[0].legs[0].start_address.match(/日本/)){
+                        document.getElementById("route-decide"+me.routeNum).style.display = "none";
+                        alert("日本国内の公共交通機関情報はご利用いただけません。")
+                        return
+                    }
+                    //複数ルートが帰ってきた場合、それぞれについて、ラインを描画する
                     for (var i = 0; i < response.routes.length; i++) {
                         //jsではObjectは参照渡しなので、Object.assignを使って、値渡しにする
                         var sub_res = Object.assign({}, response);
@@ -341,8 +348,13 @@ class AutocompleteDirectionsHandler {
                     }
                 } else {
                     document.getElementById("route-decide"+me.routeNum).style.display = "none";
-                    window.alert("検索結果はありません");
-
+                    if(this.directionsRequest.travelMode === google.maps.TravelMode.TRANSIT){
+                        window.alert("出発地と目的地の距離が遠すぎる場合、結果が表示されない場合があります。\n" +
+                            "また、日本国内の公共交通機関情報はご利用いただけません。");
+                    }
+                    else {
+                        window.alert("出発地と目的地の距離が遠すぎる場合、結果が表示されない場合があります。");
+                    }
                 }
             }
         );
