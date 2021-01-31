@@ -106,7 +106,7 @@ class AutocompleteDirectionsHandler {
         this.originPlaceId = "";
         this.destinationPlaceId = "";
         this.poly = [];
-        this.travelMode = google.maps.TravelMode.TRANSIT;
+        this.travelMode = google.maps.TravelMode.WALKING;
         this.directionsService = new google.maps.DirectionsService();
         this.directionsRenderer = new google.maps.DirectionsRenderer();
         //初期設定
@@ -323,6 +323,22 @@ class AutocompleteDirectionsHandler {
                             suppressPolylines: true,
                         });
                     me.directionsRenderer.setDirections(response);
+                    console.log(response.routes[0].summary)
+                    console.log(response.routes[0].legs[0].distance.text)
+                    console.log(response.routes[0].legs[0].duration.text)
+
+                    //ルートが１つのみの場合、detail-panelが表示されないので、span要素で距離、所要時間を表示する
+                    if(response.routes.length == 1){
+                        document.getElementById("one-result-panel").style.display = "block"
+                        document.getElementById("one-result-text").innerText = "ルート: " +
+                                                    response.routes[0].summary +" ," +
+                                                    response.routes[0].legs[0].distance.text + " ," +
+                                                    response.routes[0].legs[0].duration.text
+                    }
+                    else {
+                        //ルートが２つ以上の場合、必要ないので、表示しない
+                        document.getElementById("one-result-panel").style.display = "none"
+                    }
                 } else {
                     document.getElementById("route-decide"+me.routeNum).style.display = "none";
                     window.alert("検索結果はありません");
