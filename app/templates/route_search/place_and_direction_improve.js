@@ -45,6 +45,9 @@ function initMap() {
         zoom: 10,
         //streetViewを無効化
         streetViewControl: false,
+        options: {
+            gestureHandling: 'greedy' //地図埋め込み時Ctrボタン要求の無効化
+        },
     });
     //現在時刻を取得し、時間指定要素に挿入
     var today = new Date();
