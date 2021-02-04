@@ -4,7 +4,7 @@ var routeID = 0;
 const colorMap = {0:"#00bfff",1:"#c8e300",2:"#9543de",3:"#00db30",4:"#4586b5",5:"#00deda",6:"#eb86d5",7:"#83b300",8:"#ffb300",9:"#de0000"}
 const routeMap = {
                     "title":"",
-                    "routes": {"0": "", "1": "", "2": "", "3": "", "4": "", "5": "", "6": "", "7": "", "8": "", "9": ""}
+                    "routes": {}
                 }
 
 //Ajax通信
@@ -69,6 +69,9 @@ function initMap() {
     //ボタンが押されたら２番目以降のルート要素をHTMLに追加
     $("#add-route").on("click", function () {
         routeID++;
+        if(routeID == 9){
+            document.getElementById("add-route").style.display = "none";
+        }
         $('#search-box').append(genSearchBox(routeID,colorMap[routeID]));
         document.getElementById("date" + String(routeID)).value=yyyy+'-'+mm+'-'+dd;
         document.getElementById("date" + String(routeID)).min=yyyy+'-'+mm+'-'+dd;
