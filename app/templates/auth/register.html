@@ -2,13 +2,51 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>新規登録</title>
+    <link href="//maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
 </head>
+
 <body>
-<form action="/register" method="post">
-    <input type="text" name="username"/>
-    <input type="text" name="password"/>
-    <input type="submit">
-</form>
+<div class="container">
+    <br>
+    <br>
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <header class="card-header">
+                    <h4 class="card-title mt-2">新規登録</h4>
+                </header>
+                <article class="card-body">
+                    <form>
+                        <div class="form-row">
+                            <div class="col form-group">
+                                <label>ユーザー名:</label>
+                                <input type="text" class="form-control" placeholder="ユーザー名を入力">
+                            </div> <!-- form-group end.// -->
+
+                        </div> <!-- form-row end.// -->
+                        <div class="form-group">
+                            <label>メールアドレス:</label>
+                            <input type="email" class="form-control" placeholder="メールアドレスを入力">
+                        </div> <!-- form-group end.// -->
+
+                        <div class="form-group">
+                            <label>パスワード:</label>
+                            <input class="form-control" type="password" placeholder="パスワードを入力(8文字以上)">
+                            <br>
+                            <input class="form-control" type="password" placeholder="もう一度パスワードを入力">
+                        </div> <!-- form-group end.// -->
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-primary btn-block">登録する</button>
+                        </div> <!-- form-group// -->
+                    </form>
+                </article> <!-- card-body end .// -->
+                <div class="border-top card-body text-center">アカウントをお持ちの方はこちら<a href="/login_form">ログイン</a></div>
+            </div> <!-- card.// -->
+        </div> <!-- col.//-->
+    </div> <!-- row.//-->
+</div>
+<!--container end.//-->
+
 </body>
 </html>
