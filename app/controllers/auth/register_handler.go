@@ -1,14 +1,19 @@
 package auth
 
 import (
+	"fmt"
+	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"html"
 	"log"
 	"net/http"
+	"net/smtp"
 	"net/url"
 	"golang.org/x/crypto/bcrypt"
 	"app/dbhandler"
 	"github.com/google/uuid"
+	"os"
 )
 
 func Register(w http.ResponseWriter, req *http.Request){
@@ -50,13 +55,95 @@ func Register(w http.ResponseWriter, req *http.Request){
 		log.Println(err)
 		return
 	}
+	//メールアドレス認証用のトークンを作成
+	token := uuid.New().String()
+
+	//userを仮登録としてDBに保存
+	//保存するドキュメント
+	registerDoc := bson.D{
+		{"username",userName},
+		{"email",email},
+		{"password",securedPassword},
+		{"token",token},
+	}
+	//DBに保存
+	_, err = dbhandler.Insert("googroutes", "registering", registerDoc)
+	if err != nil {
+		msg := "エラ〜が発生しました。もう一度操作をしなおしてください。"
+		http.Error(w,msg,http.StatusInternalServerError)
+		log.Println(err)
+		return
+	}
+
+	//メールでトークン付きのURLを送る
+	env_err := godotenv.Load("env/dev.env")
+	if env_err != nil{
+		log.Println("Can't load env file")
+	}
+	//envファイルからAPI key取得
+	gmailPassword := os.Getenv("GMAIL_APP_PASS")
+	mailAuth := smtp.PlainAuth(
+		"",
+		"app.goog.routes@gmail.com",
+		gmailPassword,
+		"smtp.gmail.com",
+	)
+
+	tokenURL := "http://localhost:8080/confirm_register/?token="+token //localhostは本番で変更
+	err = smtp.SendMail(
+		"smtp.gmail.com:587",
+		mailAuth,
+		"app.goog.routes@gmail.com",
+		[]string{email},
+		[]byte(fmt.Sprintf("To:%s\r\nSubject:メールアドレス認証のお願い\r\n\r\n%s",userName, tokenURL )),
+	)
+	if err != nil {
+		log.Println(err)
+	}
+
+	http.Redirect(w,req,"/ask_confirm",http.StatusSeeOther)
+}
+
+
+func ConfirmRegister(w http.ResponseWriter, req *http.Request){
+	//メール認証トークンをリクエストURLから取得
+	query := req.URL.Query()
+	token := query["token"][0]
+	if token == ""{
+		http.Redirect(w,req,"/register_form",http.StatusSeeOther)
+		return
+	}
+
+	//DBのregistering collectionから、user情報取得
+	type registeringUser struct {
+		ID primitive.ObjectID `json:"id" bson:"_id"`
+		Username string `json:"username" bson:"username"`
+		Email string `json:"email" bson:"email"`
+		Password []byte `json:"password" bson:"password"`
+		Token string `json:"token" bson:"token"`
+	}
+
+	//取得するドキュメントの条件
+	tokenDoc := bson.D{{"token",token}}
+	//DBから取得
+	resp, err := dbhandler.Find("googroutes", "registering", tokenDoc)
+	if err != nil {
+		msg := "認証トークンが一致しません。"
+		http.Redirect(w,req,"/?msg="+msg,http.StatusSeeOther)
+	}
+	//DBから取得した値をmarshal
+	bsonByte,_ := bson.Marshal(resp)
+
+	var user registeringUser
+	//marshalした値をUnmarshalして、userに代入
+	bson.Unmarshal(bsonByte, &user)
 
 	//userをDBに保存
 	//保存するドキュメント
 	userDoc := bson.D{
-		{"username",userName},
-		{"email",email},
-		{"password",securedPassword},
+		{"username",user.Username},
+		{"email",user.Email},
+		{"password",user.Password},
 	}
 	//DBに保存
 	insertRes, err := dbhandler.Insert("googroutes", "users", userDoc)
