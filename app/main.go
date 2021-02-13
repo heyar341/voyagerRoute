@@ -39,28 +39,8 @@ func main() {
 }
 
 func home(w http.ResponseWriter, req *http.Request) {
-	//Cookieからセッション情報取得
-	c, err := req.Cookie("sessionId")
-	//Cookieが設定されてない場合
-	if err != nil {
-		c = &http.Cookie{
-			Name: "sessionId",
-			Value: "",
-		}
-	}
-
-	sessionID, _ := auth.ParseToken(c.Value)
-	var isLoggedIn bool
-	if sessionID != ""{
-		_, err = auth.GetLoginUserID(sessionID)
-		if err == nil{
-			isLoggedIn = true
-		} else {
-			isLoggedIn = false
-		}
-	} else {
-		isLoggedIn = false
-	}
+	isLoggedIn := false
+	isLoggedIn = auth.IsLoggedIn(req)
 	data := map[string]interface{}{"isLoggedIn":isLoggedIn}
 	home_tpl.ExecuteTemplate(w, "home.html",data)
 }
@@ -80,28 +60,8 @@ func index(w http.ResponseWriter, req *http.Request){
 	//envファイルからAPI key取得
 	apiKey := os.Getenv("MAP_API_KEY")
 
-	//Cookieからセッション情報取得
-	c, err := req.Cookie("sessionId")
-	//Cookieが設定されてない場合
-	if err != nil {
-		c = &http.Cookie{
-			Name: "sessionId",
-			Value: "",
-		}
-	}
-
-	sessionID, _ := auth.ParseToken(c.Value)
-	var isLoggedIn bool
-	if sessionID != ""{
-		_, err = auth.GetLoginUserID(sessionID)
-		if err == nil{
-			isLoggedIn = true
-		} else {
-			isLoggedIn = false
-		}
-	} else {
-		isLoggedIn = false
-	}
+	isLoggedIn := false
+	isLoggedIn = auth.IsLoggedIn(req)
 	data := map[string]interface{}{"apiKey":apiKey,"isLoggedIn":isLoggedIn}
 	tpl.ExecuteTemplate(w, "place_and_direction_improve.html", data)
 }
