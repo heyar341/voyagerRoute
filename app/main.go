@@ -12,12 +12,13 @@ import (
 
 )
 var tpl *template.Template
-
 var auth_tpl *template.Template
+var home_tpl *template.Template
 
 func init() {
 	tpl = template.Must(template.ParseGlob("templates/route_search/*"))
 	auth_tpl = template.Must(template.ParseGlob("templates/auth/*"))
+	home_tpl = template.Must(template.ParseGlob("templates/home/home.html"))
 }
 
 func main() {
@@ -32,8 +33,36 @@ func main() {
 	//Direction API
 	http.HandleFunc("/show_map",index)
 	http.HandleFunc("/routes_save",routes.SaveRoutes)
+	http.HandleFunc("/",home)
 
 	http.ListenAndServe(":80",nil)
+}
+
+func home(w http.ResponseWriter, req *http.Request) {
+	//Cookieからセッション情報取得
+	c, err := req.Cookie("sessionId")
+	//Cookieが設定されてない場合
+	if err != nil {
+		c = &http.Cookie{
+			Name: "sessionId",
+			Value: "",
+		}
+	}
+
+	sessionID, _ := auth.ParseToken(c.Value)
+	var isLoggedIn bool
+	if sessionID != ""{
+		_, err = auth.GetLoginUserID(sessionID)
+		if err == nil{
+			isLoggedIn = true
+		} else {
+			isLoggedIn = false
+		}
+	} else {
+		isLoggedIn = false
+	}
+	data := map[string]interface{}{"isLoggedIn":isLoggedIn}
+	home_tpl.ExecuteTemplate(w, "home.html",data)
 }
 
 func registerForm(w http.ResponseWriter, req *http.Request) {
