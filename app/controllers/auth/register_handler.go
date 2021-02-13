@@ -24,6 +24,13 @@ func Register(w http.ResponseWriter, req *http.Request){
 		http.Redirect(w,req,"/register_form/?msg="+msg,http.StatusSeeOther)
 		return
 	}
+	//メールアドレスをリクエストから取得
+	email := html.EscapeString(req.FormValue("email"))
+	if email == ""{
+		msg := url.QueryEscape("メールアドレスを入力してください。")
+		http.Redirect(w,req,"/register_form/?msg="+msg,http.StatusSeeOther)
+		return
+	}
 	//パスワードをリクエストから取得
 	password := html.EscapeString(req.FormValue("password"))
 	if password == ""{
@@ -48,6 +55,7 @@ func Register(w http.ResponseWriter, req *http.Request){
 	//保存するドキュメント
 	userDoc := bson.D{
 		{"username",userName},
+		{"email",email},
 		{"password",securedPassword},
 	}
 	//DBに保存
@@ -59,15 +67,15 @@ func Register(w http.ResponseWriter, req *http.Request){
 		return
 	}
 	//insertResから、userのドキュメントIDを取得
-	userDocId := insertRes.InsertedID
+	userDocID := insertRes.InsertedID
 	//固有のセッションIDを作成
-	sesId := uuid.New().String()
+	sessionID := uuid.New().String()
 	//sessionをDBに保存
-	sesDoc := bson.D{
-		{"session_id",sesId},
-		{"user_id",userDocId},
+	sessionDoc := bson.D{
+		{"session_id",sessionID},
+		{"user_id",userDocID},
 	}
-	_, err = dbhandler.Insert("googroutes", "sessions", sesDoc)
+	_, err = dbhandler.Insert("googroutes", "sessions", sessionDoc)
 	if err != nil {
 		msg := "エラ〜が発生しました。もう一度操作をしなおしてください。"
 		http.Error(w,msg,http.StatusInternalServerError)
@@ -75,7 +83,7 @@ func Register(w http.ResponseWriter, req *http.Request){
 		return
 	}
 
-	signedStr,err := createToken(sesId)
+	signedStr,err := createToken(sessionID)
 	if err != nil {
 		msg := "エラ〜が発生しました。もう一度操作をしなおしてください。"
 		http.Error(w,msg,http.StatusInternalServerError)

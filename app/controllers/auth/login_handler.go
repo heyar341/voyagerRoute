@@ -13,6 +13,7 @@ import (
 type userData struct {
 	ID primitive.ObjectID `json:"id" bson:"_id"`
 	Username string `json:"username" bson:"username"`
+	Email string `json:"email" bson:"email"`
 	Password []byte `json:"password" bson:"password"`
 }
 
