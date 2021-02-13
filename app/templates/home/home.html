@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>グーグる〜と</title>
+
+    {{/*bootStrapの呼び出し*/}}
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"
+          integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+    <link href="templates/home/home.css" rel="stylesheet">
+
+</head>
+
+<body>
+<!--ナビゲーションバー-->
+<div class="navbar" style="height: 50px;background-color: #555555;border-bottom: #F6F6F6 2px solid;display: flex;">
+    <div>
+        <a href="/"><h2 style="color: white"><i>グーグる〜と</i></h2></a>
+    </div>
+    <div style="display: flex;justify-content: flex-end">
+        <div>
+            {{if eq .isLoggedIn true}}
+            <a href="/mypage"><p style="color: white">マイページ</p></a>
+            {{else}}
+            <a href="/login_form"><p style="color: white">ログイン</p></a>
+            {{end}}
+        </div>
+    </div>
+</div>
+
+<main>
+    <div class="position-relative overflow-hidden p-3 p-md-5 text-center bg-light">
+        <div class="col-md-5 p-lg-5 mx-auto my-5">
+            <h1 class="display-4 fw-normal">グーグる〜と</h1>
+            <p class="lead fw-normal">Google Mapsを使用して、複数ルートをまとめて検索し保存したり、複数の目的地までの距離と所要時間を同時に検索し比較できます。</p>
+
+        </div>
+        <div class="product-device shadow-sm d-none d-md-block"></div>
+        <div class="product-device product-device-2 shadow-sm d-none d-md-block"></div>
+    </div>
+
+    <div class="d-md-flex flex-md-equal w-100 my-md-3 ps-md-3">
+        <div class="me-md-3 pt-3 px-2 pt-md-5 px-md-2 text-center text-white overflow-hidden"
+             style="background-color: #1A73E8">
+            <div class="my-3 py-3">
+                <a href="/show_map" style="color: white">
+                    <h2 class="display-5">複数ルートをまとめて検索</h2>
+                </a>
+            </div>
+            <div class="bg-light shadow-sm mx-auto mb-3"
+                 style="width: 95%; height: auto; border-radius: 21px 21px 21px 21px;">
+                <img style="width: 100%; height:auto; border-radius: 21px 21px 21px 21px;"
+                     src="/templates/home/multi_routes.png">
+            </div>
+        </div>
+
+        <div class="me-md-3 pt-3 px-2 pt-md-5 px-md-2 text-center overflow-hidden"
+             style="background-color: darkseagreen">
+            <div class="my-3 p-3">
+                <a href="/simul_search" style="color: white">
+                    <h2 class="display-5">複数の目的地を同時に検索</h2>
+                </a>
+            </div>
+            <div class="bg-light shadow-sm mx-auto mb-3"
+                 style="width: 95%; height: auto; border-radius: 21px 21px 21px 21px;">
+                <img style="width: 100%; height:auto; border-radius: 21px 21px 21px 21px;"
+                     src="/templates/home/multi_routes.png"><!--画像変更の必要あり-->
+            </div>
+        </div>
+    </div>
+</main>
+
+</body>
+</html>

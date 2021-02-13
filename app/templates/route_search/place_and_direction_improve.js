@@ -4,7 +4,7 @@ var routeID = 0;
 const colorMap = {0:"#00bfff",1:"#c8e300",2:"#9543de",3:"#00db30",4:"#4586b5",5:"#00deda",6:"#eb86d5",7:"#83b300",8:"#ffb300",9:"#de0000"}
 const routeMap = {
                     "title":"",
-                    "routes": {"0": "", "1": "", "2": "", "3": "", "4": "", "5": "", "6": "", "7": "", "8": "", "9": ""}
+                    "routes": {}
                 }
 
 //Ajax通信
@@ -69,6 +69,9 @@ function initMap() {
     //ボタンが押されたら２番目以降のルート要素をHTMLに追加
     $("#add-route").on("click", function () {
         routeID++;
+        if(routeID == 9){
+            document.getElementById("add-route").style.display = "none";
+        }
         $('#search-box').append(genSearchBox(routeID,colorMap[routeID]));
         document.getElementById("date" + String(routeID)).value=yyyy+'-'+mm+'-'+dd;
         document.getElementById("date" + String(routeID)).min=yyyy+'-'+mm+'-'+dd;
@@ -106,7 +109,7 @@ class AutocompleteDirectionsHandler {
         this.originPlaceId = "";
         this.destinationPlaceId = "";
         this.poly = [];
-        this.travelMode = google.maps.TravelMode.TRANSIT;
+        this.travelMode = google.maps.TravelMode.WALKING;
         this.directionsService = new google.maps.DirectionsService();
         this.directionsRenderer = new google.maps.DirectionsRenderer();
         //初期設定
@@ -299,6 +302,13 @@ class AutocompleteDirectionsHandler {
                         }
                         me.poly = [];
                     }
+
+                    if(response.request.travelMode == "TRANSIT" && response.routes[0].legs[0].start_address.match(/日本/)){
+                        document.getElementById("route-decide"+me.routeNum).style.display = "none";
+                        alert("日本国内の公共交通機関情報はご利用いただけません。")
+                        return
+                    }
+                    //複数ルートが帰ってきた場合、それぞれについて、ラインを描画する
                     for (var i = 0; i < response.routes.length; i++) {
                         //jsではObjectは参照渡しなので、Object.assignを使って、値渡しにする
                         var sub_res = Object.assign({}, response);
@@ -323,10 +333,31 @@ class AutocompleteDirectionsHandler {
                             suppressPolylines: true,
                         });
                     me.directionsRenderer.setDirections(response);
+                    console.log(response.routes[0].summary)
+                    console.log(response.routes[0].legs[0].distance.text)
+                    console.log(response.routes[0].legs[0].duration.text)
+
+                    //ルートが１つのみの場合、detail-panelが表示されないので、span要素で距離、所要時間を表示する
+                    if(response.routes.length == 1){
+                        document.getElementById("one-result-panel").style.display = "block"
+                        document.getElementById("one-result-text").innerText = "ルート: " +
+                                                    response.routes[0].summary +" ," +
+                                                    response.routes[0].legs[0].distance.text + " ," +
+                                                    response.routes[0].legs[0].duration.text
+                    }
+                    else {
+                        //ルートが２つ以上の場合、必要ないので、表示しない
+                        document.getElementById("one-result-panel").style.display = "none"
+                    }
                 } else {
                     document.getElementById("route-decide"+me.routeNum).style.display = "none";
-                    window.alert("検索結果はありません");
-
+                    if(this.directionsRequest.travelMode === google.maps.TravelMode.TRANSIT){
+                        window.alert("出発地と目的地の距離が遠すぎる場合、結果が表示されない場合があります。\n" +
+                            "また、日本国内の公共交通機関情報はご利用いただけません。");
+                    }
+                    else {
+                        window.alert("出発地と目的地の距離が遠すぎる場合、結果が表示されない場合があります。");
+                    }
                 }
             }
         );

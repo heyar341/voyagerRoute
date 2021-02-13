@@ -20,10 +20,10 @@ function genSearchBox(routeId,color) {
                 <div id="route-options${routeId}">
                     <span>移動方法：</span>
                     <br>
-                    <input type="radio" name="type" id="changemode-walking${routeId}"/>
+                    <input type="radio" name="type" id="changemode-walking${routeId}"  checked="checked"/>
                     <label class="mr-2" for="changemode-walking${routeId}">徒歩</label>
 
-                    <input type="radio" name="type" id="changemode-transit${routeId}" checked="checked"/>
+                    <input type="radio" name="type" id="changemode-transit${routeId}"/>
                     <label class="mr-2" for="changemode-transit${routeId}">公共交通機関</label>
 
                     <input type="radio" name="type" id="changemode-driving${routeId}"/>
@@ -52,8 +52,9 @@ function genSearchBox(routeId,color) {
             </div>
              <div id="route-detail-panel${routeId}" class="route-detail">
             </div>
-            <div style="background-color: white; padding-bottom: 10px">
-             <button class="btn-primary mx-auto" id="route-decide${routeId}" style="display: none">選択したルートで決定</button>
+            <div style="background-color: white; padding-bottom: 2px">
+             <div class="ml-2 mb-2" id="one-result-panel"><span id="one-result-text" style="color: black"></span></div>
+             <button class="btn-primary mx-auto" id="route-decide${routeId}" style="display: none">このルートで決定</button>
              </div>
         </div>`
     return route_html_tpl

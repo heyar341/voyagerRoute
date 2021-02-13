@@ -2,13 +2,64 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>新規登録</title>
+    <link href="//maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
 </head>
+
 <body>
-<form action="/register" method="post">
-    <input type="text" name="username"/>
-    <input type="text" name="password"/>
-    <input type="submit">
-</form>
+<div class="container">
+    <br>
+    <br>
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <header class="card-header">
+                    <h4 class="card-title mt-2">新規登録</h4>
+                </header>
+                <article class="card-body">
+                    <form action="/register" method="POST">
+                        <div class="form-row">
+                            <div class="col form-group">
+                                <label>ユーザー名:</label>
+                                <input type="text" name="username" class="form-control" placeholder="ユーザー名を入力" required>
+                            </div> <!-- form-group end.// -->
+
+                        </div> <!-- form-row end.// -->
+                        <div class="form-group">
+                            <label>メールアドレス:</label>
+                            <input type="email" name="email" class="form-control" placeholder="メールアドレスを入力" required>
+                        </div> <!-- form-group end.// -->
+
+                        <div class="form-group">
+                            <label>パスワード:</label>
+                            <input class="form-control" name="password" id="password" type="password" placeholder="パスワードを入力(8文字以上)" minlength="8" required>
+                            <br>
+                            <input class="form-control" id="password-confirm" type="password"
+                                   placeholder="確認用パスワードを入力" minlength="8" required>
+                        </div> <!-- form-group end.// -->
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-primary btn-block">登録する</button>
+                        </div> <!-- form-group// -->
+                    </form>
+                </article> <!-- card-body end .// -->
+                <div class="border-top card-body text-center">アカウントをお持ちの方はこちら<a href="/login_form">ログイン</a></div>
+            </div> <!-- card.// -->
+        </div> <!-- col.//-->
+    </div> <!-- row.//-->
+</div>
+<!--container end.//-->
+
+<script>
+    confirmPass = document.getElementById("password-confirm");
+    confirmPass.addEventListener("input",function () {
+        var password = document.getElementById("password").value
+        // パスワードの一致確認
+        if(password != this.value){
+            this.setCustomValidity('確認用パスワードが一致しません');
+        }else{
+            this.setCustomValidity(''); // エラーメッセージのクリア
+        }
+    });
+</script>
 </body>
 </html>
