@@ -2,6 +2,7 @@ package auth
 
 import (
 	"go.mongodb.org/mongo-driver/bson"
+	"html"
 	"log"
 	"net/http"
 	"net/url"
@@ -17,40 +18,44 @@ func Register(w http.ResponseWriter, req *http.Request){
 		return
 	}
 	//ユーザー名をリクエストから取得
-	uName := req.FormValue("username")
-	if uName == ""{
+	userName := html.EscapeString(req.FormValue("username"))
+	if userName == ""{
 		msg := url.QueryEscape("ユーザー名を入力してください。")
 		http.Redirect(w,req,"/register_form/?msg="+msg,http.StatusSeeOther)
 		return
 	}
 	//パスワードをリクエストから取得
-	password := req.FormValue("password")
+	password := html.EscapeString(req.FormValue("password"))
 	if password == ""{
 		msg := url.QueryEscape("パスワードを入力してください。")
 		http.Redirect(w,req,"/register_form/?msg="+msg,http.StatusSeeOther)
 		return
+	} else if len(password) < 8 {
+		msg := url.QueryEscape("パスワードは8文字以上で入力してください。")
+		http.Redirect(w,req,"/register_form/?msg="+msg,http.StatusSeeOther)
+		return
 	}
 	//パスワードをハッシュ化
-	securedPass,err := bcrypt.GenerateFromPassword([]byte(password), 5)
+	securedPassword,err := bcrypt.GenerateFromPassword([]byte(password), 5)
 	if err != nil {
 		msg := "エラ〜が発生しました。もう一度操作をしなおしてください。"
 		http.Error(w,msg,http.StatusInternalServerError)
-		log.Fatal(err)
+		log.Println(err)
 		return
 	}
 
 	//userをDBに保存
 	//保存するドキュメント
 	userDoc := bson.D{
-		{"username",uName},
-		{"password",securedPass},
+		{"username",userName},
+		{"password",securedPassword},
 	}
 	//DBに保存
 	insertRes, err := dbhandler.Insert("googroutes", "users", userDoc)
 	if err != nil {
 		msg := "エラ〜が発生しました。もう一度操作をしなおしてください。"
 		http.Error(w,msg,http.StatusInternalServerError)
-		log.Fatal(err)
+		log.Println(err)
 		return
 	}
 	//insertResから、userのドキュメントIDを取得
@@ -66,7 +71,7 @@ func Register(w http.ResponseWriter, req *http.Request){
 	if err != nil {
 		msg := "エラ〜が発生しました。もう一度操作をしなおしてください。"
 		http.Error(w,msg,http.StatusInternalServerError)
-		log.Fatal(err)
+		log.Println(err)
 		return
 	}
 
@@ -74,7 +79,7 @@ func Register(w http.ResponseWriter, req *http.Request){
 	if err != nil {
 		msg := "エラ〜が発生しました。もう一度操作をしなおしてください。"
 		http.Error(w,msg,http.StatusInternalServerError)
-		log.Fatal(err)
+		log.Println(err)
 		return
 	}
 

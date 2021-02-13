@@ -3,6 +3,7 @@ package auth
 import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"html"
 	"net/http"
 	"net/url"
 	"golang.org/x/crypto/bcrypt"
@@ -22,21 +23,21 @@ func Login(w http.ResponseWriter, req *http.Request){
 		return
 	}
 	//ユーザー名をリクエストから取得
-	uName := req.FormValue("username")
-	if uName == ""{
+	userName := html.EscapeString(req.FormValue("username"))
+	if userName == ""{
 		msg := url.QueryEscape("ユーザー名を入力してください。")
 		http.Redirect(w,req,"/register/?msg="+msg,http.StatusSeeOther)
 		return
 	}
 	//パスワードをリクエストから取得
-	password := req.FormValue("password")
+	password := html.EscapeString(req.FormValue("password"))
 	if password == ""{
 		msg := url.QueryEscape("パスワードを入力してください。")
 		http.Redirect(w,req,"/register/?msg="+msg,http.StatusSeeOther)
 		return
 	}
 	//取得するドキュメントの条件
-	userDoc := bson.D{{"username",uName}}
+	userDoc := bson.D{{"username",userName}}
 	//DBから取得
 	resp, err := dbhandler.Find("googroutes", "users", userDoc)
 	if err != nil {
