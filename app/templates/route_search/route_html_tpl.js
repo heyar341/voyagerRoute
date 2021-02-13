@@ -52,7 +52,7 @@ function genSearchBox(routeId,color) {
             </div>
              <div id="route-detail-panel${routeId}" class="route-detail">
             </div>
-            <div style="background-color: white; padding-bottom: 10px">
+            <div style="background-color: white; padding-bottom: 2px">
              <div class="ml-2 mb-2" id="one-result-panel"><span id="one-result-text" style="color: black"></span></div>
              <button class="btn-primary mx-auto" id="route-decide${routeId}" style="display: none">このルートで決定</button>
              </div>
