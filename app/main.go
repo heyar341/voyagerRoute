@@ -3,6 +3,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/joho/godotenv"
 	"net/http"
 	"os"
@@ -23,6 +24,7 @@ func init() {
 
 func main() {
 
+	fmt.Println("App started")
 	http.Handle("/favicon.ico", http.NotFoundHandler())
 	http.Handle("/templates/", http.StripPrefix("/templates", http.FileServer(http.Dir("./templates"))))
 	//Authentication
