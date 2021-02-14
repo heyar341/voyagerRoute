@@ -1,9 +1,11 @@
 package auth
 
 import (
+	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"html"
+	"log"
 	"net/http"
 	"net/url"
 	"golang.org/x/crypto/bcrypt"
@@ -23,10 +25,10 @@ func Login(w http.ResponseWriter, req *http.Request){
 		http.Redirect(w,req,"/register/?msg="+msg,http.StatusSeeOther)
 		return
 	}
-	//ユーザー名をリクエストから取得
-	userName := html.EscapeString(req.FormValue("username"))
-	if userName == ""{
-		msg := url.QueryEscape("ユーザー名を入力してください。")
+	//メールアドレスをリクエストから取得
+	email := html.EscapeString(req.FormValue("email"))
+	if email == ""{
+		msg := url.QueryEscape("メールアドレスを入力してください。")
 		http.Redirect(w,req,"/register/?msg="+msg,http.StatusSeeOther)
 		return
 	}
@@ -38,11 +40,11 @@ func Login(w http.ResponseWriter, req *http.Request){
 		return
 	}
 	//取得するドキュメントの条件
-	userDoc := bson.D{{"username",userName}}
+	emailDoc := bson.D{{"email",email}}
 	//DBから取得
-	resp, err := dbhandler.Find("googroutes", "users", userDoc)
+	resp, err := dbhandler.Find("googroutes", "users", emailDoc)
 	if err != nil {
-		msg := "ユーザー名またはパスワードが正しくありません。"
+		msg := "メールアドレスまたはパスワードが正しくありません。"
 		http.Redirect(w,req,"/?msg="+msg,http.StatusSeeOther)
 	}
 	//DBから取得した値をmarshal
@@ -56,10 +58,36 @@ func Login(w http.ResponseWriter, req *http.Request){
 	err = bcrypt.CompareHashAndPassword(storedPass,[]byte(password))
 	//一致しない場合
 	if err != nil{
-		msg := "ユーザー名またはパスワードが正しくありません。"
+		msg := "メールアドレスまたはパスワードが正しくありません。"
 		http.Redirect(w,req,"/?msg="+msg,http.StatusSeeOther)
 	}
 	//一致した場合
-	http.Redirect(w,req,"/",http.StatusSeeOther)
+	//固有のセッションIDを作成
+	sessionID := uuid.New().String()
+	//sessionをDBに保存
+	sessionDoc := bson.D{
+		{"session_id",sessionID},
+		{"user_id",user.ID},
+	}
+	_, err = dbhandler.Insert("googroutes", "sessions", sessionDoc)
+	if err != nil {
+		msg := "エラ〜が発生しました。もう一度操作をしなおしてください。"
+		http.Error(w,msg,http.StatusInternalServerError)
+		log.Println(err)
+		return
+	}
+	signedStr,err := createToken(sessionID)
+	if err != nil {
+		http.Redirect(w,req,"/",http.StatusSeeOther)
+		log.Println(err)
+		return
+	}
 
+	//Cookieの設定
+	c := &http.Cookie{
+		Name: "sessionId",
+		Value: signedStr,
+	}
+	http.SetCookie(w,c)
+	http.Redirect(w,req,"/",http.StatusSeeOther)
 }
