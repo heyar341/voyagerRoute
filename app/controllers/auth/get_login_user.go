@@ -4,7 +4,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"app/dbhandler"
-
+	"net/http"
 )
 
 type SessionData struct {
@@ -30,4 +30,27 @@ func GetLoginUserID(sessionId string) (primitive.ObjectID, error) {
 	bson.Unmarshal(bsonByte, &sesData)
 
 	return sesData.UserId, nil
+}
+
+func IsLoggedIn(req *http.Request) bool{
+	//Cookieからセッション情報取得
+	c, err := req.Cookie("sessionId")
+	//Cookieが設定されてない場合
+	if err != nil {
+		return false
+	}
+
+	sessionID, _ := ParseToken(c.Value)
+	var isLoggedIn bool
+	if sessionID != "" {
+		_, err = GetLoginUserID(sessionID)
+		if err == nil {
+			isLoggedIn = true
+		} else {
+			isLoggedIn = false
+		}
+	} else {
+		isLoggedIn = false
+	}
+	return isLoggedIn
 }
