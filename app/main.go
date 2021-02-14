@@ -17,9 +17,9 @@ var auth_tpl *template.Template
 var home_tpl *template.Template
 
 func init() {
-	tpl = template.Must(template.ParseGlob("templates/route_search/*"))
-	auth_tpl = template.Must(template.ParseGlob("templates/auth/*"))
-	home_tpl = template.Must(template.ParseGlob("templates/home/home.html"))
+	tpl = template.Must(template.Must(template.ParseGlob("templates/route_search/*")).ParseGlob("templates/includes/*.html"))
+	auth_tpl = template.Must(template.Must(template.ParseGlob("templates/auth/*")).ParseGlob("templates/includes/*.html"))
+	home_tpl = template.Must(template.Must(template.ParseGlob("templates/home/home.html")).ParseGlob("templates/includes/*.html"))
 }
 
 func main() {
@@ -50,13 +50,22 @@ func home(w http.ResponseWriter, req *http.Request) {
 	home_tpl.ExecuteTemplate(w, "home.html",data)
 }
 func askConfirm(w http.ResponseWriter, req *http.Request) {
-	auth_tpl.ExecuteTemplate(w, "ask_confirm_email.html",nil)
+	isLoggedIn := false
+	isLoggedIn = auth.IsLoggedIn(req)
+	data := map[string]interface{}{"isLoggedIn":isLoggedIn}
+	auth_tpl.ExecuteTemplate(w, "ask_confirm_email.html",data)
 }
 func registerForm(w http.ResponseWriter, req *http.Request) {
-	auth_tpl.ExecuteTemplate(w, "register.html",nil)
+	isLoggedIn := false
+	isLoggedIn = auth.IsLoggedIn(req)
+	data := map[string]interface{}{"isLoggedIn":isLoggedIn}
+	auth_tpl.ExecuteTemplate(w, "register.html",data)
 }
 func loginForm(w http.ResponseWriter, req *http.Request) {
-	auth_tpl.ExecuteTemplate(w, "login.html",nil)
+	isLoggedIn := false
+	isLoggedIn = auth.IsLoggedIn(req)
+	data := map[string]interface{}{"isLoggedIn":isLoggedIn}
+	auth_tpl.ExecuteTemplate(w, "login.html",data)
 }
 func index(w http.ResponseWriter, req *http.Request){
 	//API呼び出しの準備
