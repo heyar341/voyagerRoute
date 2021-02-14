@@ -20,21 +20,10 @@
 
 </head>
 <body>
-<!--ナビゲーションバー-->
-<div class="navbar" style="height: 50px;background-color: #555555;border-bottom: #F6F6F6 2px solid;display: flex;">
-    <div>
-        <a href="/home"><h2 style="color: white"><i>グーグる〜と</i></h2></a>
-    </div>
-    <div style="display: flex;justify-content: flex-end">
-        <div>
-            {{if eq .isLoggedIn true}}
-            <a href="/mypage"><p style="color: white">マイページ</p></a>
-            {{else}}
-            <a href="/login_form"><p style="color: white">ログイン</p></a>
-            {{end}}
-        </div>
-    </div>
-</div>
+
+<!--navbarを埋め込み-->
+{{template "navbar" . }}
+
 <div id="left-panel">
     <div id="search-box">
     </div>
