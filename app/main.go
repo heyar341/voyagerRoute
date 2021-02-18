@@ -84,9 +84,16 @@ func index(w http.ResponseWriter, req *http.Request){
 }
 
 func simulSearchTpl(w http.ResponseWriter, req *http.Request) {
+	//API呼び出しの準備
+	env_err := godotenv.Load("env/dev.env")
+	if env_err != nil{
+		panic("Can't load env file")
+	}
+	//envファイルからAPI key取得
+	apiKey := os.Getenv("MAP_API_KEY")
 	isLoggedIn := false
 	isLoggedIn = auth.IsLoggedIn(req)
 	nineIterator := []int {1,2,3,4,5,6,7,8,9}
-	data := map[string]interface{}{"isLoggedIn":isLoggedIn,"nineIterator":nineIterator}
+	data := map[string]interface{}{"apiKey":apiKey,"isLoggedIn":isLoggedIn,"nineIterator":nineIterator}
 	simul_search_tpl.ExecuteTemplate(w, "simul_search.html",data)
 }
