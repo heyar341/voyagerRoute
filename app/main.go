@@ -12,12 +12,11 @@ import (
 	"app/controllers/routes"
 
 )
-var tpl *template.Template
-var auth_tpl *template.Template
-var home_tpl *template.Template
+var tpl, auth_tpl, home_tpl, simul_search_tpl *template.Template
 
 func init() {
 	tpl = template.Must(template.Must(template.ParseGlob("templates/route_search/*")).ParseGlob("templates/includes/*.html"))
+	simul_search_tpl = template.Must(template.Must(template.ParseGlob("templates/simul_search/*")).ParseGlob("templates/includes/*.html"))
 	auth_tpl = template.Must(template.Must(template.ParseGlob("templates/auth/*")).ParseGlob("templates/includes/*.html"))
 	home_tpl = template.Must(template.Must(template.ParseGlob("templates/home/home.html")).ParseGlob("templates/includes/*.html"))
 }
@@ -38,6 +37,8 @@ func main() {
 	//Direction API
 	http.HandleFunc("/show_map",index)
 	http.HandleFunc("/routes_save",routes.SaveRoutes)
+	http.HandleFunc("/simul_search",simulSearchTpl)
+	http.HandleFunc("/do_simul_search",routes.DoSimulSearch)
 	http.HandleFunc("/",home)
 
 	http.ListenAndServe(":80",nil)
@@ -80,4 +81,12 @@ func index(w http.ResponseWriter, req *http.Request){
 	isLoggedIn = auth.IsLoggedIn(req)
 	data := map[string]interface{}{"apiKey":apiKey,"isLoggedIn":isLoggedIn}
 	tpl.ExecuteTemplate(w, "place_and_direction_improve.html", data)
+}
+
+func simulSearchTpl(w http.ResponseWriter, req *http.Request) {
+	isLoggedIn := false
+	isLoggedIn = auth.IsLoggedIn(req)
+	nineIterator := []int {1,2,3,4,5,6,7,8,9}
+	data := map[string]interface{}{"isLoggedIn":isLoggedIn,"nineIterator":nineIterator}
+	simul_search_tpl.ExecuteTemplate(w, "simul_search.html",data)
 }
