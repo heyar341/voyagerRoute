@@ -4,15 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/joho/godotenv"
 	"googlemaps.github.io/maps"
 	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 	"time"
+	"app/controllers/envhandler"
+
 )
 
 type Resp struct {
@@ -29,13 +29,8 @@ type SimulSearchRequest struct {
 
 func DoSimulSearch(w http.ResponseWriter, req *http.Request) {
 	fmt.Printf("Receive request")
-	//API呼び出しの準備
-	env_err := godotenv.Load("env/dev.env")
-	if env_err != nil {
-		log.Println("Can't load env file")
-	}
-	//envファイルからAPI key取得
-	apiKey := os.Getenv("MAP_API_KEY")
+	//envファイルからAPIキー取得
+	apiKey := envhandler.GetEnvVal("MAP_API_KEY")
 
 	//API呼び出しクライアントを作成
 	client, err := maps.NewClient(maps.WithAPIKey(apiKey), maps.WithRateLimit(10))

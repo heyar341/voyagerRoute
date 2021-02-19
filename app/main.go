@@ -4,9 +4,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/joho/godotenv"
 	"net/http"
-	"os"
 	"html/template"
 	"app/controllers/auth"
 	"app/controllers/routes"
@@ -69,14 +67,8 @@ func loginForm(w http.ResponseWriter, req *http.Request) {
 	auth_tpl.ExecuteTemplate(w, "login.html",data)
 }
 func index(w http.ResponseWriter, req *http.Request){
-	//API呼び出しの準備
-	env_err := godotenv.Load("env/dev.env")
-	if env_err != nil{
-		panic("Can't load env file")
-	}
-	//envファイルからAPI key取得
-	apiKey := os.Getenv("MAP_API_KEY")
-
+	//envファイルからAPIキー取得
+	apiKey := envhandler.GetEnvVal("MAP_API_KEY")
 	isLoggedIn := false
 	isLoggedIn = auth.IsLoggedIn(req)
 	data := map[string]interface{}{"apiKey":apiKey,"isLoggedIn":isLoggedIn}
@@ -84,13 +76,8 @@ func index(w http.ResponseWriter, req *http.Request){
 }
 
 func simulSearchTpl(w http.ResponseWriter, req *http.Request) {
-	//API呼び出しの準備
-	env_err := godotenv.Load("env/dev.env")
-	if env_err != nil{
-		panic("Can't load env file")
-	}
-	//envファイルからAPI key取得
-	apiKey := os.Getenv("MAP_API_KEY")
+	//envファイルからAPIキー取得
+	apiKey := envhandler.GetEnvVal("MAP_API_KEY")
 	isLoggedIn := false
 	isLoggedIn = auth.IsLoggedIn(req)
 	nineIterator := []int {1,2,3,4,5,6,7,8,9}
