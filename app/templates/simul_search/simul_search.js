@@ -5,13 +5,30 @@ $(function () {
         var button = $(this);
         button.attr("disabled", true);
 
+        //公共交通機関選択の場合
+        if (document.getElementById("transit").checked && document.getElementById("set-future").checked) {
+            simulReq["departure_time"] = document.getElementById("date").value + "T" + document.getElementById("time").value + ":00Z";
+        }
+        //自動車選択の場合
+        else if (document.getElementById("driving").checked) {
+            var tmparr = [];
+            if (document.getElementById("avoid-tolls").checked) {
+                tmparr.push("tolls");
+            }
+            if (document.getElementById("avoid-highways").checked) {
+                tmparr.push("highways");
+            }
+            console.log(tmparr);
+            simulReq["avoid"] = tmparr.join("|");
+        }
+
         $.ajax({
             url: "/do_simul_search", // 通信先のURL
             type: "POST",		// 使用するHTTPメソッド
-            data: JSON.stringify(simulMap),
+            data: JSON.stringify(simulReq),
             contentType: 'application/json',
             dataType: "json", // responseのデータの種類
-            timespan: 1000,	// 通信のタイムアウトの設定(ミリ秒)
+            timespan: 2000,	// 通信のタイムアウトの設定(ミリ秒)
             //通信成功
         }).done(function (data, textStatus, jqXHR) {
             for (var i = 1; i < 10; i++) {
@@ -32,7 +49,7 @@ $(function () {
     });
 });
 
-var simulMap = {
+var simulReq = {
     "origin": "",
     "destinations": {
         "1": "",
@@ -45,8 +62,12 @@ var simulMap = {
         "8": "",
         "9": "",
     },
+    "mode": "",
+    "departure_time": "",
+    "avoid": "",
 };
 
+//出発地と目的地の自動入力を設定
 function initAutocomplete() {
     var originInput = document.getElementById("origin-input");
     const originAutocomplete = new google.maps.places.Autocomplete(originInput);
@@ -56,13 +77,34 @@ function initAutocomplete() {
         const place = originAutocomplete.getPlace();
         if (!place.place_id) {
             window.alert("表示された選択肢の中から選んでください。");
+        } else if (document.getElementById("transit").checked && place.formatted_address.indexOf("日本") !== -1) {
+            window.alert("日本の公共交通機関情報はGoogle Maps APIの仕様上、ご利用いただけません。");
+            return;
         }
-        simulMap["origin"] = place.place_id;
+        simulReq["origin"] = place.place_id;
     });
     //目的地検索のAutocompleteを有効化
     for (var i = 1; i < 10; i++) {
         new AutocompleteHandler(String(i));
     }
+    document.getElementById("walking").addEventListener("click", setupClickListener);
+    document.getElementById("transit").addEventListener("click", setupClickListener);
+    document.getElementById("driving").addEventListener("click", setupClickListener);
+}
+
+//経路オプションのラジオボタンが押されたら発火
+function setupClickListener() {
+    if (this.id === "transit") {
+        document.getElementById("departure-time").style.display = "block"
+    } else if (this.id !== "transit") {
+        document.getElementById("departure-time").style.display = "none"
+    }
+    if (this.id === "driving") {
+        document.getElementById("driving-option").style.display = "block"
+    } else if (this.id !== "driving") {
+        document.getElementById("driving-option").style.display = "none"
+    }
+    simulReq.mode = this.value;
 }
 
 //目的地検索のAutocompleteを設定
@@ -77,15 +119,18 @@ class AutocompleteHandler {
         this.setupPlaceChangedListener(destinationAutocomplete);
     }
 
-    //出発地の入力があった場合、発火
+    //目的地の入力があった場合、発火
     setupPlaceChangedListener(autocomplete) {
         autocomplete.addListener("place_changed", () => {
             const place = autocomplete.getPlace();
             if (!place.place_id) {
                 window.alert("表示された選択肢の中から選んでください。");
                 return;
+            } else if (document.getElementById("transit").checked && place.formatted_address.indexOf("日本") !== -1) {
+                window.alert("日本の公共交通機関情報はGoogle Maps APIの仕様上、ご利用いただけません。");
+                return;
             }
-            simulMap["destinations"][this.routeNum] = place.place_id;
+            simulReq["destinations"][this.routeNum] = place.place_id;
         });
     }
 }

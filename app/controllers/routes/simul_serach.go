@@ -1,12 +1,12 @@
 package routes
 
 import (
-	//envファイル操作用のパッケージ
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/joho/godotenv"
 	"googlemaps.github.io/maps"
-	"html"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -15,7 +15,19 @@ import (
 	"time"
 )
 
-func DoSimulSearch(_ http.ResponseWriter, req *http.Request) {
+type Resp struct {
+	Field map[string][]string `json:"resp"`
+}
+
+type SimulSearchRequest struct {
+	Origin        string            `json:"origin"`
+	Destinations  map[string]string `json:"destinations"`
+	Mode          string            `json:"mode"`
+	DepartureTime string            `json:"departure_time"`
+	Avoid         string            `json:"avoid"`
+}
+
+func DoSimulSearch(w http.ResponseWriter, req *http.Request) {
 	fmt.Printf("Receive request")
 	//API呼び出しの準備
 	env_err := godotenv.Load("env/dev.env")
@@ -33,46 +45,71 @@ func DoSimulSearch(_ http.ResponseWriter, req *http.Request) {
 	reqParam := map[string]string{
 		"origin":        "",
 		"departureTime": "",
-		"arrivalTime":   "",
 		"mode":          "",
 		"avoid":         "",
 	}
 
-	//出発地
-	origin := html.EscapeString(req.FormValue("origin"))
-	reqParam["origin"] = origin
-	//出発時間はデフォルトで現在時刻に設定
-	defDepartureTime := strconv.Itoa(int(time.Now().Unix()))
-	reqParam["departureTime"] = defDepartureTime
-
-	//時間指定する場合
-	departureTime := html.EscapeString(req.FormValue("departureTime"))
-	arrivalTime := html.EscapeString(req.FormValue("arrivalTime"))
-	if departureTime != "" {
-		reqParam["departureTime"] = departureTime
-	} else if arrivalTime != "" {
-		reqParam["departureTime"] = ""
-		reqParam["arrivalTime"] = arrivalTime
+	//requestのフィールドを保存する変数
+	var reqFields SimulSearchRequest
+	body, _ := ioutil.ReadAll(req.Body)
+	err = json.Unmarshal(body, &reqFields)
+	if err != nil {
+		http.Error(w, "aa", http.StatusInternalServerError)
 	}
+
+	//出発地
+	origin := "place_id:" + reqFields.Origin
+	reqParam["origin"] = origin
 
 	//徒歩、公共交通機関、自動車を選択
-	mode := html.EscapeString(req.FormValue("mode"))
+	mode := reqFields.Mode
 	reqParam["mode"] = mode
 	//自動車選択時、有料道路などを含めないオプション
-	avoid := html.EscapeString(req.FormValue("avoid"))
-	reqParam["avoid"] = avoid
+	if mode == "transit" {
+		//時間指定する場合
+		departureTime := reqFields.DepartureTime
+		reqParam["departureTime"] = departureTime
+	} else if mode == "driving" {
+		//運転時オプションを指定する場合
+		avoid := reqFields.Avoid
+		reqParam["avoid"] = avoid
+	}
 
+	//検索結果を入れるmap
+	simulRoutes := map[string][]string{}
 	//同時検索
 	for i := 1; i < 10; i++ {
-		destination := html.EscapeString(req.FormValue("destination" + strconv.Itoa(i)))
+		destination := reqFields.Destinations[strconv.Itoa(i)]
 		if destination == "" {
-			break
+			continue
 		}
+		destination = "place_id:" + destination
 		disntance, duration := simulSearch(client, destination, reqParam)
-		fmt.Print(disntance, duration)
-		//同期か非同期か決まってから処理を決定
+		//エラーもしくは検索結果がない場合
+		if disntance == "" && duration == 0 {
+			simulRoutes[strconv.Itoa(i)] = []string{"検索結果なし", "検索結果なし"}
+		} else {
+			var durationResp string
+			//１時間以上の場合、〜時間〜分にフォーマットを変える
+			if duration >= 60 {
+				durationResp = strconv.Itoa(int(duration/60)) + "時間" + strconv.Itoa(int(duration%60)) + "分"
+			} else {
+				durationResp = strconv.Itoa(duration) + "分"
+			}
+			simulRoutes[strconv.Itoa(i)] = []string{disntance, durationResp}
+		}
 	}
-	return
+
+	//レスポンスを作成
+	resp := Resp{
+		Field: simulRoutes,
+	}
+	w.Header().Set("Content-Type", "application/json")
+	respJson, err := json.Marshal(resp)
+	if err != nil {
+		http.Error(w, "問題が発生しました。もう一度操作しなおしてください", http.StatusInternalServerError)
+	}
+	w.Write(respJson)
 }
 
 func simulSearch(client *maps.Client, destination string, reqParam map[string]string) (string, int) {
@@ -82,18 +119,17 @@ func simulSearch(client *maps.Client, destination string, reqParam map[string]st
 		Region:      "JP",
 		Origin:      reqParam["origin"],
 		Destination: destination,
+		//出発時間はデフォルトで現在時刻に設定
+		DepartureTime: strconv.Itoa(int(time.Now().Unix())),
 		//過去のデータから予想される最適な所要時間を返すよう設定
 		TrafficModel: maps.TrafficModelBestGuess,
 	}
 
 	//オプション指定されている場合、SearchReqにその値を入れる
 	if reqParam["departureTime"] != "" {
-		SearchReq.DepartureTime = reqParam["departureTime"]
-	} else if reqParam["arrivalTime"] != "" {
-		SearchReq.DepartureTime = ""
-		SearchReq.ArrivalTime = reqParam["arrivalTime"]
+		t, _ := time.Parse(time.RFC3339, reqParam["departureTime"])
+		SearchReq.DepartureTime = strconv.Itoa(int(t.Unix()))
 	}
-
 	if reqParam["mode"] != "" {
 		lookupMode(reqParam["mode"], SearchReq)
 	}
@@ -104,7 +140,9 @@ func simulSearch(client *maps.Client, destination string, reqParam map[string]st
 	//ルートを取得
 	routes, _, err := client.Directions(context.Background(), SearchReq)
 	check(err)
-
+	if err != nil {
+		return "", 0
+	}
 	//pretty.Println(routes[0].Legs[0].Distance)
 	//pretty.Println(int(routes[0].Legs[0].Duration.Minutes()))
 	return routes[0].Legs[0].Distance.HumanReadable, int(routes[0].Legs[0].Duration.Minutes())
@@ -132,7 +170,7 @@ func lookupMode(mode string, r *maps.DirectionsRequest) {
 	case "":
 		// ignore
 	default:
-		log.Fatalf("Unknown mode '%s'", mode)
+		log.Printf("Unknown mode '%s'", mode)
 	}
 }
 
@@ -155,7 +193,7 @@ func lookupTransitRoutingPreference(transitRoutingPreference string, r *maps.Dir
 	case "":
 		// ignore
 	default:
-		log.Fatalf("Unknown transit routing preference %s", transitRoutingPreference)
+		log.Printf("Unknown transit routing preference %s", transitRoutingPreference)
 	}
 }
 
@@ -171,7 +209,7 @@ func lookupTrafficModel(trafficModel string, r *maps.DirectionsRequest) {
 	case "":
 		// ignore
 	default:
-		log.Fatalf("Unknown traffic mode %s", trafficModel)
+		log.Printf("Unknown traffic mode %s", trafficModel)
 	}
 }
 
@@ -186,7 +224,7 @@ func lookupAvoid(avoid string, r *maps.DirectionsRequest) {
 		case "ferries":
 			r.Avoid = append(r.Avoid, maps.AvoidFerries)
 		default:
-			log.Fatalf("Unknown avoid restriction %s", a)
+			log.Printf("Unknown avoid restriction %s", a)
 		}
 	}
 }
