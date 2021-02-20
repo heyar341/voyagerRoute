@@ -34,7 +34,7 @@ func main() {
 	http.HandleFunc("/ask_confirm/",askConfirm)
 
 	//Direction API
-	http.HandleFunc("/show_map",index)
+	http.HandleFunc("/multi_search",index)
 	http.HandleFunc("/routes_save",routes.SaveRoutes)
 	http.HandleFunc("/simul_search",simulSearchTpl)
 	http.HandleFunc("/do_simul_search",routes.DoSimulSearch)
