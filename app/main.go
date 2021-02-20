@@ -68,7 +68,7 @@ func index(w http.ResponseWriter, req *http.Request){
 	apiKey := envhandler.GetEnvVal("MAP_API_KEY")
 	isLoggedIn := auth.IsLoggedIn(req)
 	data := map[string]interface{}{"apiKey":apiKey,"isLoggedIn":isLoggedIn}
-	tpl.ExecuteTemplate(w, "place_and_direction_improve.html", data)
+	tpl.ExecuteTemplate(w, "multi_search.html", data)
 }
 
 func simulSearchTpl(w http.ResponseWriter, req *http.Request) {
