@@ -59,6 +59,13 @@ $(function () {
   });
 });
 
+//現在時刻を取得し、時間指定要素に挿入
+var today = new Date();
+var yyyy = today.getFullYear();
+var mm = ("0" + (today.getMonth() + 1)).slice(-2);
+var dd = ("0" + today.getDate()).slice(-2);
+var now = today.getHours() + ":" + today.getMinutes() + ":00";
+
 function initMap() {
   const map = new google.maps.Map(document.getElementById("map"), {
     mapTypeControl: false,
@@ -70,11 +77,7 @@ function initMap() {
       gestureHandling: "greedy", //地図埋め込み時Ctrボタン要求の無効化
     },
   });
-  //現在時刻を取得し、時間指定要素に挿入
-  var today = new Date();
-  var yyyy = today.getFullYear();
-  var mm = ("0" + (today.getMonth() + 1)).slice(-2);
-  var dd = ("0" + today.getDate()).slice(-2);
+
 
   //１番目のルート要素をHTMLに追加
   $("#search-box").append(genSearchBox(routeID, colorMap[routeID]));
@@ -148,12 +151,12 @@ class AutocompleteDirectionsHandler {
     );
     const originAutocomplete = new google.maps.places.Autocomplete(originInput);
     //Places detailは高額料金がかかるので、必要なフィールドを指定して、料金を下げる
-    originAutocomplete.setFields(["place_id"]);
+    originAutocomplete.setFields(["place_id", "geometry", "formatted_address"]);
     const destinationAutocomplete = new google.maps.places.Autocomplete(
       destinationInput
     );
     //Places detailは高額料金がかかるので、必要なフィールドを指定して、料金を下げる
-    destinationAutocomplete.setFields(["place_id"]);
+    destinationAutocomplete.setFields(["place_id", "geometry", "formatted_address"]);
 
     //EventListenerの設定
     this.setupClickListener(
@@ -172,6 +175,7 @@ class AutocompleteDirectionsHandler {
     this.setupPlaceChangedListener(destinationAutocomplete, "DEST", this);
     this.setupOptionListener("date" + this.routeNum);
     this.setupOptionListener("time" + this.routeNum);
+    this.setupTimeListener("depart-now" + this.routeNum, this.routeNum)
     this.setupOptionListener("avoid-toll" + this.routeNum);
     this.setupOptionListener("avoid-highway" + this.routeNum);
     this.setUpRouteSelectedListener(this, this.directionsRenderer);
@@ -229,9 +233,19 @@ class AutocompleteDirectionsHandler {
     });
   }
 
+  //経路オプションが設定された時発火
   setupOptionListener(id) {
     const optionChange = document.getElementById(id);
     optionChange.addEventListener("change", () => {
+      this.route();
+    });
+  }
+//すぐに出発ボタンを有効化
+  setupTimeListener(id, rNum) {
+    const timeNow = document.getElementById(id);
+    timeNow.addEventListener("click", () => {
+      document.getElementById("date" + rNum).value = yyyy + "-" + mm + "-" + dd;
+      document.getElementById("time" + rNum).value = now;
       this.route();
     });
   }
@@ -322,14 +336,6 @@ class AutocompleteDirectionsHandler {
       this.directionsRequest.transitOptions = {};
       //出発時間を指定した場合
       if (document.getElementById("depart-time" + this.routeNum).checked) {
-        console.log(
-          new Date(
-            document.getElementById("date" + this.routeNum).value +
-              "T" +
-              document.getElementById("time" + this.routeNum).value
-          )
-        );
-        console.log(document.getElementById("time" + this.routeNum).value);
         this.directionsRequest.transitOptions.departureTime = new Date(
           document.getElementById("date" + this.routeNum).value +
             "T" +
@@ -408,9 +414,9 @@ class AutocompleteDirectionsHandler {
           suppressPolylines: true,
         });
         me.directionsRenderer.setDirections(response);
-        console.log(response.routes[0].summary);
-        console.log(response.routes[0].legs[0].distance.text);
-        console.log(response.routes[0].legs[0].duration.text);
+        // console.log(response.routes[0].summary);
+        // console.log(response.routes[0].legs[0].distance.text);
+        // console.log(response.routes[0].legs[0].duration.text);
 
         //ルートが１つのみの場合、detail-panelが表示されないので、span要素で距離、所要時間を表示する
         if (response.routes.length == 1) {
@@ -485,9 +491,11 @@ function genSearchBox(routeId, color) {
                 <div id="transit-time${routeId}" style="display: none">
                     <span>時間指定：</span>
                     <br>
-                    <input type="radio" name="deparitime${routeId}" id="depart-time${routeId}"/>
+                    <input type="radio" name="timespec${routeId}" id="depart-now${routeId}"/>
+                    <label class="mr-2" for="depart-now${routeId}">すぐに出発</label>
+                    <input type="radio" name="timespec${routeId}" id="depart-time${routeId}"/>
                     <label class="mr-2" for="depart-time${routeId}">出発時間</label>
-                    <input type="radio" name="arrivaltime${routeId}" id="arrival-time${routeId}"/>
+                    <input type="radio" name="timespec${routeId}" id="arrival-time${routeId}"/>
                     <label for="arrival-time${routeId}">到着時間</label>
                     <br>
                     <input type="date" id="date${routeId}">
