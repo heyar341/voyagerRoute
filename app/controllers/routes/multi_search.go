@@ -30,24 +30,26 @@ func SaveRoutes(w http.ResponseWriter, req *http.Request) {
 	body, _ := ioutil.ReadAll(req.Body)
 	err := json.Unmarshal(body, &reqFields)
 	if err != nil {
-		http.Error(w, "aa", http.StatusInternalServerError)
+		http.Error(w, "入力に不正があります。", http.StatusInternalServerError)
+		log.Printf("Error while json marshaling: %v",err)
+		return
 	}
 
 	//Cookieからセッション情報取得
 	c, err := req.Cookie("sessionId")
 	//Cookieが設定されてない場合
 	if err != nil {
-		c = &http.Cookie{
-			Name:  "sessionId",
-			Value: "",
-		}
+		msg := "ログインしてください。"
+		http.Error(w, msg, http.StatusUnauthorized)
+		log.Printf("Error while getting cookie: %v", err)
+		return
 	}
 
 	sessionID, err := auth.ParseToken(c.Value)
 	if err != nil {
 		msg := "セッション情報が不正です。"
 		http.Error(w, msg, http.StatusUnauthorized)
-		log.Println(err)
+		log.Printf("Error while parsing token: %v",err)
 		return
 	}
 	var userID primitive.ObjectID
@@ -56,7 +58,7 @@ func SaveRoutes(w http.ResponseWriter, req *http.Request) {
 		if err != nil {
 			msg := "エラ〜が発生しました。もう一度操作をしなおしてください。"
 			http.Error(w, msg, http.StatusInternalServerError)
-			log.Println(err)
+			log.Printf("Error while getting loggedin user: %v",err)
 			return
 		}
 	}
@@ -70,7 +72,7 @@ func SaveRoutes(w http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		msg := "エラ〜が発生しました。もう一度操作をしなおしてください。"
 		http.Error(w, msg, http.StatusInternalServerError)
-		log.Println(err)
+		log.Printf("Error while saving multi route: %v", err)
 		return
 	}
 
