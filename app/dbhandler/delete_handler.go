@@ -6,7 +6,7 @@ import (
 	"log"
 )
 
-func Delete(dbName,collectionName string, document interface{}) (error){
+func Delete(dbName, collectionName string, document interface{}) error {
 	//objectIDを取得するには、１番目の帰り値のInsertedIDフィールドを取得する
 	client, ctx, err := connectDB()
 	if err != nil {
@@ -18,10 +18,10 @@ func Delete(dbName,collectionName string, document interface{}) (error){
 	collection := database.Collection(collectionName)
 	//DBからのレスポンスを挿入する変数
 	var deletedDocument bson.M
-	err = collection.FindOneAndDelete(ctx,document).Decode(&deletedDocument)
+	err = collection.FindOneAndDelete(ctx, document).Decode(&deletedDocument)
 	if err != nil && err == mongo.ErrNoDocuments {
-			log.Fatalln("During deleting a document: ",err)
-			return err
-		}
+		log.Fatalln("During deleting a document: ", err)
+		return err
+	}
 	return nil
 }

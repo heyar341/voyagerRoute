@@ -1,58 +1,58 @@
 package auth
 
 import (
+	"app/dbhandler"
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"golang.org/x/crypto/bcrypt"
 	"html"
 	"log"
 	"net/http"
 	"net/smtp"
 	"net/url"
-	"golang.org/x/crypto/bcrypt"
-	"app/dbhandler"
-	"github.com/google/uuid"
 	"os"
 	"sync"
 )
 
-func Register(w http.ResponseWriter, req *http.Request){
-	if req.Method != "POST"{
+func Register(w http.ResponseWriter, req *http.Request) {
+	if req.Method != "POST" {
 		msg := url.QueryEscape("HTTPメソッドが不正です。")
-		http.Redirect(w,req,"/register_form/?msg="+msg,http.StatusSeeOther)
+		http.Redirect(w, req, "/register_form/?msg="+msg, http.StatusSeeOther)
 		return
 	}
 	//ユーザー名をリクエストから取得
 	userName := html.EscapeString(req.FormValue("username"))
-	if userName == ""{
+	if userName == "" {
 		msg := url.QueryEscape("ユーザー名を入力してください。")
-		http.Redirect(w,req,"/register_form/?msg="+msg,http.StatusSeeOther)
+		http.Redirect(w, req, "/register_form/?msg="+msg, http.StatusSeeOther)
 		return
 	}
 	//メールアドレスをリクエストから取得
 	email := html.EscapeString(req.FormValue("email"))
-	if email == ""{
+	if email == "" {
 		msg := url.QueryEscape("メールアドレスを入力してください。")
-		http.Redirect(w,req,"/register_form/?msg="+msg,http.StatusSeeOther)
+		http.Redirect(w, req, "/register_form/?msg="+msg, http.StatusSeeOther)
 		return
 	}
 	//パスワードをリクエストから取得
 	password := html.EscapeString(req.FormValue("password"))
-	if password == ""{
+	if password == "" {
 		msg := url.QueryEscape("パスワードを入力してください。")
-		http.Redirect(w,req,"/register_form/?msg="+msg,http.StatusSeeOther)
+		http.Redirect(w, req, "/register_form/?msg="+msg, http.StatusSeeOther)
 		return
 	} else if len(password) < 8 {
 		msg := url.QueryEscape("パスワードは8文字以上で入力してください。")
-		http.Redirect(w,req,"/register_form/?msg="+msg,http.StatusSeeOther)
+		http.Redirect(w, req, "/register_form/?msg="+msg, http.StatusSeeOther)
 		return
 	}
 	//パスワードをハッシュ化
-	securedPassword,err := bcrypt.GenerateFromPassword([]byte(password), 5)
+	securedPassword, err := bcrypt.GenerateFromPassword([]byte(password), 5)
 	if err != nil {
 		msg := "エラ〜が発生しました。もう一度操作をしなおしてください。"
-		http.Error(w,msg,http.StatusInternalServerError)
+		http.Error(w, msg, http.StatusInternalServerError)
 		log.Println(err)
 		return
 	}
@@ -62,16 +62,16 @@ func Register(w http.ResponseWriter, req *http.Request){
 	//userを仮登録としてDBに保存
 	//保存するドキュメント
 	registerDoc := bson.D{
-		{"username",userName},
-		{"email",email},
-		{"password",securedPassword},
-		{"token",token},
+		{"username", userName},
+		{"email", email},
+		{"password", securedPassword},
+		{"token", token},
 	}
 	//DBに保存
 	_, err = dbhandler.Insert("googroutes", "registering", registerDoc)
 	if err != nil {
 		msg := "エラ〜が発生しました。もう一度操作をしなおしてください。"
-		http.Error(w,msg,http.StatusInternalServerError)
+		http.Error(w, msg, http.StatusInternalServerError)
 		log.Println(err)
 		return
 	}
@@ -81,7 +81,7 @@ func Register(w http.ResponseWriter, req *http.Request){
 	wg.Add(2)
 
 	//並列処理1:メールでトークン付きのURLを送る
-	go func(){
+	go func() {
 		env_err := godotenv.Load("env/dev.env")
 		if env_err != nil {
 			log.Println("Can't load env file")
@@ -111,42 +111,41 @@ func Register(w http.ResponseWriter, req *http.Request){
 
 	//並列処理2:認証依頼画面表示
 	go func() {
-		http.Redirect(w,req,"/ask_confirm",http.StatusSeeOther)
+		http.Redirect(w, req, "/ask_confirm", http.StatusSeeOther)
 		wg.Done()
 	}()
 
 	wg.Wait()
 }
 
-
-func ConfirmRegister(w http.ResponseWriter, req *http.Request){
+func ConfirmRegister(w http.ResponseWriter, req *http.Request) {
 	//メール認証トークンをリクエストURLから取得
 	query := req.URL.Query()
 	token := query["token"][0]
-	if token == ""{
-		http.Redirect(w,req,"/register_form",http.StatusSeeOther)
+	if token == "" {
+		http.Redirect(w, req, "/register_form", http.StatusSeeOther)
 		return
 	}
 
 	//DBのregistering collectionから、user情報取得
 	type registeringUser struct {
-		ID primitive.ObjectID `json:"id" bson:"_id"`
-		Username string `json:"username" bson:"username"`
-		Email string `json:"email" bson:"email"`
-		Password []byte `json:"password" bson:"password"`
-		Token string `json:"token" bson:"token"`
+		ID       primitive.ObjectID `json:"id" bson:"_id"`
+		Username string             `json:"username" bson:"username"`
+		Email    string             `json:"email" bson:"email"`
+		Password []byte             `json:"password" bson:"password"`
+		Token    string             `json:"token" bson:"token"`
 	}
 
 	//取得するドキュメントの条件
-	tokenDoc := bson.D{{"token",token}}
+	tokenDoc := bson.D{{"token", token}}
 	//DBから取得
 	resp, err := dbhandler.Find("googroutes", "registering", tokenDoc)
 	if err != nil {
 		msg := "認証トークンが一致しません。"
-		http.Redirect(w,req,"/?msg="+msg,http.StatusSeeOther)
+		http.Redirect(w, req, "/?msg="+msg, http.StatusSeeOther)
 	}
 	//DBから取得した値をmarshal
-	bsonByte,_ := bson.Marshal(resp)
+	bsonByte, _ := bson.Marshal(resp)
 
 	var user registeringUser
 	//marshalした値をUnmarshalして、userに代入
@@ -155,15 +154,15 @@ func ConfirmRegister(w http.ResponseWriter, req *http.Request){
 	//userをDBに保存
 	//保存するドキュメント
 	userDoc := bson.D{
-		{"username",user.Username},
-		{"email",user.Email},
-		{"password",user.Password},
+		{"username", user.Username},
+		{"email", user.Email},
+		{"password", user.Password},
 	}
 	//DBに保存
 	insertRes, err := dbhandler.Insert("googroutes", "users", userDoc)
 	if err != nil {
 		msg := "エラ〜が発生しました。もう一度操作をしなおしてください。"
-		http.Error(w,msg,http.StatusInternalServerError)
+		http.Error(w, msg, http.StatusInternalServerError)
 		log.Println(err)
 		return
 	}
@@ -173,29 +172,29 @@ func ConfirmRegister(w http.ResponseWriter, req *http.Request){
 	sessionID := uuid.New().String()
 	//sessionをDBに保存
 	sessionDoc := bson.D{
-		{"session_id",sessionID},
-		{"user_id",userDocID},
+		{"session_id", sessionID},
+		{"user_id", userDocID},
 	}
 	_, err = dbhandler.Insert("googroutes", "sessions", sessionDoc)
 	if err != nil {
 		msg := "エラ〜が発生しました。もう一度操作をしなおしてください。"
-		http.Error(w,msg,http.StatusInternalServerError)
+		http.Error(w, msg, http.StatusInternalServerError)
 		log.Println(err)
 		return
 	}
 
-	signedStr,err := createToken(sessionID)
+	signedStr, err := createToken(sessionID)
 	if err != nil {
-		http.Redirect(w,req,"/",http.StatusSeeOther)
+		http.Redirect(w, req, "/", http.StatusSeeOther)
 		log.Println(err)
 		return
 	}
 
 	//Cookieの設定
 	c := &http.Cookie{
-		Name: "sessionId",
+		Name:  "sessionId",
 		Value: signedStr,
 	}
-	http.SetCookie(w,c)
-	http.Redirect(w,req,"/",http.StatusSeeOther)
+	http.SetCookie(w, c)
+	http.Redirect(w, req, "/", http.StatusSeeOther)
 }

@@ -2,7 +2,7 @@ package dbhandler
 
 import "go.mongodb.org/mongo-driver/mongo"
 
-func Insert(dbName,collectionName string, document interface{}) (*mongo.InsertOneResult, error){
+func Insert(dbName, collectionName string, document interface{}) (*mongo.InsertOneResult, error) {
 	//objectIDを取得するには、１番目の帰り値のInsertedIDフィールドを取得する
 	client, ctx, err := connectDB()
 	if err != nil {
