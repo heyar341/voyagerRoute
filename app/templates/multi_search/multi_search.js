@@ -33,10 +33,10 @@ $(function () {
       contentType: "application/json",
       dataType: "json", // responseのデータの種類
       timespan: 1000, // 通信のタイムアウトの設定(ミリ秒)
-      //通信成功
     })
+      //通信成功
       .done(function (data, textStatus, jqXHR) {
-        window.location.href = "http://localhost:8080";
+        window.location.href = "http://localhost:8080/multi_search";
         //通信失敗
       })
       .fail(function (xhr, status, error) {
