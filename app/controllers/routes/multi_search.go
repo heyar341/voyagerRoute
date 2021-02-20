@@ -12,7 +12,7 @@ import (
 )
 
 type ResponseMsg struct {
-	Msg string
+	Msg string `json:"msg"`
 }
 
 type MultiSearchRequest struct {
@@ -46,7 +46,7 @@ func SaveRoutes(w http.ResponseWriter, req *http.Request) {
 	sessionID, err := auth.ParseToken(c.Value)
 	if err != nil {
 		msg := "セッション情報が不正です。"
-		http.Redirect(w, req, "/?msg="+msg, http.StatusSeeOther)
+		http.Error(w, msg, http.StatusUnauthorized)
 		log.Println(err)
 		return
 	}
@@ -76,10 +76,10 @@ func SaveRoutes(w http.ResponseWriter, req *http.Request) {
 
 	//レスポンス作成
 	w.Header().Set("Content-Type", "application/json")
-	msg := ResponseMsg{Msg: ""}
+	msg := ResponseMsg{Msg: "aaa"}
 	respJson, err := json.Marshal(msg)
 	if err != nil {
-		http.Error(w, "問題が発生しました。もう一度操作しなおしてください", http.StatusInternalServerError)
+		log.Printf("Error while json marshaling: %v", err)
 	}
 	w.Write(respJson)
 }
