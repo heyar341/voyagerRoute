@@ -8,12 +8,13 @@ import (
 	"html/template"
 	"app/controllers/auth"
 	"app/controllers/routes"
+	"app/controllers/envhandler"
 
 )
 var tpl, auth_tpl, home_tpl, simul_search_tpl *template.Template
 
 func init() {
-	tpl = template.Must(template.Must(template.ParseGlob("templates/route_search/*")).ParseGlob("templates/includes/*.html"))
+	tpl = template.Must(template.Must(template.ParseGlob("templates/multi_search/*")).ParseGlob("templates/includes/*.html"))
 	simul_search_tpl = template.Must(template.Must(template.ParseGlob("templates/simul_search/*")).ParseGlob("templates/includes/*.html"))
 	auth_tpl = template.Must(template.Must(template.ParseGlob("templates/auth/*")).ParseGlob("templates/includes/*.html"))
 	home_tpl = template.Must(template.Must(template.ParseGlob("templates/home/home.html")).ParseGlob("templates/includes/*.html"))
@@ -43,43 +44,37 @@ func main() {
 }
 
 func home(w http.ResponseWriter, req *http.Request) {
-	isLoggedIn := false
-	isLoggedIn = auth.IsLoggedIn(req)
+	isLoggedIn := auth.IsLoggedIn(req)
 	data := map[string]interface{}{"isLoggedIn":isLoggedIn}
 	home_tpl.ExecuteTemplate(w, "home.html",data)
 }
 func askConfirm(w http.ResponseWriter, req *http.Request) {
-	isLoggedIn := false
-	isLoggedIn = auth.IsLoggedIn(req)
+	isLoggedIn := auth.IsLoggedIn(req)
 	data := map[string]interface{}{"isLoggedIn":isLoggedIn}
 	auth_tpl.ExecuteTemplate(w, "ask_confirm_email.html",data)
 }
 func registerForm(w http.ResponseWriter, req *http.Request) {
-	isLoggedIn := false
-	isLoggedIn = auth.IsLoggedIn(req)
+	isLoggedIn := auth.IsLoggedIn(req)
 	data := map[string]interface{}{"isLoggedIn":isLoggedIn}
 	auth_tpl.ExecuteTemplate(w, "register.html",data)
 }
 func loginForm(w http.ResponseWriter, req *http.Request) {
-	isLoggedIn := false
-	isLoggedIn = auth.IsLoggedIn(req)
+	isLoggedIn := auth.IsLoggedIn(req)
 	data := map[string]interface{}{"isLoggedIn":isLoggedIn}
 	auth_tpl.ExecuteTemplate(w, "login.html",data)
 }
 func index(w http.ResponseWriter, req *http.Request){
 	//envファイルからAPIキー取得
 	apiKey := envhandler.GetEnvVal("MAP_API_KEY")
-	isLoggedIn := false
-	isLoggedIn = auth.IsLoggedIn(req)
+	isLoggedIn := auth.IsLoggedIn(req)
 	data := map[string]interface{}{"apiKey":apiKey,"isLoggedIn":isLoggedIn}
-	tpl.ExecuteTemplate(w, "place_and_direction_improve.html", data)
+	tpl.ExecuteTemplate(w, "multi_search.html", data)
 }
 
 func simulSearchTpl(w http.ResponseWriter, req *http.Request) {
 	//envファイルからAPIキー取得
 	apiKey := envhandler.GetEnvVal("MAP_API_KEY")
-	isLoggedIn := false
-	isLoggedIn = auth.IsLoggedIn(req)
+	isLoggedIn := auth.IsLoggedIn(req)
 	nineIterator := []int {1,2,3,4,5,6,7,8,9}
 	data := map[string]interface{}{"apiKey":apiKey,"isLoggedIn":isLoggedIn,"nineIterator":nineIterator}
 	simul_search_tpl.ExecuteTemplate(w, "simul_search.html",data)
