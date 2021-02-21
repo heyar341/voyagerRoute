@@ -15,6 +15,7 @@ import (
 	"net/url"
 	"os"
 	"sync"
+	"time"
 )
 
 func Register(w http.ResponseWriter, req *http.Request) {
@@ -139,7 +140,7 @@ func ConfirmRegister(w http.ResponseWriter, req *http.Request) {
 	//取得するドキュメントの条件
 	tokenDoc := bson.D{{"token", token}}
 	//DBから取得
-	resp, err := dbhandler.Find("googroutes", "registering", tokenDoc)
+	resp, err := dbhandler.Find("googroutes", "registering", tokenDoc, nil)
 	if err != nil {
 		msg := "認証トークンが一致しません。"
 		http.Redirect(w, req, "/?msg="+msg, http.StatusSeeOther)
@@ -157,6 +158,7 @@ func ConfirmRegister(w http.ResponseWriter, req *http.Request) {
 		{"username", user.Username},
 		{"email", user.Email},
 		{"password", user.Password},
+		{"multi_route_titles", map[string]time.Time{}},
 	}
 	//DBに保存
 	insertRes, err := dbhandler.Insert("googroutes", "users", userDoc)
