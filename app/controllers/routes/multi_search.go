@@ -6,9 +6,11 @@ import (
 	"encoding/json"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"html"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -33,6 +35,11 @@ func SaveRoutes(w http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		http.Error(w, "入力に不正があります。", http.StatusInternalServerError)
 		log.Printf("Error while json marshaling: %v", err)
+		return
+	}
+
+	if strings.Contains(reqFields.Title, ".") {
+		http.Error(w, "ルート名に.(ドット)は使用できません。", http.StatusBadRequest)
 		return
 	}
 
@@ -66,8 +73,8 @@ func SaveRoutes(w http.ResponseWriter, req *http.Request) {
 
 	//users collectionのmulti_route_titlesフィールドにルート名と作成時刻を追加($set)する。作成時刻はルート名取得時に作瀬時刻でソートするため
 	userDoc := bson.D{{"_id", userID}}
-	now := time.Now().UTC()                                             //MongoDBでは、timeはUTC表記で扱われ、タイムゾーン情報は入れられない
-	updateField := bson.M{"multi_route_titles." + reqFields.Title: now} //nested fieldsは.(ドット表記)で繋いで書く
+	now := time.Now().UTC()                                                                //MongoDBでは、timeはUTC表記で扱われ、タイムゾーン情報は入れられない
+	updateField := bson.M{"multi_route_titles." + html.EscapeString(reqFields.Title): now} //nested fieldsは.(ドット表記)で繋いで書く
 	err = dbhandler.UpdateOne("googroutes", "users", "$set", userDoc, updateField)
 
 	//routes collectionに保存
