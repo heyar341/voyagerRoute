@@ -7,17 +7,20 @@ import (
 	"net/http"
 	"html/template"
 	"app/controllers/auth"
+	"app/controllers/mypages"
 	"app/controllers/routes"
 	"app/controllers/envhandler"
 
 )
-var tpl, auth_tpl, home_tpl, simul_search_tpl *template.Template
+var tpl, auth_tpl, home_tpl, simul_search_tpl, mypage_tpl *template.Template
 
 func init() {
 	tpl = template.Must(template.Must(template.ParseGlob("templates/multi_search/*")).ParseGlob("templates/includes/*.html"))
 	simul_search_tpl = template.Must(template.Must(template.ParseGlob("templates/simul_search/*")).ParseGlob("templates/includes/*.html"))
 	auth_tpl = template.Must(template.Must(template.ParseGlob("templates/auth/*")).ParseGlob("templates/includes/*.html"))
 	home_tpl = template.Must(template.Must(template.ParseGlob("templates/home/home.html")).ParseGlob("templates/includes/*.html"))
+	mypage_tpl = template.Must(template.Must(template.ParseGlob("templates/mypage/*.html")).ParseGlob("templates/includes/*.html"))
+
 }
 
 func main() {
@@ -40,6 +43,9 @@ func main() {
 	http.HandleFunc("/do_simul_search",routes.DoSimulSearch)
 	http.HandleFunc("/",home)
 
+	http.HandleFunc("/mypage", mypage)
+	http.HandleFunc("/show_routes", showRoutes)
+
 	http.ListenAndServe(":80",nil)
 }
 
@@ -47,6 +53,23 @@ func home(w http.ResponseWriter, req *http.Request) {
 	isLoggedIn := auth.IsLoggedIn(req)
 	data := map[string]interface{}{"isLoggedIn":isLoggedIn}
 	home_tpl.ExecuteTemplate(w, "home.html",data)
+}
+
+func mypage(w http.ResponseWriter, req *http.Request) {
+	isLoggedIn := auth.IsLoggedIn(req)
+	userID, _ := auth.GetLoginUserID(req)
+	userName, _ := auth.GetLoginUserName(userID)
+	data := map[string]interface{}{"isLoggedIn":isLoggedIn, "userName":userName}
+	mypage_tpl.ExecuteTemplate(w, "mypage.html",data)
+}
+
+func showRoutes(w http.ResponseWriter, req *http.Request) {
+	isLoggedIn := auth.IsLoggedIn(req)
+	userID, _ := auth.GetLoginUserID(req)
+	userName, _ := auth.GetLoginUserName(userID)
+	titleNames := mypages.RouteTitles(userID)
+	data := map[string]interface{}{"isLoggedIn":isLoggedIn, "userName":userName, "titles":titleNames}
+	mypage_tpl.ExecuteTemplate(w, "show_routes.html",data)
 }
 func askConfirm(w http.ResponseWriter, req *http.Request) {
 	isLoggedIn := auth.IsLoggedIn(req)
