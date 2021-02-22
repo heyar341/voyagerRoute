@@ -8,7 +8,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"golang.org/x/crypto/bcrypt"
-	"html"
 	"log"
 	"net/http"
 	"net/smtp"
@@ -25,21 +24,21 @@ func Register(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	//ユーザー名をリクエストから取得
-	userName := html.EscapeString(req.FormValue("username"))
+	userName := req.FormValue("username")
 	if userName == "" {
 		msg := url.QueryEscape("ユーザー名を入力してください。")
 		http.Redirect(w, req, "/register_form/?msg="+msg, http.StatusSeeOther)
 		return
 	}
 	//メールアドレスをリクエストから取得
-	email := html.EscapeString(req.FormValue("email"))
+	email := req.FormValue("email")
 	if email == "" {
 		msg := url.QueryEscape("メールアドレスを入力してください。")
 		http.Redirect(w, req, "/register_form/?msg="+msg, http.StatusSeeOther)
 		return
 	}
 	//パスワードをリクエストから取得
-	password := html.EscapeString(req.FormValue("password"))
+	password := req.FormValue("password")
 	if password == "" {
 		msg := url.QueryEscape("パスワードを入力してください。")
 		http.Redirect(w, req, "/register_form/?msg="+msg, http.StatusSeeOther)
