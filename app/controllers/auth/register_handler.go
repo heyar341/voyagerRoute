@@ -1,11 +1,11 @@
 package auth
 
 import (
+	"app/controllers/envhandler"
 	"app/dbhandler"
 	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
-	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -15,8 +15,6 @@ import (
 	"net/http"
 	"net/smtp"
 	"net/url"
-	"os"
-	"sync"
 	"time"
 )
 
@@ -79,46 +77,30 @@ func Register(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	//メール送信に少し時間がかかるので、メール送信と認証依頼画面表示を並列処理
-	wg := &sync.WaitGroup{}
-	wg.Add(2)
+	//メール送信に少し時間がかかるので、認証依頼画面表示を先に処理
+	http.Redirect(w, req, "/ask_confirm", http.StatusSeeOther)
 
-	//並列処理1:メールでトークン付きのURLを送る
-	go func() {
-		env_err := godotenv.Load("env/dev.env")
-		if env_err != nil {
-			log.Println("Can't load env file")
-		}
-		//envファイルからGmailのアプリパスワード取得
-		gmailPassword := os.Getenv("GMAIL_APP_PASS")
-		mailAuth := smtp.PlainAuth(
-			"",
-			"app.goog.routes@gmail.com",
-			gmailPassword,
-			"smtp.gmail.com",
-		)
+	//メールでトークン付きのURLを送る
+	//envファイルからGmailのアプリパスワード取得
+	gmailPassword := envhandler.GetEnvVal("GMAIL_APP_PASS")
+	mailAuth := smtp.PlainAuth(
+		"",
+		"app.goog.routes@gmail.com",
+		gmailPassword,
+		"smtp.gmail.com",
+	)
 
-		tokenURL := "http://localhost:8080/confirm_register/?token=" + token //localhostは本番で変更
-		err = smtp.SendMail(
-			"smtp.gmail.com:587",
-			mailAuth,
-			"app.goog.routes@gmail.com",
-			[]string{email},
-			[]byte(fmt.Sprintf("To:%s\r\nSubject:メールアドレス認証のお願い\r\n\r\n%s", userName, tokenURL)),
-		)
-		if err != nil {
-			log.Println(err)
-		}
-		wg.Done()
-	}()
-
-	//並列処理2:認証依頼画面表示
-	go func() {
-		http.Redirect(w, req, "/ask_confirm", http.StatusSeeOther)
-		wg.Done()
-	}()
-
-	wg.Wait()
+	tokenURL := "http://localhost:8080/confirm_register/?token=" + token //localhostは本番で変更
+	err = smtp.SendMail(
+		"smtp.gmail.com:587",
+		mailAuth,
+		"app.goog.routes@gmail.com",
+		[]string{email},
+		[]byte(fmt.Sprintf("To:%s\r\nSubject:メールアドレス認証のお願い\r\n\r\n%s", userName, tokenURL)),
+	)
+	if err != nil {
+		log.Println(err)
+	}
 }
 
 func ConfirmRegister(w http.ResponseWriter, req *http.Request) {
