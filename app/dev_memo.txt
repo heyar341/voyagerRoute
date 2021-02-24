@@ -23,3 +23,11 @@ toggleボタンなどはjQueryで自分で実装する必要あり。
 
 　http.HandleFuncでクエリーパラメータを使う場合、URIパスの最後に/を入れないと、クエリー部は無視されて
 意図したように動作しないため注意
+
+  MongoDBでフィールドをuniqueにする場合、indexを作成する。
+(indexを作成する手順)
+MongoDBを実行中のマシンで
+$mongo -u < ユーザー名> -p
+//MongoDb shell
+$use googroutes;
+$db.users.createIndex({"email":1},{unique:true})

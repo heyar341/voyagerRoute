@@ -22,6 +22,10 @@ const multiSearchReq = {
 $(function () {
   $("#save-route").click(function () {
     multiSearchReq["title"] = document.getElementById("route-name").value;
+    if (/[\.\$]/.test(document.getElementById("route-name").value)) {
+      window.alert(".または$はルート名に使用できません。");
+      return
+    }
     // 多重送信を防ぐため通信完了までボタンをdisableにする
     var button = $(this);
     button.attr("disabled", true);
