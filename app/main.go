@@ -30,6 +30,7 @@ func main() {
 	http.Handle("/templates/", http.StripPrefix("/templates", http.FileServer(http.Dir("./templates"))))
 	//Authentication
 	http.HandleFunc("/register_form/",registerForm)
+	http.HandleFunc("/check_email",auth.EmailIsAvailable)
 	http.HandleFunc("/register",auth.Register)
 	http.HandleFunc("/login_form/",loginForm)
 	http.HandleFunc("/login",auth.Login)

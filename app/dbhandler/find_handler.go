@@ -23,7 +23,7 @@ func Find(dbName, collectionName string, document interface{}, optionDoc bson.M)
 	var response bson.D
 	err = collection.FindOne(ctx, document, opts).Decode(&response)
 	if err != nil {
-		if err == mongo.ErrNoDocuments {
+		if err != mongo.ErrNoDocuments {
 			log.Printf("Error while finding a document: %v", err)
 		}
 		return nil, err
