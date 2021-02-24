@@ -35,6 +35,7 @@ func main() {
 	http.HandleFunc("/login",auth.Login)
 	http.HandleFunc("/confirm_register/",auth.ConfirmRegister)
 	http.HandleFunc("/ask_confirm/",askConfirm)
+	http.HandleFunc("/logout",auth.Logout)
 
 	//Direction API
 	http.HandleFunc("/multi_search",index)
