@@ -1,9 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ja">
 <head>
     <meta charset="UTF-8">
     <title>新規登録</title>
     <link href="//maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+
+    <script src="/templates/auth/register.js"></script>
 </head>
 
 <body>
@@ -24,13 +27,13 @@
                         <div class="form-row">
                             <div class="col form-group">
                                 <label>ユーザー名:</label>
-                                <input type="text" name="username" class="form-control" placeholder="ユーザー名を入力" required>
+                                <input type="text" id="username" name="username" class="form-control" placeholder="ユーザー名を入力" required>
                             </div> <!-- form-group end.// -->
 
                         </div> <!-- form-row end.// -->
                         <div class="form-group">
                             <label>メールアドレス:</label>
-                            <input type="email" name="email" class="form-control" placeholder="メールアドレスを入力" required>
+                            <input type="email" id="email" name="email" class="form-control" placeholder="メールアドレスを入力" required>
                         </div> <!-- form-group end.// -->
 
                         <div class="form-group">
@@ -41,7 +44,7 @@
                                    placeholder="確認用パスワードを入力" minlength="8" required>
                         </div> <!-- form-group end.// -->
                         <div class="form-group">
-                            <button type="submit" class="btn btn-primary btn-block">登録する</button>
+                            <button type="submit" id="register-btn" class="btn btn-primary btn-block">登録する</button>
                         </div> <!-- form-group// -->
                     </form>
                 </article> <!-- card-body end .// -->
@@ -52,17 +55,5 @@
 </div>
 <!--container end.//-->
 
-<script>
-    confirmPass = document.getElementById("password-confirm");
-    confirmPass.addEventListener("input",function () {
-        var password = document.getElementById("password").value
-        // パスワードの一致確認
-        if(password != this.value){
-            this.setCustomValidity('確認用パスワードが一致しません');
-        }else{
-            this.setCustomValidity(''); // エラーメッセージのクリア
-        }
-    });
-</script>
 </body>
 </html>
