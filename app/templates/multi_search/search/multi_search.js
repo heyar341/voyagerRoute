@@ -24,7 +24,7 @@ $(function () {
     multiSearchReq["title"] = document.getElementById("route-name").value;
     if (/[\.\$]/.test(document.getElementById("route-name").value)) {
       window.alert(".または$はルート名に使用できません。");
-      return
+      return;
     }
     // 多重送信を防ぐため通信完了までボタンをdisableにする
     var button = $(this);
@@ -81,7 +81,6 @@ function initMap() {
       gestureHandling: "greedy", //地図埋め込み時Ctrボタン要求の無効化
     },
   });
-
 
   //１番目のルート要素をHTMLに追加
   $("#search-box").append(genSearchBox(routeID, colorMap[routeID]));
@@ -160,7 +159,11 @@ class AutocompleteDirectionsHandler {
       destinationInput
     );
     //Places detailは高額料金がかかるので、必要なフィールドを指定して、料金を下げる
-    destinationAutocomplete.setFields(["place_id", "geometry", "formatted_address"]);
+    destinationAutocomplete.setFields([
+      "place_id",
+      "geometry",
+      "formatted_address",
+    ]);
 
     //EventListenerの設定
     this.setupClickListener(
@@ -179,7 +182,7 @@ class AutocompleteDirectionsHandler {
     this.setupPlaceChangedListener(destinationAutocomplete, "DEST", this);
     this.setupOptionListener("date" + this.routeNum);
     this.setupOptionListener("time" + this.routeNum);
-    this.setupTimeListener("depart-now" + this.routeNum, this.routeNum)
+    this.setupTimeListener("depart-now" + this.routeNum, this.routeNum);
     this.setupOptionListener("avoid-toll" + this.routeNum);
     this.setupOptionListener("avoid-highway" + this.routeNum);
     this.setUpRouteSelectedListener(this, this.directionsRenderer);
@@ -244,7 +247,8 @@ class AutocompleteDirectionsHandler {
       this.route();
     });
   }
-//すぐに出発ボタンを有効化
+
+  //すぐに出発ボタンを有効化
   setupTimeListener(id, rNum) {
     const timeNow = document.getElementById(id);
     timeNow.addEventListener("click", () => {
@@ -424,8 +428,10 @@ class AutocompleteDirectionsHandler {
 
         //ルートが１つのみの場合、detail-panelが表示されないので、span要素で距離、所要時間を表示する
         if (response.routes.length == 1) {
-          document.getElementById("one-result-panel"+me.routeNum).style.display = "block";
-          document.getElementById("one-result-text"+me.routeNum).innerText =
+          document.getElementById(
+            "one-result-panel" + me.routeNum
+          ).style.display = "block";
+          document.getElementById("one-result-text" + me.routeNum).innerText =
             "ルート: " +
             response.routes[0].summary +
             " ," +
@@ -434,7 +440,9 @@ class AutocompleteDirectionsHandler {
             response.routes[0].legs[0].duration.text;
         } else {
           //ルートが２つ以上の場合、必要ないので、表示しない
-          document.getElementById("one-result-panel"+me.routeNum).style.display = "none";
+          document.getElementById(
+            "one-result-panel" + me.routeNum
+          ).style.display = "none";
         }
       } else {
         document.getElementById("route-decide" + me.routeNum).style.display =
