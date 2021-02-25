@@ -37,3 +37,8 @@ $db.users.createIndex({"email":1},{unique:true})
 
 　multi_routes_show.html内でtemplate実行時にJSONが入った変数routeInfoをmulti_route_show.jsより上部で宣言することで、
 multi_route_show.js内でroutesInfoが使用可能になる。
+
+　CookieのPathを指定しないと、ConfirmRegisterでリダイレクトしたときに、Cookieが設定されない。
+Loginの時はCookieが設定されていて、違いはリクエストメソッドがGETかPOSTであることのみ。おそらく、
+GETで/confirm_emailにGETでアクセスして、リダイレクトだと、最初のレスポンス先のパス(/confirm_email)にCookie
+が設定されて、リダイレクトで(/)にアクセスする時、異なるドメインとして扱われてしまうのではないかと思われる。
