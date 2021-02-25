@@ -48,8 +48,8 @@ func main() {
 
 	http.HandleFunc("/",home)
 
+	http.HandleFunc("/mypage/show_routes", showRoutes)
 	http.HandleFunc("/mypage", mypage)
-	http.HandleFunc("/show_routes", showRoutes)
 
 	http.ListenAndServe(":80",nil)
 }
