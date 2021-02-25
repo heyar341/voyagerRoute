@@ -424,8 +424,8 @@ class AutocompleteDirectionsHandler {
 
         //ルートが１つのみの場合、detail-panelが表示されないので、span要素で距離、所要時間を表示する
         if (response.routes.length == 1) {
-          document.getElementById("one-result-panel").style.display = "block";
-          document.getElementById("one-result-text").innerText =
+          document.getElementById("one-result-panel"+me.routeNum).style.display = "block";
+          document.getElementById("one-result-text"+me.routeNum).innerText =
             "ルート: " +
             response.routes[0].summary +
             " ," +
@@ -434,7 +434,7 @@ class AutocompleteDirectionsHandler {
             response.routes[0].legs[0].duration.text;
         } else {
           //ルートが２つ以上の場合、必要ないので、表示しない
-          document.getElementById("one-result-panel").style.display = "none";
+          document.getElementById("one-result-panel"+me.routeNum).style.display = "none";
         }
       } else {
         document.getElementById("route-decide" + me.routeNum).style.display =
@@ -515,7 +515,7 @@ function genSearchBox(routeId, color) {
              <div id="route-detail-panel${routeId}" class="route-detail">
             </div>
             <div style="background-color: white; padding-bottom: 2px">
-             <div class="ml-2 mb-2" id="one-result-panel"><span id="one-result-text" style="color: black"></span></div>
+             <div class="ml-2 mb-2" id="one-result-panel${routeId}"><span id="one-result-text${routeId}" style="color: black"></span></div>
              <button class="btn-primary mx-auto" id="route-decide${routeId}" style="display: none">このルートで決定</button>
              </div>
         </div>`;
