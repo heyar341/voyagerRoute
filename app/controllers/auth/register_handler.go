@@ -105,21 +105,12 @@ func Register(w http.ResponseWriter, req *http.Request) {
 
 func ConfirmRegister(w http.ResponseWriter, req *http.Request) {
 	//メール認証トークンをリクエストURLから取得
-	query := req.URL.Query()
-	token := query["token"][0]
+	token := req.URL.Query()["token"][0]
 	if token == "" {
 		http.Redirect(w, req, "/register_form", http.StatusSeeOther)
 		return
 	}
-
-	//DBのregistering collectionから、user情報取得
-	type registeringUser struct {
-		ID       primitive.ObjectID `json:"id" bson:"_id"`
-		Username string             `json:"username" bson:"username"`
-		Email    string             `json:"email" bson:"email"`
-		Password []byte             `json:"password" bson:"password"`
-		Token    string             `json:"token" bson:"token"`
-	}
+	//このtokenはメール認証用でjwtを使ってないからParseTokenは呼び出さなくていい
 
 	//取得するドキュメントの条件
 	tokenDoc := bson.D{{"token", token}}
@@ -131,7 +122,14 @@ func ConfirmRegister(w http.ResponseWriter, req *http.Request) {
 	}
 	//DBから取得した値をmarshal
 	bsonByte, _ := bson.Marshal(resp)
-
+	//user情報取得型
+	type registeringUser struct {
+		ID       primitive.ObjectID `json:"id" bson:"_id"`
+		Username string             `json:"username" bson:"username"`
+		Email    string             `json:"email" bson:"email"`
+		Password []byte             `json:"password" bson:"password"`
+		Token    string             `json:"token" bson:"token"`
+	}
 	var user registeringUser
 	//marshalした値をUnmarshalして、userに代入
 	bson.Unmarshal(bsonByte, &user)
@@ -180,6 +178,7 @@ func ConfirmRegister(w http.ResponseWriter, req *http.Request) {
 	c := &http.Cookie{
 		Name:  "sessionId",
 		Value: signedStr,
+		Path:  "/",
 	}
 	http.SetCookie(w, c)
 	http.Redirect(w, req, "/", http.StatusSeeOther)

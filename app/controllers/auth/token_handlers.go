@@ -1,10 +1,9 @@
 package auth
 
 import (
+	"app/controllers/envhandler"
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
-	"github.com/joho/godotenv"
-	"os"
 	"time"
 )
 
@@ -13,20 +12,16 @@ type customClaim struct {
 	SessionID string
 }
 
-func createToken(sesId string) (string, error) {
+func createToken(sessionID string) (string, error) {
 	claim := &customClaim{
 		StandardClaims: jwt.StandardClaims{
 			//30日間有効
 			ExpiresAt: time.Now().Add(720 * time.Hour).Unix(),
 		},
-		SessionID: sesId,
+		SessionID: sessionID,
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claim)
-	env_err := godotenv.Load("env/dev.env")
-	if env_err != nil {
-		panic("Can't load env file")
-	}
-	key := []byte(os.Getenv("TOKENIZE_KEY"))
+	key := []byte(envhandler.GetEnvVal("TOKENIZE_KEY"))
 	signedString, err := token.SignedString(key)
 	if err != nil {
 		return "", fmt.Errorf("Error happend creating a token: %w", err)
@@ -34,13 +29,9 @@ func createToken(sesId string) (string, error) {
 	return signedString, nil
 }
 
-func ParseToken(sesVal string) (string, error) {
-	env_err := godotenv.Load("env/dev.env")
-	if env_err != nil {
-		panic("Can't load env file")
-	}
-	key := []byte(os.Getenv("TOKENIZE_KEY"))
-	afterVerifToken, err := jwt.ParseWithClaims(sesVal, &customClaim{}, func(token *jwt.Token) (interface{}, error) {
+func ParseToken(sessionValue string) (string, error) {
+	key := []byte(envhandler.GetEnvVal("TOKENIZE_KEY"))
+	afterVerifToken, err := jwt.ParseWithClaims(sessionValue, &customClaim{}, func(token *jwt.Token) (interface{}, error) {
 		if token.Method.Alg() != jwt.SigningMethodHS256.Alg() {
 			return "", fmt.Errorf("Someone tried hack the site!")
 		}
