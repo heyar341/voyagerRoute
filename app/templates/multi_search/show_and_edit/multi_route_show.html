@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ルート検索</title>
+    {{/*GoogleMaps APIの呼び出し*/}}
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=default"></script>
+    <!--読み込んだルートのJSONをrouteInfoに入れる-->
+    <script>routeInfo = JSON.parse({{.routeInfo}});</script>
+    <script
+            src="https://maps.googleapis.com/maps/api/js?key={{.apiKey}}&callback=initMap&libraries=places&v=weekly"
+            defer
+    ></script>
+    {{/*jQueryの呼び出し*/}}
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    {{/*bootStrapの呼び出し*/}}
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"
+          integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+
+    <link rel="stylesheet" type="text/css" href="/templates/multi_search/show_and_edit/multi_route_show.css"/>
+    <script src="/templates/multi_search/show_and_edit/multi_route_show.js"></script>
+
+
+</head>
+<body>
+
+<!--navbarを埋め込み-->
+{{template "navbar" . }}
+
+<div id="left-panel">
+    <div id="search-box">
+    </div>
+    <div class="ml-2">
+        <input type="button" class="mt-3 mb-3 btn-primary" id="add-route" value="新しいルートを追加"><br>
+        <hr>
+        <span class="ml-2" style="color: black">ルートの保存:</span><br><br>
+        <span for="route-name" style="color: black">ルート名:</span>
+        <input type="text" class="mt-3" id="route-name" style="width: 350px" placeholder="保存するタイトルを入力(.,$以外の文字)"><br>
+        <input type="button" class="mt-1 btn-success" id="save-route" value="ルートを上書き保存">
+    </div>
+</div>
+<div id="map"></div>
+</body>
+</html>

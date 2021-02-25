@@ -31,3 +31,9 @@ $mongo -u < ユーザー名> -p
 //MongoDb shell
 $use googroutes;
 $db.users.createIndex({"email":1},{unique:true})
+
+　json packageを使ってmarshalすると[]byte型のJsonが得られる。template実行時に[]byte型のまま渡すと、エラーとなるので、
+[]byte → stringへの変換が必要。
+
+　multi_routes_show.html内でtemplate実行時にJSONが入った変数routeInfoをmulti_route_show.jsより上部で宣言することで、
+multi_route_show.js内でroutesInfoが使用可能になる。
