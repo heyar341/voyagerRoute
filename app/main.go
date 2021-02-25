@@ -45,6 +45,7 @@ func main() {
 	http.HandleFunc("/simul_search",simulSearchTpl)
 	http.HandleFunc("/do_simul_search",routes.DoSimulSearch)
 	http.HandleFunc("/show_route/",showAndEditRoutes)
+	http.HandleFunc("/update_route",routes.UpdateRoute)
 
 	http.HandleFunc("/",home)
 
