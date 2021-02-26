@@ -8,6 +8,7 @@ import (
 	"app/controllers/middleware"
 	"app/controllers/mypages"
 	"app/controllers/routes"
+	"app/model"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -65,14 +66,14 @@ func home(w http.ResponseWriter, req *http.Request) {
 
 func mypage(w http.ResponseWriter, req *http.Request) {
 	data := req.Context().Value("data").(map[string]interface{})
-	user := req.Context().Value("user").(middleware.UserData)
+	user := req.Context().Value("user").(model.UserData)
 	data["userName"] = user.UserName
 	mypage_tpl.ExecuteTemplate(w, "mypage.html", data)
 }
 
 func showRoutes(w http.ResponseWriter, req *http.Request) {
 	data := req.Context().Value("data").(map[string]interface{})
-	user := req.Context().Value("user").(middleware.UserData)
+	user := req.Context().Value("user").(model.UserData)
 	titleNames := mypages.RouteTitles(user.ID)
 	data["userName"] = user.UserName
 	data["titles"] = titleNames
@@ -115,7 +116,7 @@ func showAndEditRoutes(w http.ResponseWriter, req *http.Request) {
 	apiKey := envhandler.GetEnvVal("MAP_API_KEY")
 	data := req.Context().Value("data").(map[string]interface{})
 	routeTitle := req.URL.Query().Get("route_title")
-	user := req.Context().Value("user").(middleware.UserData)
+	user := req.Context().Value("user").(model.UserData)
 	routeInfo := routes.GetRoute(w, routeTitle, user.ID)
 	data["apiKey"] = apiKey
 	data["routeInfo"] = routeInfo

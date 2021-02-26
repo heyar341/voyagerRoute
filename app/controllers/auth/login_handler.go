@@ -2,23 +2,14 @@ package auth
 
 import (
 	"app/dbhandler"
+	"app/model"
 	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"golang.org/x/crypto/bcrypt"
 	"log"
 	"net/http"
 	"net/url"
-	"time"
 )
-
-type UserData struct {
-	ID               primitive.ObjectID   `json:"id" bson:"_id"`
-	UserName         string               `json:"username" bson:"username"`
-	Email            string               `json:"email" bson:"email"`
-	Password         []byte               `json:"password" bson:"password"`
-	MultiRouteTitles map[string]time.Time `json:"multi_route_titles" bson:"multi_route_titles"`
-}
 
 func Login(w http.ResponseWriter, req *http.Request) {
 	//Validation完了後のメールアドレスを取得
@@ -47,7 +38,7 @@ func Login(w http.ResponseWriter, req *http.Request) {
 	}
 	//DBから取得した値をmarshal
 	bsonByte, _ := bson.Marshal(resp)
-	var user UserData
+	var user model.UserData
 	//marshalした値をUnmarshalして、userに代入
 	bson.Unmarshal(bsonByte, &user)
 

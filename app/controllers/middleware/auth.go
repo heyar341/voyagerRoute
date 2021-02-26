@@ -3,27 +3,13 @@ package middleware
 import (
 	"app/controllers/auth"
 	"app/dbhandler"
+	"app/model"
 	"context"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"log"
 	"net/http"
-	"time"
 )
-
-type SessionData struct {
-	ID        primitive.ObjectID `json:"id" bson:"_id"`
-	SessionId string             `json:"session_id" bson:"session_id"`
-	UserID    primitive.ObjectID `json:"user_id" bson:"user_id"`
-}
-
-type UserData struct {
-	ID               primitive.ObjectID   `json:"id" bson:"_id"`
-	UserName         string               `json:"username" bson:"username"`
-	Email            string               `json:"email" bson:"email"`
-	Password         []byte               `json:"password" bson:"password"`
-	MultiRouteTitles map[string]time.Time `json:"multi_route_titles" bson:"multi_route_titles"`
-}
 
 func Auth(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
@@ -57,12 +43,12 @@ func Auth(next http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-func getSession(req *http.Request) (SessionData, error) {
+func getSession(req *http.Request) (model.SessionData, error) {
 	//Cookieからセッション情報取得
 	c, err := req.Cookie("sessionId")
 	//Cookieが設定されてない場合
 	if err != nil {
-		return SessionData{}, err
+		return model.SessionData{}, err
 	}
 
 	//tokenからsessionID取得
@@ -72,38 +58,38 @@ func getSession(req *http.Request) (SessionData, error) {
 	resp, err := dbhandler.Find("googroutes", "sessions", sessionDoc, nil)
 	if err != nil {
 		log.Printf("Error while finding session data: %v", err)
-		return SessionData{}, err
+		return model.SessionData{}, err
 	}
 
 	//DBから取得した値をmarshal
 	bsonByte, err := bson.Marshal(resp)
 	if err != nil {
 		log.Printf("Error while bson marshaling session data: %v", err)
-		return SessionData{}, err
+		return model.SessionData{}, err
 	}
 
-	var session SessionData
+	var session model.SessionData
 	//marshalした値をUnmarshalして、userに代入
 	bson.Unmarshal(bsonByte, &session)
 	return session, nil
 }
 
-func getLoginUser(userID primitive.ObjectID) (UserData, error) {
+func getLoginUser(userID primitive.ObjectID) (model.UserData, error) {
 	userDoc := bson.D{{"_id", userID}}
 	//DBから読み込み
 	resp, err := dbhandler.Find("googroutes", "users", userDoc, nil)
 	if err != nil {
 		log.Printf("Error while finding user data: %v", err)
-		return UserData{}, err
+		return model.UserData{}, err
 	}
 	//DBから取得した値をmarshal
 	bsonByte, err := bson.Marshal(resp)
 	if err != nil {
 		log.Printf("Error while bson marshaling session data: %v", err)
-		return UserData{}, err
+		return model.UserData{}, err
 	}
 
-	var user UserData
+	var user model.UserData
 	//marshalした値をUnmarshalして、userに代入
 	bson.Unmarshal(bsonByte, &user)
 

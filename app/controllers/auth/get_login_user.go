@@ -2,6 +2,7 @@ package auth
 
 import (
 	"app/dbhandler"
+	"app/model"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"net/http"
@@ -54,7 +55,7 @@ func GetLoginUserName(req *http.Request) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	var user UserData
+	var user model.UserData
 	//marshalした値をUnmarshalして、userに代入
 	bson.Unmarshal(bsonByte, &user)
 
