@@ -8,7 +8,7 @@ import (
 var authTpl *template.Template
 
 func init()  {
-	authTpl = template.Must(template.Must(template.ParseGlob("templates/auth/*")).ParseGlob("templates/includes/*.html"))
+	authTpl = template.Must(template.Must(template.ParseGlob("templates/auth/*.html")).ParseGlob("templates/includes/*.html"))
 }
 
 func AskConfirmEmail(w http.ResponseWriter, req *http.Request) {

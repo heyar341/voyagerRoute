@@ -11,9 +11,9 @@ import (
 var multiSearchTpl,simulSearchTpl,showRouteTpl *template.Template
 
 func init()  {
-	multiSearchTpl = template.Must(template.Must(template.ParseGlob("templates/multi_search/search/*")).ParseGlob("templates/includes/*.html"))
-	simulSearchTpl = template.Must(template.Must(template.ParseGlob("templates/simul_search/*")).ParseGlob("templates/includes/*.html"))
-	showRouteTpl = template.Must(template.Must(template.ParseGlob("templates/multi_search/show_and_edit/*")).ParseGlob("templates/includes/*.html"))
+	multiSearchTpl = template.Must(template.Must(template.ParseGlob("templates/multi_search/search/multi_search.html")).ParseGlob("templates/includes/*.html"))
+	simulSearchTpl = template.Must(template.Must(template.ParseGlob("templates/simul_search/simul_search.html")).ParseGlob("templates/includes/*.html"))
+	showRouteTpl = template.Must(template.Must(template.ParseGlob("templates/multi_search/show_and_edit/multi_route_show.html")).ParseGlob("templates/includes/*.html"))
 }
 
 
