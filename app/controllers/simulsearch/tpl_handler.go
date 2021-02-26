@@ -6,12 +6,11 @@ import (
 	"net/http"
 )
 
-var  simulSearchTpl *template.Template
+var simulSearchTpl *template.Template
 
 func init() {
 	simulSearchTpl = template.Must(template.Must(template.ParseGlob("templates/simul_search/simul_search.html")).ParseGlob("templates/includes/*.html"))
 }
-
 
 func SimulSearchTpl(w http.ResponseWriter, req *http.Request) {
 	//envファイルからAPIキー取得
