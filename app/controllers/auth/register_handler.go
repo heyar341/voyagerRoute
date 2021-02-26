@@ -19,24 +19,23 @@ import (
 )
 
 func Register(w http.ResponseWriter, req *http.Request) {
+	//ユーザーに表示するエラーメッセージを定義
+	msg := "エラ〜が発生しました。もう一度操作をしなおしてください。"
 	//Validation完了後のユーザー名を取得
 	userName, ok := req.Context().Value("username").(string)
 	if !ok {
-		msg := "エラ〜が発生しました。もう一度操作をしなおしてください。"
 		http.Redirect(w, req, "/login_form/?msg="+msg+"&username="+userName, http.StatusSeeOther)
 		return
 	}
 	//Validation完了後のメールアドレスを取得
 	email, ok := req.Context().Value("email").(string)
 	if !ok {
-		msg := "エラ〜が発生しました。もう一度操作をしなおしてください。"
 		http.Redirect(w, req, "/login_form/?msg="+msg+"&email="+email, http.StatusSeeOther)
 		return
 	}
 	password, ok := req.Context().Value("password").(string)
 	//Validation完了後のパスワードを取得
 	if !ok {
-		msg := "エラ〜が発生しました。もう一度操作をしなおしてください。"
 		http.Redirect(w, req, "/login_form/?msg="+msg+"&email="+email, http.StatusSeeOther)
 		return
 	}
@@ -44,7 +43,6 @@ func Register(w http.ResponseWriter, req *http.Request) {
 	//パスワードをハッシュ化
 	securedPassword, err := bcrypt.GenerateFromPassword([]byte(password), 5)
 	if err != nil {
-		msg := url.QueryEscape("エラ〜が発生しました。もう一度操作をしなおしてください。")
 		http.Redirect(w, req, "/register_form/?msg="+msg+"&username="+userName+"&email="+email, http.StatusSeeOther)
 		log.Println(err)
 		return
@@ -63,7 +61,6 @@ func Register(w http.ResponseWriter, req *http.Request) {
 	//DBに保存
 	_, err = dbhandler.Insert("googroutes", "registering", registerDoc)
 	if err != nil {
-		msg := url.QueryEscape("エラ〜が発生しました。もう一度操作をしなおしてください。")
 		http.Redirect(w, req, "/register_form/?msg="+msg+"&username="+userName+"&email="+email, http.StatusSeeOther)
 		log.Println(err)
 		return
@@ -72,7 +69,7 @@ func Register(w http.ResponseWriter, req *http.Request) {
 	//メール送信に少し時間がかかるので、認証依頼画面表示を先に処理
 	http.Redirect(w, req, "/ask_confirm", http.StatusSeeOther)
 
-	//メールでトークン付きのURLを送る
+	//「メールでトークン付きのURLを送る」
 	//envファイルからGmailのアプリパスワード取得
 	gmailPassword := envhandler.GetEnvVal("GMAIL_APP_PASS")
 	mailAuth := smtp.PlainAuth(
@@ -140,43 +137,20 @@ func ConfirmRegister(w http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		msg := url.QueryEscape("エラ〜が発生しました。もう一度操作をしなおしてください。")
 		http.Redirect(w, req, "/?msg="+msg, http.StatusSeeOther)
-		log.Println(err)
+		log.Printf("Error while inserting user data into DB: %v", err)
 		return
 	}
 
 	//「session作成」
 	//insertResから、userのドキュメントIDを取得
-	userDocID := insertRes.InsertedID
-	//固有のセッションIDを作成
-	sessionID := uuid.New().String()
-	//sessionをDBに保存
-	sessionDoc := bson.D{
-		{"session_id", sessionID},
-		{"user_id", userDocID},
-	}
-	_, err = dbhandler.Insert("googroutes", "sessions", sessionDoc)
+	userID := insertRes.InsertedID.(primitive.ObjectID)
+	err = genNewSession(userID, w)
 	if err != nil {
 		msg := url.QueryEscape("エラ〜が発生しました。もう一度操作をしなおしてください。")
 		http.Redirect(w, req, "/?msg="+msg, http.StatusSeeOther)
-		log.Println(err)
 		return
 	}
 
-	signedStr, err := createToken(sessionID)
-	if err != nil {
-		msg := url.QueryEscape("ログインに失敗しました。もう一度ログインしてください。")
-		http.Redirect(w, req, "/?msg="+msg, http.StatusSeeOther)
-		log.Println(err)
-		return
-	}
-
-	//Cookieの設定
-	c := &http.Cookie{
-		Name:  "sessionId",
-		Value: signedStr,
-		Path:  "/",
-	}
-	http.SetCookie(w, c)
 	succcess := url.QueryEscape("メールアドレス認証が完了しました。")
 	http.Redirect(w, req, "/?success="+succcess, http.StatusSeeOther)
 }

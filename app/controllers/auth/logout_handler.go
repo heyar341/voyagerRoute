@@ -12,7 +12,7 @@ func Logout(w http.ResponseWriter, req *http.Request) {
 		http.Redirect(w, req, "/", http.StatusSeeOther)
 	}
 	//Cookieからセッション情報取得
-	c, err := req.Cookie("sessionId")
+	c, err := req.Cookie("session_id")
 	if err != nil {
 		msg := "ログインしていません"
 		http.Redirect(w, req, "/?msg="+msg, http.StatusSeeOther)
@@ -42,5 +42,5 @@ func Logout(w http.ResponseWriter, req *http.Request) {
 	http.SetCookie(w, c)
 
 	success := "ログアウトしました"
-	http.Redirect(w, req, "/?msg="+success, http.StatusSeeOther)
+	http.Redirect(w, req, "/?success="+success, http.StatusSeeOther)
 }

@@ -45,7 +45,7 @@ func Auth(next http.HandlerFunc) http.HandlerFunc {
 
 func getSession(req *http.Request) (model.SessionData, error) {
 	//Cookieからセッション情報取得
-	c, err := req.Cookie("sessionId")
+	c, err := req.Cookie("session_id")
 	//Cookieが設定されてない場合
 	if err != nil {
 		return model.SessionData{}, err
