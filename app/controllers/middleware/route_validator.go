@@ -2,9 +2,9 @@ package middleware
 
 import (
 	"app/controllers/routes"
+	"app/model"
 	"context"
 	"encoding/json"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -45,14 +45,7 @@ func UpdateRouteValidator(UpdateRoute http.HandlerFunc) http.HandlerFunc {
 			http.Error(w, "HTTPメソッドが不正です。", http.StatusBadRequest)
 			return
 		}
-		//requestのフィールドを保存する変数
-		type RouteUpdateRequest struct {
-			ID            primitive.ObjectID     `json:"id" bson:"_id"`
-			Title         string                 `json:"title" bson:"title"`
-			PreviousTitle string                 `json:"previous_title" bson:"previous_title"`
-			Routes        map[string]interface{} `json:"routes" bson:"routes"`
-		}
-		var reqFields RouteUpdateRequest
+		var reqFields model.RouteUpdateRequest
 		body, _ := ioutil.ReadAll(req.Body)
 		err := json.Unmarshal(body, &reqFields)
 		if err != nil {

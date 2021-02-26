@@ -36,7 +36,7 @@ func main() {
 	http.HandleFunc("/multi_search", middleware.Auth(routes.MultiSearchTpl))                            //検索画面
 	http.HandleFunc("/routes_save", middleware.Auth(middleware.SaveRoutesValidator(routes.SaveRoutes))) //保存用エンドポイント
 	http.HandleFunc("/show_route/", middleware.Auth(routes.ShowAndEditRoutesTpl))                       //確認編集画面
-	http.HandleFunc("/update_route", routes.UpdateRoute)                                                //編集用エンドポイント
+	http.HandleFunc("/update_route", middleware.Auth(middleware.UpdateRouteValidator(routes.UpdateRoute)))               //編集用エンドポイント
 	//「同時検索」
 	http.HandleFunc("/simul_search", middleware.Auth(routes.SimulSearchTpl)) //検索画面
 	http.HandleFunc("/do_simul_search", routes.DoSimulSearch)                //検索実行用エンドポイント
