@@ -1,5 +1,3 @@
-// Copyright 2015 Google Inc. All Rights Reserved.
-// Directions docs: https://developers.google.com/maps/documentation/directions/
 package main
 
 import (
@@ -21,30 +19,34 @@ func init() {
 func main() {
 
 	fmt.Println("App started")
-	http.Handle("/favicon.ico", http.NotFoundHandler())
+	http.Handle("/favicon.ico", http.NotFoundHandler()) //favicon
 	http.Handle("/templates/", http.StripPrefix("/templates", http.FileServer(http.Dir("./templates"))))
-	//Authentication
-	http.HandleFunc("/register_form/", middleware.Auth(auth.RegisterForm))
-	http.HandleFunc("/check_email", auth.EmailIsAvailable)
-	http.HandleFunc("/register", middleware.RegisterValidator(auth.Register))
-	http.HandleFunc("/login_form/", middleware.Auth(auth.LoginForm))
-	http.HandleFunc("/login", middleware.LoginValidator(auth.Login))
-	http.HandleFunc("/confirm_register/", auth.ConfirmRegister)
-	http.HandleFunc("/ask_confirm/", middleware.Auth(auth.AskConfirmEmail))
-	http.HandleFunc("/logout", auth.Logout)
 
-	//Direction API
-	http.HandleFunc("/multi_search", middleware.Auth(routes.MultiSearchTpl))
-	http.HandleFunc("/routes_save", middleware.Auth(middleware.SaveRoutesValidator(routes.SaveRoutes)))
-	http.HandleFunc("/simul_search", middleware.Auth(routes.SimulSearchTpl))
-	http.HandleFunc("/do_simul_search", routes.DoSimulSearch)
-	http.HandleFunc("/show_route/", middleware.Auth(routes.ShowAndEditRoutesTpl))
-	http.HandleFunc("/update_route", routes.UpdateRoute)
+	//「認証」
+	http.HandleFunc("/register_form/", middleware.Auth(auth.RegisterForm))    //新規登録画面
+	http.HandleFunc("/check_email", auth.EmailIsAvailable)                    //メールアドレスの可用確認APIのエドポイント
+	http.HandleFunc("/register", middleware.RegisterValidator(auth.Register)) //仮登録実行用エンドポイント
+	http.HandleFunc("/ask_confirm/", middleware.Auth(auth.AskConfirmEmail))   //メールアドレス確認依頼画面
+	http.HandleFunc("/login_form/", middleware.Auth(auth.LoginForm))          //ログイン画面
+	http.HandleFunc("/login", middleware.LoginValidator(auth.Login))          //ログイン実行用エンドポイント
+	http.HandleFunc("/confirm_register/", auth.ConfirmRegister)               //本登録実行用エンドポイント
+	http.HandleFunc("/logout", auth.Logout)                                   //ログアウト用エンドポイント
 
+	//「まとめ検索」
+	http.HandleFunc("/multi_search", middleware.Auth(routes.MultiSearchTpl))                            //検索画面
+	http.HandleFunc("/routes_save", middleware.Auth(middleware.SaveRoutesValidator(routes.SaveRoutes))) //保存用エンドポイント
+	http.HandleFunc("/show_route/", middleware.Auth(routes.ShowAndEditRoutesTpl))                       //確認編集画面
+	http.HandleFunc("/update_route", routes.UpdateRoute)                                                //編集用エンドポイント
+	//「同時検索」
+	http.HandleFunc("/simul_search", middleware.Auth(routes.SimulSearchTpl)) //検索画面
+	http.HandleFunc("/do_simul_search", routes.DoSimulSearch)                //検索実行用エンドポイント
+
+	//「マイページ」
+	http.HandleFunc("/mypage", middleware.Auth(mypage.ShowMypage))                //マイページ表示
+	http.HandleFunc("/mypage/show_routes", middleware.Auth(mypage.ShowAllRoutes)) //保存したルート一覧
+
+	//「ホーム」
 	http.HandleFunc("/", middleware.Auth(home))
-
-	http.HandleFunc("/mypage/show_routes", middleware.Auth(mypage.ShowAllRoutes))
-	http.HandleFunc("/mypage", middleware.Auth(mypage.ShowMypage))
 
 	http.ListenAndServe(":80", nil)
 }
