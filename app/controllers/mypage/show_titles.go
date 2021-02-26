@@ -1,8 +1,8 @@
-package mypages
+package mypage
 
 import (
-	"app/controllers/auth"
 	"app/dbhandler"
+	"app/model"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"log"
@@ -34,7 +34,7 @@ func RouteTitles(userID primitive.ObjectID) []string {
 		log.Println("Error while json marshaling: %v", err)
 	}
 
-	var user auth.UserData
+	var user model.UserData
 	//marshalした値をUnmarshalして、userに代入
 	bson.Unmarshal(bsonByte, &user)
 	titles := user.MultiRouteTitles

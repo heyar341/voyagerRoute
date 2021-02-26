@@ -3,6 +3,7 @@ package routes
 import (
 	"app/controllers/auth"
 	"app/dbhandler"
+	"app/model"
 	"encoding/json"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -32,7 +33,7 @@ func SaveRoutes(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	//Auth middlewareからuserIDを取得
-	user, ok := req.Context().Value("user").(auth.UserData)
+	user, ok := req.Context().Value("user").(model.UserData)
 	if !ok {
 		http.Error(w, "エラーが発生しました。もう一度操作を行ってください。", http.StatusInternalServerError)
 		log.Printf("Error while getting userID from reuest's context: %v", ok)
@@ -62,7 +63,7 @@ func SaveRoutes(w http.ResponseWriter, req *http.Request) {
 
 	//レスポンス作成
 	w.Header().Set("Content-Type", "application/json")
-	msg := ResponseMsg{Msg: "aaa"}
+	msg := ResponseMsg{Msg: "OK"}
 	respJson, err := json.Marshal(msg)
 	if err != nil {
 		log.Printf("Error while json marshaling: %v", err)
@@ -90,14 +91,14 @@ func GetRoute(w http.ResponseWriter, title string, userID primitive.ObjectID) st
 		log.Printf("Error while saving multi route: %v", err)
 	}
 
-	type MultiRoutes struct {
+	type MultiRoute struct {
 		ID     primitive.ObjectID     `json:"_id" bson:"_id"`
 		UserID primitive.ObjectID     `json:"user_id" bson:"user_id"`
 		Title  string                 `json:"title" bson:"title"`
 		Routes map[string]interface{} `json:"routes" bson:"routes"`
 	}
 
-	var respRoute MultiRoutes
+	var respRoute MultiRoute
 	//marshalした値をUnmarshalして、userに代入
 	bson.Unmarshal(bsonByte, &respRoute)
 
