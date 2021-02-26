@@ -30,7 +30,6 @@ func main() {
 	http.Handle("/favicon.ico", http.NotFoundHandler())
 	http.Handle("/templates/", http.StripPrefix("/templates", http.FileServer(http.Dir("./templates"))))
 	//Authentication
-	http.HandleFunc("/register_form/",registerForm)
 	http.HandleFunc("/check_email",auth.EmailIsAvailable)
 	http.HandleFunc("/register",auth.Register)
 	http.HandleFunc("/login_form/",loginForm)
@@ -82,11 +81,7 @@ func askConfirm(w http.ResponseWriter, req *http.Request) {
 	data := map[string]interface{}{"isLoggedIn":isLoggedIn}
 	auth_tpl.ExecuteTemplate(w, "ask_confirm_email.html",data)
 }
-func registerForm(w http.ResponseWriter, req *http.Request) {
-	isLoggedIn := auth.IsLoggedIn(req)
-	data := map[string]interface{}{"isLoggedIn":isLoggedIn}
-	auth_tpl.ExecuteTemplate(w, "register.html",data)
-}
+
 func loginForm(w http.ResponseWriter, req *http.Request) {
 	isLoggedIn := auth.IsLoggedIn(req)
 	data := map[string]interface{}{"isLoggedIn":isLoggedIn}

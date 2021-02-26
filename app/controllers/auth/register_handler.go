@@ -10,50 +10,62 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"golang.org/x/crypto/bcrypt"
+	"html/template"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"net/smtp"
-	"net/url"
 	"time"
 )
 
+var register_tpl *template.Template
+
+func init() {
+	register_tpl = template.Must(template.Must(template.ParseGlob("templates/auth/*")).ParseGlob("templates/includes/*.html"))
+}
+
 func Register(w http.ResponseWriter, req *http.Request) {
-	if req.Method != "POST" {
-		msg := url.QueryEscape("HTTPメソッドが不正です。")
-		http.Redirect(w, req, "/register_form/?msg="+msg, http.StatusSeeOther)
+	isLoggedIn := IsLoggedIn(req)
+	if req.Method == "GET" {
+		data := map[string]interface{}{"isLoggedIn": isLoggedIn, "msg": ""}
+		register_tpl.ExecuteTemplate(w, "register.html", data)
 		return
 	}
 	//ユーザー名をリクエストから取得
 	userName := req.FormValue("username")
 	if userName == "" {
-		msg := url.QueryEscape("ユーザー名を入力してください。")
-		http.Redirect(w, req, "/register_form/?msg="+msg, http.StatusSeeOther)
+		msg := "ユーザー名を入力してください。"
+		data := map[string]interface{}{"isLoggedIn": isLoggedIn, "msg": msg}
+		register_tpl.ExecuteTemplate(w, "register.html", data)
 		return
 	}
 	//メールアドレスをリクエストから取得
 	email := req.FormValue("email")
 	if email == "" {
-		msg := url.QueryEscape("メールアドレスを入力してください。")
-		http.Redirect(w, req, "/register_form/?msg="+msg, http.StatusSeeOther)
+		msg := "メールアドレスを入力してください。"
+		data := map[string]interface{}{"isLoggedIn": isLoggedIn, "msg": msg}
+		register_tpl.ExecuteTemplate(w, "register.html", data)
 		return
 	}
 	//パスワードをリクエストから取得
 	password := req.FormValue("password")
 	if password == "" {
-		msg := url.QueryEscape("パスワードを入力してください。")
-		http.Redirect(w, req, "/register_form/?msg="+msg, http.StatusSeeOther)
+		msg := "パスワードを入力してください。"
+		data := map[string]interface{}{"isLoggedIn": isLoggedIn, "msg": msg}
+		register_tpl.ExecuteTemplate(w, "register.html", data)
 		return
 	} else if len(password) < 8 {
-		msg := url.QueryEscape("パスワードは8文字以上で入力してください。")
-		http.Redirect(w, req, "/register_form/?msg="+msg, http.StatusSeeOther)
+		msg := "パスワードは8文字以上で入力してください。"
+		data := map[string]interface{}{"isLoggedIn": isLoggedIn, "msg": msg}
+		register_tpl.ExecuteTemplate(w, "register.html", data)
 		return
 	}
 	//パスワードをハッシュ化
 	securedPassword, err := bcrypt.GenerateFromPassword([]byte(password), 5)
 	if err != nil {
 		msg := "エラ〜が発生しました。もう一度操作をしなおしてください。"
-		http.Error(w, msg, http.StatusInternalServerError)
+		data := map[string]interface{}{"isLoggedIn": isLoggedIn, "msg": msg}
+		register_tpl.ExecuteTemplate(w, "register.html", data)
 		log.Println(err)
 		return
 	}
@@ -72,7 +84,8 @@ func Register(w http.ResponseWriter, req *http.Request) {
 	_, err = dbhandler.Insert("googroutes", "registering", registerDoc)
 	if err != nil {
 		msg := "エラ〜が発生しました。もう一度操作をしなおしてください。"
-		http.Error(w, msg, http.StatusInternalServerError)
+		data := map[string]interface{}{"isLoggedIn": isLoggedIn, "msg": msg}
+		register_tpl.ExecuteTemplate(w, "register.html", data)
 		log.Println(err)
 		return
 	}
@@ -107,7 +120,9 @@ func ConfirmRegister(w http.ResponseWriter, req *http.Request) {
 	//メール認証トークンをリクエストURLから取得
 	token := req.URL.Query()["token"][0]
 	if token == "" {
-		http.Redirect(w, req, "/register_form", http.StatusSeeOther)
+		msg := "エラ〜が発生しました。もう一度操作をしなおしてください。"
+		data := map[string]interface{}{"isLoggedIn": false, "msg": msg}
+		register_tpl.ExecuteTemplate(w, "register.html", data)
 		return
 	}
 	//このtokenはメール認証用でjwtを使ってないからParseTokenは呼び出さなくていい
@@ -118,7 +133,8 @@ func ConfirmRegister(w http.ResponseWriter, req *http.Request) {
 	resp, err := dbhandler.Find("googroutes", "registering", tokenDoc, nil)
 	if err != nil {
 		msg := "認証トークンが一致しません。"
-		http.Redirect(w, req, "/?msg="+msg, http.StatusSeeOther)
+		data := map[string]interface{}{"isLoggedIn": false, "msg": msg}
+		register_tpl.ExecuteTemplate(w, "register.html", data)
 	}
 	//DBから取得した値をmarshal
 	bsonByte, _ := bson.Marshal(resp)
@@ -184,6 +200,7 @@ func ConfirmRegister(w http.ResponseWriter, req *http.Request) {
 	http.Redirect(w, req, "/", http.StatusSeeOther)
 }
 
+//API
 func EmailIsAvailable(w http.ResponseWriter, req *http.Request) {
 	//メールアドレスが使用可能かのリクエスト
 	type ValidEmailRequest struct {
