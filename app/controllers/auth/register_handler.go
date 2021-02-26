@@ -19,43 +19,33 @@ import (
 )
 
 func Register(w http.ResponseWriter, req *http.Request) {
-	if req.Method != "POST" {
-		msg := url.QueryEscape("HTTPメソッドが不正です。")
-		http.Redirect(w, req, "/register_form/?msg="+msg, http.StatusSeeOther)
+	//Validation完了後のユーザー名を取得
+	userName, ok := req.Context().Value("username").(string)
+	if !ok {
+		msg := "エラ〜が発生しました。もう一度操作をしなおしてください。"
+		http.Redirect(w, req, "/login_form/?msg="+msg+"&username="+userName, http.StatusSeeOther)
 		return
 	}
-	//ユーザー名をリクエストから取得
-	userName := req.FormValue("username")
-	//メールアドレスをリクエストから取得
-	email := req.FormValue("email")
-	u := url.QueryEscape(userName)
-	m := url.QueryEscape(email)
-	if userName == "" {
-		msg := url.QueryEscape("ユーザー名を入力してください。")
-		http.Redirect(w, req, "/register_form/?msg="+msg+"&username="+u+"&email="+m, http.StatusSeeOther)
+	//Validation完了後のメールアドレスを取得
+	email, ok := req.Context().Value("email").(string)
+	if !ok {
+		msg := "エラ〜が発生しました。もう一度操作をしなおしてください。"
+		http.Redirect(w, req, "/login_form/?msg="+msg+"&email="+email, http.StatusSeeOther)
 		return
 	}
-	if email == "" {
-		msg := url.QueryEscape("メールアドレスを入力してください。")
-		http.Redirect(w, req, "/register_form/?msg="+msg+"&username="+u+"&email="+m, http.StatusSeeOther)
+	password, ok := req.Context().Value("password").(string)
+	//Validation完了後のパスワードを取得
+	if !ok {
+		msg := "エラ〜が発生しました。もう一度操作をしなおしてください。"
+		http.Redirect(w, req, "/login_form/?msg="+msg+"&email="+email, http.StatusSeeOther)
 		return
 	}
-	//パスワードをリクエストから取得
-	password := req.FormValue("password")
-	if password == "" {
-		msg := url.QueryEscape("パスワードを入力してください。")
-		http.Redirect(w, req, "/register_form/?msg="+msg+"&username="+u+"&email="+m, http.StatusSeeOther)
-		return
-	} else if len(password) < 8 {
-		msg := url.QueryEscape("パスワードは8文字以上で入力してください。")
-		http.Redirect(w, req, "/register_form/?msg="+msg+"&username="+u+"&email="+m, http.StatusSeeOther)
-		return
-	}
+
 	//パスワードをハッシュ化
 	securedPassword, err := bcrypt.GenerateFromPassword([]byte(password), 5)
 	if err != nil {
 		msg := url.QueryEscape("エラ〜が発生しました。もう一度操作をしなおしてください。")
-		http.Redirect(w, req, "/register_form/?msg="+msg+"&username="+u+"&email="+m, http.StatusSeeOther)
+		http.Redirect(w, req, "/register_form/?msg="+msg+"&username="+userName+"&email="+email, http.StatusSeeOther)
 		log.Println(err)
 		return
 	}
@@ -74,7 +64,7 @@ func Register(w http.ResponseWriter, req *http.Request) {
 	_, err = dbhandler.Insert("googroutes", "registering", registerDoc)
 	if err != nil {
 		msg := url.QueryEscape("エラ〜が発生しました。もう一度操作をしなおしてください。")
-		http.Redirect(w, req, "/register_form/?msg="+msg+"&username="+u+"&email="+m, http.StatusSeeOther)
+		http.Redirect(w, req, "/register_form/?msg="+msg+"&username="+userName+"&email="+email, http.StatusSeeOther)
 		log.Println(err)
 		return
 	}
@@ -137,7 +127,7 @@ func ConfirmRegister(w http.ResponseWriter, req *http.Request) {
 	//marshalした値をUnmarshalして、userに代入
 	bson.Unmarshal(bsonByte, &user)
 
-	//userをDBに保存
+	//「userをDBに保存」
 	//保存するドキュメント
 	userDoc := bson.D{
 		{"username", user.Username},
@@ -153,6 +143,8 @@ func ConfirmRegister(w http.ResponseWriter, req *http.Request) {
 		log.Println(err)
 		return
 	}
+
+	//「session作成」
 	//insertResから、userのドキュメントIDを取得
 	userDocID := insertRes.InsertedID
 	//固有のセッションIDを作成
@@ -172,7 +164,8 @@ func ConfirmRegister(w http.ResponseWriter, req *http.Request) {
 
 	signedStr, err := createToken(sessionID)
 	if err != nil {
-		http.Redirect(w, req, "/", http.StatusSeeOther)
+		msg := url.QueryEscape("ログインに失敗しました。もう一度ログインしてください。")
+		http.Redirect(w, req, "/?msg="+msg, http.StatusSeeOther)
 		log.Println(err)
 		return
 	}
@@ -186,7 +179,6 @@ func ConfirmRegister(w http.ResponseWriter, req *http.Request) {
 	http.SetCookie(w, c)
 	succcess := url.QueryEscape("メールアドレス認証が完了しました。")
 	http.Redirect(w, req, "/?success="+succcess, http.StatusSeeOther)
-
 }
 
 func EmailIsAvailable(w http.ResponseWriter, req *http.Request) {

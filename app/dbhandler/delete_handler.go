@@ -20,7 +20,7 @@ func Delete(dbName, collectionName string, document interface{}) error {
 	var deletedDocument bson.M
 	err = collection.FindOneAndDelete(ctx, document).Decode(&deletedDocument)
 	if err != nil && err == mongo.ErrNoDocuments {
-		log.Fatalln("During deleting a document: ", err)
+		log.Println("During deleting a document: ", err)
 		return err
 	}
 	return nil

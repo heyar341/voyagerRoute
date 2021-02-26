@@ -21,28 +21,19 @@ type UserData struct {
 }
 
 func Login(w http.ResponseWriter, req *http.Request) {
-	if req.Method != "POST" {
-		msg := url.QueryEscape("HTTPメソッドが不正です。")
-		http.Redirect(w, req, "/login_form/?msg="+msg, http.StatusFound)
-		return
+	//Validation完了後のメールアドレスを取得
+	email, ok := req.Context().Value("email").(string)
+	if !ok {
+		msg := "エラ〜が発生しました。もう一度操作をしなおしてください。"
+		http.Redirect(w, req, "/login_form/?msg="+msg+"&email="+email, http.StatusSeeOther)
 	}
-	//メールアドレスをリクエストから取得
-	email := req.FormValue("email")
-	if email == "" {
-		msg := url.QueryEscape("メールアドレスを入力してください。")
-		http.Redirect(w, req, "/login_form/?msg="+msg, http.StatusSeeOther)
-		return
+	password, ok := req.Context().Value("password").(string)
+	//Validation完了後のパスワードを取得
+	if !ok {
+		msg := "エラ〜が発生しました。もう一度操作をしなおしてください。"
+		http.Redirect(w, req, "/login_form/?msg="+msg+"&email="+email, http.StatusSeeOther)
 	}
 
-	//パスワードをリクエストから取得
-	password := req.FormValue("password")
-	if password == "" {
-		msg := url.QueryEscape("パスワードを入力してください。")
-		//入力されたメールアドレスを保持する
-		email = url.QueryEscape(email)
-		http.Redirect(w, req, "/login_form/?msg="+msg+"&email="+email, http.StatusSeeOther)
-		return
-	}
 	//取得するドキュメントの条件
 	emailDoc := bson.D{{"email", email}}
 	//DBから取得
@@ -97,7 +88,7 @@ func Login(w http.ResponseWriter, req *http.Request) {
 	c := &http.Cookie{
 		Name:  "sessionId",
 		Value: signedStr,
-		Path: "/",
+		Path:  "/",
 	}
 	http.SetCookie(w, c)
 	http.Redirect(w, req, "/", http.StatusSeeOther)

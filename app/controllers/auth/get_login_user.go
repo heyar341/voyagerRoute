@@ -41,7 +41,8 @@ func GetLoginUserID(req *http.Request) (primitive.ObjectID, error) {
 	return user.UserID, nil
 }
 
-func GetLoginUserName(userID primitive.ObjectID) (string, error) {
+func GetLoginUserName(req *http.Request) (string, error) {
+	userID, err := GetLoginUserID(req)
 	userDoc := bson.D{{"_id", userID}}
 	//DBから読み込み
 	resp, err := dbhandler.Find("googroutes", "users", userDoc, nil)
@@ -58,16 +59,4 @@ func GetLoginUserName(userID primitive.ObjectID) (string, error) {
 	bson.Unmarshal(bsonByte, &user)
 
 	return user.UserName, nil
-}
-
-func IsLoggedIn(req *http.Request) bool {
-
-	var isLoggedIn bool
-	_, err := GetLoginUserID(req)
-	if err != nil {
-		isLoggedIn = false
-	} else {
-		isLoggedIn = true
-	}
-	return isLoggedIn
 }
