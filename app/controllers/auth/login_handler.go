@@ -23,21 +23,24 @@ type UserData struct {
 func Login(w http.ResponseWriter, req *http.Request) {
 	if req.Method != "POST" {
 		msg := url.QueryEscape("HTTPメソッドが不正です。")
-		http.Redirect(w, req, "/register/?msg="+msg, http.StatusSeeOther)
+		http.Redirect(w, req, "/login_form/?msg="+msg, http.StatusFound)
 		return
 	}
 	//メールアドレスをリクエストから取得
 	email := req.FormValue("email")
 	if email == "" {
 		msg := url.QueryEscape("メールアドレスを入力してください。")
-		http.Redirect(w, req, "/register/?msg="+msg, http.StatusSeeOther)
+		http.Redirect(w, req, "/login_form/?msg="+msg, http.StatusSeeOther)
 		return
 	}
+
 	//パスワードをリクエストから取得
 	password := req.FormValue("password")
 	if password == "" {
 		msg := url.QueryEscape("パスワードを入力してください。")
-		http.Redirect(w, req, "/register/?msg="+msg, http.StatusSeeOther)
+		//入力されたメールアドレスを保持する
+		email = url.QueryEscape(email)
+		http.Redirect(w, req, "/login_form/?msg="+msg+"&email="+email, http.StatusSeeOther)
 		return
 	}
 	//取得するドキュメントの条件
@@ -46,7 +49,10 @@ func Login(w http.ResponseWriter, req *http.Request) {
 	resp, err := dbhandler.Find("googroutes", "users", emailDoc, nil)
 	if err != nil {
 		msg := "メールアドレスまたはパスワードが正しくありません。"
-		http.Redirect(w, req, "/?msg="+msg, http.StatusSeeOther)
+		//入力されたメールアドレスを保持する
+		email = url.QueryEscape(email)
+		http.Redirect(w, req, "/login_form/?msg="+msg+"&email="+email, http.StatusSeeOther)
+		return
 	}
 	//DBから取得した値をmarshal
 	bsonByte, _ := bson.Marshal(resp)
@@ -60,7 +66,10 @@ func Login(w http.ResponseWriter, req *http.Request) {
 	//一致しない場合
 	if err != nil {
 		msg := "メールアドレスまたはパスワードが正しくありません。"
-		http.Redirect(w, req, "/?msg="+msg, http.StatusSeeOther)
+		//入力されたメールアドレスを保持する
+		email = url.QueryEscape(email)
+		http.Redirect(w, req, "/login_form/?msg="+msg+"&email="+email, http.StatusSeeOther)
+		return
 	}
 	//一致した場合
 	//固有のセッションIDを作成
@@ -73,7 +82,7 @@ func Login(w http.ResponseWriter, req *http.Request) {
 	_, err = dbhandler.Insert("googroutes", "sessions", sessionDoc)
 	if err != nil {
 		msg := "エラ〜が発生しました。もう一度操作をしなおしてください。"
-		http.Error(w, msg, http.StatusInternalServerError)
+		http.Redirect(w, req, "/login_form/?msg="+msg, http.StatusSeeOther)
 		log.Println(err)
 		return
 	}
