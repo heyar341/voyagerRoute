@@ -18,3 +18,12 @@ type SessionData struct {
 	SessionId string             `json:"session_id" bson:"session_id"`
 	UserID    primitive.ObjectID `json:"user_id" bson:"user_id"`
 }
+
+
+//ルート編集保存requestのフィールドを保存するstruct
+type RouteUpdateRequest struct {
+	ID            primitive.ObjectID     `json:"id" bson:"_id"`
+	Title         string                 `json:"title" bson:"title"`
+	PreviousTitle string                 `json:"previous_title" bson:"previous_title"`
+	Routes        map[string]interface{} `json:"routes" bson:"routes"`
+}
