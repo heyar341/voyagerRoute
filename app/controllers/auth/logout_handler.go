@@ -42,5 +42,5 @@ func Logout(w http.ResponseWriter, req *http.Request) {
 	http.SetCookie(w, c)
 
 	success := "ログアウトしました"
-	http.Redirect(w, req, "/?msg="+success, http.StatusSeeOther)
+	http.Redirect(w, req, "/?success="+success, http.StatusSeeOther)
 }
