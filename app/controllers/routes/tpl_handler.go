@@ -1,21 +1,19 @@
 package routes
 
 import (
-	"html/template"
-	"net/http"
 	"app/controllers/envhandler"
 	"app/model"
-
+	"html/template"
+	"net/http"
 )
 
-var multiSearchTpl,simulSearchTpl,showRouteTpl *template.Template
+var multiSearchTpl, simulSearchTpl, showRouteTpl *template.Template
 
-func init()  {
+func init() {
 	multiSearchTpl = template.Must(template.Must(template.ParseGlob("templates/multi_search/search/multi_search.html")).ParseGlob("templates/includes/*.html"))
 	simulSearchTpl = template.Must(template.Must(template.ParseGlob("templates/simul_search/simul_search.html")).ParseGlob("templates/includes/*.html"))
 	showRouteTpl = template.Must(template.Must(template.ParseGlob("templates/multi_search/show_and_edit/multi_route_show.html")).ParseGlob("templates/includes/*.html"))
 }
-
 
 func MultiSearchTpl(w http.ResponseWriter, req *http.Request) {
 	//envファイルからAPIキー取得

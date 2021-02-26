@@ -1,17 +1,16 @@
 package mypage
 
 import (
+	"app/model"
 	"html/template"
 	"net/http"
-	"app/model"
-
 )
 
 var mypageTpl *template.Template
-func init(){
+
+func init() {
 	mypageTpl = template.Must(template.Must(template.ParseGlob("templates/mypage/*.html")).ParseGlob("templates/includes/*.html"))
 }
-
 
 func ShowMypage(w http.ResponseWriter, req *http.Request) {
 	data := req.Context().Value("data").(map[string]interface{})
