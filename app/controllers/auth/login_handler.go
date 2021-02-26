@@ -3,34 +3,32 @@ package auth
 import (
 	"app/dbhandler"
 	"app/model"
-	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
 	"golang.org/x/crypto/bcrypt"
-	"log"
 	"net/http"
 	"net/url"
 )
 
 func Login(w http.ResponseWriter, req *http.Request) {
+	//エラーメッセージを定義
+	msg := "エラ〜が発生しました。もう一度操作をしなおしてください。"
 	//Validation完了後のメールアドレスを取得
 	email, ok := req.Context().Value("email").(string)
 	if !ok {
-		msg := "エラ〜が発生しました。もう一度操作をしなおしてください。"
 		http.Redirect(w, req, "/login_form/?msg="+msg+"&email="+email, http.StatusSeeOther)
 	}
-	password, ok := req.Context().Value("password").(string)
 	//Validation完了後のパスワードを取得
+	password, ok := req.Context().Value("password").(string)
 	if !ok {
-		msg := "エラ〜が発生しました。もう一度操作をしなおしてください。"
 		http.Redirect(w, req, "/login_form/?msg="+msg+"&email="+email, http.StatusSeeOther)
 	}
 
 	//取得するドキュメントの条件
-	emailDoc := bson.D{{"email", email}}
+	userDoc := bson.D{{"email", email}}
 	//DBから取得
-	resp, err := dbhandler.Find("googroutes", "users", emailDoc, nil)
+	resp, err := dbhandler.Find("googroutes", "users", userDoc, nil)
 	if err != nil {
-		msg := "メールアドレスまたはパスワードが正しくありません。"
+		msg = "メールアドレスまたはパスワードが正しくありません。"
 		//入力されたメールアドレスを保持する
 		email = url.QueryEscape(email)
 		http.Redirect(w, req, "/login_form/?msg="+msg+"&email="+email, http.StatusSeeOther)
@@ -47,40 +45,18 @@ func Login(w http.ResponseWriter, req *http.Request) {
 	err = bcrypt.CompareHashAndPassword(storedPass, []byte(password))
 	//一致しない場合
 	if err != nil {
-		msg := "メールアドレスまたはパスワードが正しくありません。"
+		msg = "メールアドレスまたはパスワードが正しくありません。"
 		//入力されたメールアドレスを保持する
 		email = url.QueryEscape(email)
 		http.Redirect(w, req, "/login_form/?msg="+msg+"&email="+email, http.StatusSeeOther)
 		return
 	}
 	//一致した場合
-	//固有のセッションIDを作成
-	sessionID := uuid.New().String()
-	//sessionをDBに保存
-	sessionDoc := bson.D{
-		{"session_id", sessionID},
-		{"user_id", user.ID},
-	}
-	_, err = dbhandler.Insert("googroutes", "sessions", sessionDoc)
+	err = genNewSession(user.ID, w)
 	if err != nil {
-		msg := "エラ〜が発生しました。もう一度操作をしなおしてください。"
-		http.Redirect(w, req, "/login_form/?msg="+msg, http.StatusSeeOther)
-		log.Println(err)
-		return
-	}
-	signedStr, err := createToken(sessionID)
-	if err != nil {
-		http.Redirect(w, req, "/", http.StatusSeeOther)
-		log.Println(err)
-		return
+		msg = " ログインに失敗しました。もう一度操作をしなおしてください。"
+		http.Redirect(w, req, "/login_form/?msg="+msg+"&email="+email, http.StatusSeeOther)
 	}
 
-	//Cookieの設定
-	c := &http.Cookie{
-		Name:  "sessionId",
-		Value: signedStr,
-		Path:  "/",
-	}
-	http.SetCookie(w, c)
 	http.Redirect(w, req, "/", http.StatusSeeOther)
 }
