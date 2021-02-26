@@ -1,7 +1,7 @@
 package middleware
 
 import (
-	"app/controllers/routes"
+	"app/controllers/multiroute"
 	"app/model"
 	"context"
 	"encoding/json"
@@ -18,7 +18,7 @@ func SaveRoutesValidator(SaveRoutes http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 		//requestのフィールドを保存する変数
-		var reqFields routes.MultiSearchRequest
+		var reqFields multiroute.MultiSearchRequest
 		body, _ := ioutil.ReadAll(req.Body)
 		err := json.Unmarshal(body, &reqFields)
 		if err != nil {

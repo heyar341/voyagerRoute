@@ -4,7 +4,8 @@ import (
 	"app/controllers/auth"
 	"app/controllers/middleware"
 	"app/controllers/mypage"
-	"app/controllers/routes"
+	"app/controllers/simulsearch"
+	"app/controllers/multiroute"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -38,8 +39,8 @@ func main() {
 	http.HandleFunc("/show_route/", middleware.Auth(multiroute.ShowAndEditRoutesTpl))                       //確認編集画面
 	http.HandleFunc("/update_route", middleware.Auth(middleware.UpdateRouteValidator(multiroute.UpdateRoute)))               //編集用エンドポイント
 	//「同時検索」
-	http.HandleFunc("/simul_search", middleware.Auth(routes.SimulSearchTpl)) //検索画面
-	http.HandleFunc("/do_simul_search", routes.DoSimulSearch)                //検索実行用エンドポイント
+	http.HandleFunc("/simul_search", middleware.Auth(simulsearch.SimulSearchTpl)) //検索画面
+	http.HandleFunc("/do_simul_search", simulsearch.DoSimulSearch)                //検索実行用エンドポイント
 
 	//「マイページ」
 	http.HandleFunc("/mypage", middleware.Auth(mypage.ShowMypage))                //マイページ表示
