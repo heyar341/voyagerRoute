@@ -31,7 +31,7 @@ func genNewSession(userID primitive.ObjectID, w http.ResponseWriter) error {
 
 	//Cookieの設定
 	c := &http.Cookie{
-		Name:  "sessionId",
+		Name:  "session_id",
 		Value: signedStr,
 		Path:  "/",
 	}
