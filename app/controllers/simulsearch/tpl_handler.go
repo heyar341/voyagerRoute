@@ -1,4 +1,4 @@
-package routes
+package simulsearch
 
 import (
 	"app/controllers/envhandler"

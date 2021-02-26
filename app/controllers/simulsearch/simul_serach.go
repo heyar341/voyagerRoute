@@ -1,8 +1,7 @@
-package routes
+package simulsearch
 
 import (
 	"app/controllers/envhandler"
-	"app/controllers/routes/simuloptions"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -125,10 +124,10 @@ func simulSearch(client *maps.Client, destination string, reqParam map[string]st
 		SearchReq.DepartureTime = strconv.Itoa(int(t.Unix()))
 	}
 	if reqParam["mode"] != "" {
-		simuloptions.LookupMode(reqParam["mode"], SearchReq)
+		LookupMode(reqParam["mode"], SearchReq)
 	}
 	if reqParam["avoid"] != "" {
-		simuloptions.LookupAvoid(reqParam["avoid"], SearchReq)
+		LookupAvoid(reqParam["avoid"], SearchReq)
 	}
 
 	//ルートを取得

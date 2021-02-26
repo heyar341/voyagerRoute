@@ -1,4 +1,4 @@
-package simuloptions
+package simulsearch
 
 import (
 	"googlemaps.github.io/maps"
