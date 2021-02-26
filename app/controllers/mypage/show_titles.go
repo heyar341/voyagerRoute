@@ -1,4 +1,4 @@
-package mypages
+package mypage
 
 import (
 	"app/controllers/auth"
