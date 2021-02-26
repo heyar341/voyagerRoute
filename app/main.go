@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"html/template"
 	"app/controllers/auth"
+	"app/controllers/middleware"
 	"app/controllers/mypages"
 	"app/controllers/routes"
 	"app/controllers/envhandler"
@@ -34,7 +35,7 @@ func main() {
 	http.HandleFunc("/check_email",auth.EmailIsAvailable)
 	http.HandleFunc("/register",auth.Register)
 	http.HandleFunc("/login_form/",loginForm)
-	http.HandleFunc("/login",auth.Login)
+	http.HandleFunc("/login",middleware.LoginValidator(auth.Login))
 	http.HandleFunc("/confirm_register/",auth.ConfirmRegister)
 	http.HandleFunc("/ask_confirm/",askConfirm)
 	http.HandleFunc("/logout",auth.Logout)
