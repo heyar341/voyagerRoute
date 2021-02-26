@@ -48,3 +48,9 @@ GETで/confirm_emailにGETでアクセスして、リダイレクトだと、最
 よくない。次にリダイレクトでクエリーパラメータを使ってmsgを追加しようとしたが、GETとPOSTのURIが同じだと、
 リダイレクト時にクエリー部が自動で省略されてしまうため、パラメータを渡せなかった。
 解決策として、GETとPOSTのURIを別のまま、リダイレクトすればクエリーパラメータを渡すことができた。
+
+  MongoDBのdocument内でフィールドの一部を削除する場合、
+deleteField := bson.M{"<フィールド名>":""} ←目的のフィールド名を設定し、値を""にする。
+そして、$unsetを使うことで、１つだけ削除できる。
+dbhandler.UpdateOne("googroutes", "users", "$unset", userDoc, deleteField)
+公式ドキュメントURL: https://docs.mongodb.com/manual/reference/operator/update/unset/
