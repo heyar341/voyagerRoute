@@ -90,6 +90,7 @@ func registerForm(w http.ResponseWriter, req *http.Request) {
 func loginForm(w http.ResponseWriter, req *http.Request) {
 	isLoggedIn := auth.IsLoggedIn(req)
 	data := map[string]interface{}{"isLoggedIn":isLoggedIn}
+	data["qParams"] = req.URL.Query()
 	auth_tpl.ExecuteTemplate(w, "login.html",data)
 }
 func index(w http.ResponseWriter, req *http.Request){
