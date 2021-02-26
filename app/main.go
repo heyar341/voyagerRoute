@@ -31,96 +31,94 @@ func main() {
 	http.Handle("/favicon.ico", http.NotFoundHandler())
 	http.Handle("/templates/", http.StripPrefix("/templates", http.FileServer(http.Dir("./templates"))))
 	//Authentication
-	http.HandleFunc("/register_form/",registerForm)
+	http.HandleFunc("/register_form/",middleware.Auth(registerForm))
 	http.HandleFunc("/check_email",auth.EmailIsAvailable)
 	http.HandleFunc("/register",middleware.RegisterValidator(auth.Register))
-	http.HandleFunc("/login_form/",loginForm)
+	http.HandleFunc("/login_form/",middleware.Auth(loginForm))
 	http.HandleFunc("/login",middleware.LoginValidator(auth.Login))
 	http.HandleFunc("/confirm_register/",auth.ConfirmRegister)
-	http.HandleFunc("/ask_confirm/",askConfirm)
+	http.HandleFunc("/ask_confirm/",middleware.Auth(askConfirm))
 	http.HandleFunc("/logout",auth.Logout)
 
 	//Direction API
-	http.HandleFunc("/multi_search",index)
+	http.HandleFunc("/multi_search",middleware.Auth(index))
 	http.HandleFunc("/routes_save",routes.SaveRoutes)
-	http.HandleFunc("/simul_search",simulSearchTpl)
+	http.HandleFunc("/simul_search",middleware.Auth(simulSearchTpl))
 	http.HandleFunc("/do_simul_search",routes.DoSimulSearch)
-	http.HandleFunc("/show_route/",showAndEditRoutes)
+	http.HandleFunc("/show_route/",middleware.Auth(showAndEditRoutes))
 	http.HandleFunc("/update_route",routes.UpdateRoute)
 
-	http.HandleFunc("/",home)
+	http.HandleFunc("/",middleware.Auth(home))
 
-	http.HandleFunc("/mypage/show_routes", showRoutes)
-	http.HandleFunc("/mypage", mypage)
+	http.HandleFunc("/mypage/show_routes", middleware.Auth(showRoutes))
+	http.HandleFunc("/mypage", middleware.Auth(mypage))
 
 	http.ListenAndServe(":80",nil)
 }
 
 func home(w http.ResponseWriter, req *http.Request) {
-	isLoggedIn := auth.IsLoggedIn(req)
-	data := map[string]interface{}{"isLoggedIn":isLoggedIn}
+	data := req.Context().Value("data").(map[string]interface{})
 	data["msg"] = req.URL.Query().Get("msg")
 	data["success"] = req.URL.Query().Get("success")
 	home_tpl.ExecuteTemplate(w, "home.html",data)
 }
 
 func mypage(w http.ResponseWriter, req *http.Request) {
-	isLoggedIn := auth.IsLoggedIn(req)
-	userID, _ := auth.GetLoginUserID(req)
-	userName, _ := auth.GetLoginUserName(userID)
-	data := map[string]interface{}{"isLoggedIn":isLoggedIn, "userName":userName}
+	data := req.Context().Value("data").(map[string]interface{})
+	userName, _ := auth.GetLoginUserName(req)
+	data["userName"] = userName
 	mypage_tpl.ExecuteTemplate(w, "mypage.html",data)
 }
 
 func showRoutes(w http.ResponseWriter, req *http.Request) {
-	isLoggedIn := auth.IsLoggedIn(req)
+	data := req.Context().Value("data").(map[string]interface{})
 	userID, _ := auth.GetLoginUserID(req)
-	userName, _ := auth.GetLoginUserName(userID)
+	userName, _ := auth.GetLoginUserName(req)
 	titleNames := mypages.RouteTitles(userID)
-	data := map[string]interface{}{"isLoggedIn":isLoggedIn, "userName":userName, "titles":titleNames}
+	data["userName"] = userName
+	data["titles"] = titleNames
 	mypage_tpl.ExecuteTemplate(w, "show_routes.html",data)
 }
 func askConfirm(w http.ResponseWriter, req *http.Request) {
-	isLoggedIn := auth.IsLoggedIn(req)
-	data := map[string]interface{}{"isLoggedIn":isLoggedIn}
+	data := req.Context().Value("data").(map[string]interface{})
 	auth_tpl.ExecuteTemplate(w, "ask_confirm_email.html",data)
 }
 func registerForm(w http.ResponseWriter, req *http.Request) {
-	isLoggedIn := auth.IsLoggedIn(req)
-	data := map[string]interface{}{"isLoggedIn":isLoggedIn}
+	data := req.Context().Value("data").(map[string]interface{})
 	data["qParams"] = req.URL.Query()
 	auth_tpl.ExecuteTemplate(w, "register.html",data)
 }
 func loginForm(w http.ResponseWriter, req *http.Request) {
-	isLoggedIn := auth.IsLoggedIn(req)
-	data := map[string]interface{}{"isLoggedIn":isLoggedIn}
+	data := req.Context().Value("data").(map[string]interface{})
 	data["qParams"] = req.URL.Query()
 	auth_tpl.ExecuteTemplate(w, "login.html",data)
 }
 func index(w http.ResponseWriter, req *http.Request){
 	//envファイルからAPIキー取得
 	apiKey := envhandler.GetEnvVal("MAP_API_KEY")
-	isLoggedIn := auth.IsLoggedIn(req)
-	data := map[string]interface{}{"apiKey":apiKey,"isLoggedIn":isLoggedIn}
+	data := req.Context().Value("data").(map[string]interface{})
+	data["apiKey"] = apiKey
 	tpl.ExecuteTemplate(w, "multi_search.html", data)
 }
 
 func simulSearchTpl(w http.ResponseWriter, req *http.Request) {
 	//envファイルからAPIキー取得
 	apiKey := envhandler.GetEnvVal("MAP_API_KEY")
-	isLoggedIn := auth.IsLoggedIn(req)
+	data := req.Context().Value("data").(map[string]interface{})
 	nineIterator := []int {1,2,3,4,5,6,7,8,9}
-	data := map[string]interface{}{"apiKey":apiKey,"isLoggedIn":isLoggedIn,"nineIterator":nineIterator}
+	data["apiKey"] = apiKey
+	data["nineIterator"] = nineIterator
 	simul_search_tpl.ExecuteTemplate(w, "simul_search.html",data)
 }
 
 func showAndEditRoutes(w http.ResponseWriter, req *http.Request){
-//envファイルからAPIキー取得
-apiKey := envhandler.GetEnvVal("MAP_API_KEY")
-isLoggedIn := auth.IsLoggedIn(req)
-route_title := req.URL.Query().Get("route_title")
-userID, _ := auth.GetLoginUserID(req)
-routeInfo := routes.GetRoute(w,route_title, userID)
-data := map[string]interface{}{"apiKey":apiKey,"isLoggedIn":isLoggedIn,"routeInfo":routeInfo}
-show_route_tpl.ExecuteTemplate(w, "multi_route_show.html", data)
+	//envファイルからAPIキー取得
+	apiKey := envhandler.GetEnvVal("MAP_API_KEY")
+	data := req.Context().Value("data").(map[string]interface{})
+	route_title := req.URL.Query().Get("route_title")
+	userID, _ := auth.GetLoginUserID(req)
+	routeInfo := routes.GetRoute(w,route_title, userID)
+	data["apiKey"] = apiKey
+	data["routeInfo"] = routeInfo
+	show_route_tpl.ExecuteTemplate(w, "multi_route_show.html", data)
 }
