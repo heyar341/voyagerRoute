@@ -42,7 +42,7 @@ func main() {
 
 	//Direction API
 	http.HandleFunc("/multi_search",middleware.Auth(index))
-	http.HandleFunc("/routes_save",routes.SaveRoutes)
+	http.HandleFunc("/routes_save",middleware.Auth(middleware.SaveRoutesValidator(routes.SaveRoutes)))
 	http.HandleFunc("/simul_search",middleware.Auth(simulSearchTpl))
 	http.HandleFunc("/do_simul_search",routes.DoSimulSearch)
 	http.HandleFunc("/show_route/",middleware.Auth(showAndEditRoutes))

@@ -17,64 +17,34 @@ type ResponseMsg struct {
 	Msg string `json:"msg"`
 }
 
+//requestのフィールドを保存する変数
 type MultiSearchRequest struct {
 	Title  string                 `json:"title" bson:"title"`
 	Routes map[string]interface{} `json:"routes" bson:"routes"`
 }
 
 func SaveRoutes(w http.ResponseWriter, req *http.Request) {
-	if req.Method != "POST" {
-		http.Error(w, "HTTPメソッドが不正です。", http.StatusBadRequest)
+	//バリデーション完了後のrequestFieldsを取得
+	reqFields, ok := req.Context().Value("reqFields").(MultiSearchRequest)
+	if !ok {
+		http.Error(w, "エラーが発生しました。もう一度操作を行ってください。", http.StatusInternalServerError)
+		log.Printf("Error while getting request fields from reuest's context: %v", ok)
 		return
 	}
-	//requestのフィールドを保存する変数
-	var reqFields MultiSearchRequest
-	body, _ := ioutil.ReadAll(req.Body)
-	err := json.Unmarshal(body, &reqFields)
-	if err != nil {
-		http.Error(w, "入力に不正があります。", http.StatusInternalServerError)
-		log.Printf("Error while json marshaling: %v", err)
+	//Auth middlewareからuserIDを取得
+	user, ok := req.Context().Value("user").(auth.UserData)
+	if !ok {
+		http.Error(w, "エラーが発生しました。もう一度操作を行ってください。", http.StatusInternalServerError)
+		log.Printf("Error while getting userID from reuest's context: %v", ok)
 		return
 	}
+	userID := user.ID
 
-	if strings.ContainsAny(reqFields.Title, ".$") {
-		http.Error(w, "ルート名にご使用いただけない文字が含まれています。", http.StatusBadRequest)
-		return
-	}
-
-	//Cookieからセッション情報取得
-	c, err := req.Cookie("sessionId")
-	//Cookieが設定されてない場合
-	if err != nil {
-		msg := "ログインしてください。"
-		http.Error(w, msg, http.StatusUnauthorized)
-		log.Printf("Error while getting cookie: %v", err)
-		return
-	}
-
-	sessionID, err := auth.ParseToken(c.Value)
-	if err != nil {
-		msg := "セッション情報が不正です。"
-		http.Error(w, msg, http.StatusUnauthorized)
-		log.Printf("Error while parsing token: %v", err)
-		return
-	}
-	var userID primitive.ObjectID
-	if sessionID != "" {
-		userID, err = auth.GetLoginUserID(req)
-		if err != nil {
-			msg := "エラ〜が発生しました。もう一度操作をしなおしてください。"
-			http.Error(w, msg, http.StatusInternalServerError)
-			log.Printf("Error while getting loggedin user: %v", err)
-			return
-		}
-	}
-
-	//users collectionのmulti_route_titlesフィールドにルート名と作成時刻を追加($set)する。作成時刻はルート名取得時に作瀬時刻でソートするため
+	//users collectionのmulti_route_titlesフィールドにルート名と作成時刻を追加($set)する。作成時刻はルート名取得時に作成時刻でソートするため
 	userDoc := bson.D{{"_id", userID}}
 	now := time.Now().UTC()                                             //MongoDBでは、timeはUTC表記で扱われ、タイムゾーン情報は入れられない
 	updateField := bson.M{"multi_route_titles." + reqFields.Title: now} //nested fieldsは.(ドット表記)で繋いで書く
-	err = dbhandler.UpdateOne("googroutes", "users", "$set", userDoc, updateField)
+	err := dbhandler.UpdateOne("googroutes", "users", "$set", userDoc, updateField)
 
 	//routes collectionに保存
 	document := bson.D{
@@ -202,7 +172,7 @@ func UpdateRoute(w http.ResponseWriter, req *http.Request) {
 		//元のルート名を削除
 		deleteField := bson.M{"multi_route_titles": reqFields.PreviousTitle}
 		//documentではなく、document内のフィールドを削除する場合、Deleteではなく、Update operatorの$unsetを使って削除する
-		err = dbhandler.UpdateOne("googroutes", "users","$unset", userDoc, deleteField)
+		err = dbhandler.UpdateOne("googroutes", "users", "$unset", userDoc, deleteField)
 		//新しいルート名とタイムスタンプを追加
 		updateField := bson.M{"multi_route_titles." + reqFields.Title: now} //nested fieldsは.(ドット表記)で繋いで書く
 		err = dbhandler.UpdateOne("googroutes", "users", "$set", userDoc, updateField)
