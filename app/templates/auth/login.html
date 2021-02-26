@@ -23,13 +23,20 @@
                     <form action="/login" method="POST">
                         <div class="form-group">
                             <label>メールアドレス:</label>
-                            <input type="email" name="email" class="form-control" placeholder="メールアドレスを入力" required>
+                            <input type="email" name="email" class="form-control" placeholder="メールアドレスを入力"
+                            {{if .qParams.email}}
+                                value={{index .qParams.email 0}}
+                            {{end}}
+                                   required>
                         </div> <!-- form-group end.// -->
 
                         <div class="form-group">
                             <label>パスワード:</label>
                             <input class="form-control" name="password" type="password" placeholder="パスワードを入力" required>
                         </div> <!-- form-group end.// -->
+                        {{if .qParams.msg }}
+                        <span style="color: red">{{index .qParams.msg 0}}</span>
+                        {{end}}
                         <div class="form-group">
                             <button type="submit" class="btn btn-primary btn-block">ログイン</button>
                         </div> <!-- form-group// -->
