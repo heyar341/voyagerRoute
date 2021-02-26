@@ -6,9 +6,9 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"golang.org/x/crypto/bcrypt"
+	"html/template"
 	"log"
 	"net/http"
-	"net/url"
 	"time"
 )
 
@@ -20,24 +20,34 @@ type UserData struct {
 	MultiRouteTitles map[string]time.Time `json:"multi_route_titles" bson:"multi_route_titles"`
 }
 
+var login_tpl *template.Template
+
+func init() {
+	login_tpl = template.Must(template.Must(template.ParseGlob("templates/auth/*")).ParseGlob("templates/includes/*.html"))
+}
+
 func Login(w http.ResponseWriter, req *http.Request) {
-	if req.Method != "POST" {
-		msg := url.QueryEscape("HTTPメソッドが不正です。")
-		http.Redirect(w, req, "/register/?msg="+msg, http.StatusSeeOther)
+	isLoggedIn := IsLoggedIn(req)
+	if req.Method == "GET" {
+		data := map[string]interface{}{"isLoggedIn": isLoggedIn, "msg": ""}
+		register_tpl.ExecuteTemplate(w, "login.html", data)
 		return
 	}
+
 	//メールアドレスをリクエストから取得
 	email := req.FormValue("email")
 	if email == "" {
-		msg := url.QueryEscape("メールアドレスを入力してください。")
-		http.Redirect(w, req, "/register/?msg="+msg, http.StatusSeeOther)
+		msg := "メールアドレスを入力してください。"
+		data := map[string]interface{}{"isLoggedIn": isLoggedIn, "msg": msg}
+		register_tpl.ExecuteTemplate(w, "login.html", data)
 		return
 	}
 	//パスワードをリクエストから取得
 	password := req.FormValue("password")
 	if password == "" {
-		msg := url.QueryEscape("パスワードを入力してください。")
-		http.Redirect(w, req, "/register/?msg="+msg, http.StatusSeeOther)
+		msg := "パスワードを入力してください。"
+		data := map[string]interface{}{"isLoggedIn": isLoggedIn, "msg": msg}
+		register_tpl.ExecuteTemplate(w, "login.html", data)
 		return
 	}
 	//取得するドキュメントの条件
@@ -60,7 +70,8 @@ func Login(w http.ResponseWriter, req *http.Request) {
 	//一致しない場合
 	if err != nil {
 		msg := "メールアドレスまたはパスワードが正しくありません。"
-		http.Redirect(w, req, "/?msg="+msg, http.StatusSeeOther)
+		data := map[string]interface{}{"isLoggedIn": isLoggedIn, "msg": msg}
+		register_tpl.ExecuteTemplate(w, "login.html", data)
 	}
 	//一致した場合
 	//固有のセッションIDを作成
@@ -73,13 +84,16 @@ func Login(w http.ResponseWriter, req *http.Request) {
 	_, err = dbhandler.Insert("googroutes", "sessions", sessionDoc)
 	if err != nil {
 		msg := "エラ〜が発生しました。もう一度操作をしなおしてください。"
-		http.Error(w, msg, http.StatusInternalServerError)
+		data := map[string]interface{}{"isLoggedIn": isLoggedIn, "msg": msg}
+		register_tpl.ExecuteTemplate(w, "login.html", data)
 		log.Println(err)
 		return
 	}
 	signedStr, err := createToken(sessionID)
 	if err != nil {
-		http.Redirect(w, req, "/", http.StatusSeeOther)
+		msg := "エラ〜が発生しました。もう一度操作をしなおしてください。"
+		data := map[string]interface{}{"isLoggedIn": isLoggedIn, "msg": msg}
+		register_tpl.ExecuteTemplate(w, "login.html", data)
 		log.Println(err)
 		return
 	}
@@ -88,7 +102,7 @@ func Login(w http.ResponseWriter, req *http.Request) {
 	c := &http.Cookie{
 		Name:  "sessionId",
 		Value: signedStr,
-		Path: "/",
+		Path:  "/",
 	}
 	http.SetCookie(w, c)
 	http.Redirect(w, req, "/", http.StatusSeeOther)

@@ -32,7 +32,6 @@ func main() {
 	//Authentication
 	http.HandleFunc("/check_email",auth.EmailIsAvailable)
 	http.HandleFunc("/register",auth.Register)
-	http.HandleFunc("/login_form/",loginForm)
 	http.HandleFunc("/login",auth.Login)
 	http.HandleFunc("/confirm_register/",auth.ConfirmRegister)
 	http.HandleFunc("/ask_confirm/",askConfirm)
@@ -82,11 +81,6 @@ func askConfirm(w http.ResponseWriter, req *http.Request) {
 	auth_tpl.ExecuteTemplate(w, "ask_confirm_email.html",data)
 }
 
-func loginForm(w http.ResponseWriter, req *http.Request) {
-	isLoggedIn := auth.IsLoggedIn(req)
-	data := map[string]interface{}{"isLoggedIn":isLoggedIn}
-	auth_tpl.ExecuteTemplate(w, "login.html",data)
-}
 func index(w http.ResponseWriter, req *http.Request){
 	//envファイルからAPIキー取得
 	apiKey := envhandler.GetEnvVal("MAP_API_KEY")
