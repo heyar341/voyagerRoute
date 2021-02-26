@@ -58,6 +58,8 @@ func main() {
 func home(w http.ResponseWriter, req *http.Request) {
 	isLoggedIn := auth.IsLoggedIn(req)
 	data := map[string]interface{}{"isLoggedIn":isLoggedIn}
+	data["msg"] = req.URL.Query().Get("msg")
+	data["success"] = req.URL.Query().Get("success")
 	home_tpl.ExecuteTemplate(w, "home.html",data)
 }
 
@@ -85,6 +87,7 @@ func askConfirm(w http.ResponseWriter, req *http.Request) {
 func registerForm(w http.ResponseWriter, req *http.Request) {
 	isLoggedIn := auth.IsLoggedIn(req)
 	data := map[string]interface{}{"isLoggedIn":isLoggedIn}
+	data["qParams"] = req.URL.Query()
 	auth_tpl.ExecuteTemplate(w, "register.html",data)
 }
 func loginForm(w http.ResponseWriter, req *http.Request) {
