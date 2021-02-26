@@ -33,7 +33,7 @@ func main() {
 	//Authentication
 	http.HandleFunc("/register_form/",registerForm)
 	http.HandleFunc("/check_email",auth.EmailIsAvailable)
-	http.HandleFunc("/register",auth.Register)
+	http.HandleFunc("/register",middleware.RegisterValidator(auth.Register))
 	http.HandleFunc("/login_form/",loginForm)
 	http.HandleFunc("/login",middleware.LoginValidator(auth.Login))
 	http.HandleFunc("/confirm_register/",auth.ConfirmRegister)
