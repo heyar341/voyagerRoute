@@ -7,7 +7,7 @@ import (
 )
 
 //徒歩、運転、乗り換えのモード選択
-func LookupMode(mode string, r *maps.DirectionsRequest) {
+func lookupMode(mode string, r *maps.DirectionsRequest) {
 	switch mode {
 	case "driving":
 		r.Mode = maps.TravelModeDriving
@@ -25,7 +25,7 @@ func LookupMode(mode string, r *maps.DirectionsRequest) {
 }
 
 //trueの場合複数ルートを探し、falseの場合１つのルートのみ返す
-func LookupAlternatives(alternatives string, r *maps.DirectionsRequest) {
+func lookupAlternatives(alternatives string, r *maps.DirectionsRequest) {
 	if alternatives == "true" {
 		r.Alternatives = true
 	} else {
@@ -34,7 +34,7 @@ func LookupAlternatives(alternatives string, r *maps.DirectionsRequest) {
 }
 
 //乗り換え数の少なさを優先するか、歩行距離の短さを優先するか選択
-func LookupTransitRoutingPreference(transitRoutingPreference string, r *maps.DirectionsRequest) {
+func lookupTransitRoutingPreference(transitRoutingPreference string, r *maps.DirectionsRequest) {
 	switch transitRoutingPreference {
 	case "fewer_transfers":
 		r.TransitRoutingPreference = maps.TransitRoutingPreferenceFewerTransfers
@@ -48,7 +48,7 @@ func LookupTransitRoutingPreference(transitRoutingPreference string, r *maps.Dir
 }
 
 //最速時間、過去のデータからの最適予測時間、最も遅い場合の予測のどれか選択
-func LookupTrafficModel(trafficModel string, r *maps.DirectionsRequest) {
+func lookupTrafficModel(trafficModel string, r *maps.DirectionsRequest) {
 	switch trafficModel {
 	case "optimistic":
 		r.TrafficModel = maps.TrafficModelOptimistic
@@ -64,7 +64,7 @@ func LookupTrafficModel(trafficModel string, r *maps.DirectionsRequest) {
 }
 
 //有料道路、高速道路、フェリーを除外する場合選択
-func LookupAvoid(avoid string, r *maps.DirectionsRequest) {
+func lookupAvoid(avoid string, r *maps.DirectionsRequest) {
 	for _, a := range strings.Split(avoid, "|") {
 		switch a {
 		case "tolls":
@@ -80,7 +80,7 @@ func LookupAvoid(avoid string, r *maps.DirectionsRequest) {
 }
 
 //交通手段を選択
-func LookupTransitMode(transitMode string, r *maps.DirectionsRequest) {
+func lookupTransitMode(transitMode string, r *maps.DirectionsRequest) {
 	for _, t := range strings.Split(transitMode, "|") {
 		switch t {
 		case "bus":
