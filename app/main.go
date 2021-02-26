@@ -3,9 +3,9 @@ package main
 import (
 	"app/controllers/auth"
 	"app/controllers/middleware"
+	"app/controllers/multiroute"
 	"app/controllers/mypage"
 	"app/controllers/simulsearch"
-	"app/controllers/multiroute"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -27,17 +27,17 @@ func main() {
 	http.HandleFunc("/register_form/", middleware.Auth(auth.RegisterForm))    //新規登録画面
 	http.HandleFunc("/check_email", auth.EmailIsAvailable)                    //メールアドレスの可用確認APIのエドポイント
 	http.HandleFunc("/register", middleware.RegisterValidator(auth.Register)) //仮登録実行用エンドポイント
-	http.HandleFunc("/ask_confirm/", middleware.Auth(auth.AskConfirmEmail))   //メールアドレス確認依頼画面
+	http.HandleFunc("/ask_confirm", middleware.Auth(auth.AskConfirmEmail))    //メールアドレス確認依頼画面
 	http.HandleFunc("/login_form/", middleware.Auth(auth.LoginForm))          //ログイン画面
 	http.HandleFunc("/login", middleware.LoginValidator(auth.Login))          //ログイン実行用エンドポイント
-	http.HandleFunc("/confirm_register/", auth.ConfirmRegister)               //本登録実行用エンドポイント
+	http.HandleFunc("/confirm_register", auth.ConfirmRegister)                //本登録実行用エンドポイント
 	http.HandleFunc("/logout", auth.Logout)                                   //ログアウト用エンドポイント
 
 	//「まとめ検索」
-	http.HandleFunc("/multi_search", middleware.Auth(multiroute.MultiSearchTpl))                            //検索画面
-	http.HandleFunc("/routes_save", middleware.Auth(middleware.SaveRoutesValidator(multiroute.SaveRoutes))) //保存用エンドポイント
-	http.HandleFunc("/show_route/", middleware.Auth(multiroute.ShowAndEditRoutesTpl))                       //確認編集画面
-	http.HandleFunc("/update_route", middleware.Auth(middleware.UpdateRouteValidator(multiroute.UpdateRoute)))               //編集用エンドポイント
+	http.HandleFunc("/multi_search", middleware.Auth(multiroute.MultiSearchTpl))                               //検索画面
+	http.HandleFunc("/routes_save", middleware.Auth(middleware.SaveRoutesValidator(multiroute.SaveRoutes)))    //保存用エンドポイント
+	http.HandleFunc("/show_route/", middleware.Auth(multiroute.ShowAndEditRoutesTpl))                          //確認編集画面
+	http.HandleFunc("/update_route", middleware.Auth(middleware.UpdateRouteValidator(multiroute.UpdateRoute))) //編集用エンドポイント
 	//「同時検索」
 	http.HandleFunc("/simul_search", middleware.Auth(simulsearch.SimulSearchTpl)) //検索画面
 	http.HandleFunc("/do_simul_search", simulsearch.DoSimulSearch)                //検索実行用エンドポイント
