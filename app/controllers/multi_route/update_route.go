@@ -1,29 +1,18 @@
 package multiroute
 
 import (
-	"app/dbhandler"
 	"app/model"
+	"app/dbhandler"
 	"encoding/json"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"log"
 	"net/http"
-	"time"
 )
 
-type ResponseMsg struct {
-	Msg string `json:"msg"`
-}
-
-//requestのフィールドを保存する変数
-type MultiSearchRequest struct {
-	Title  string                 `json:"title" bson:"title"`
-	Routes map[string]interface{} `json:"routes" bson:"routes"`
-}
-
-func SaveRoutes(w http.ResponseWriter, req *http.Request) {
+//ルートを更新保存するための関数
+func UpdateRoute(w http.ResponseWriter, req *http.Request) {
 	//バリデーション完了後のrequestFieldsを取得
-	reqFields, ok := req.Context().Value("reqFields").(MultiSearchRequest)
+	reqFields, ok := req.Context().Value("reqFields").(model.RouteUpdateRequest)
 	if !ok {
 		http.Error(w, "エラーが発生しました。もう一度操作を行ってください。", http.StatusInternalServerError)
 		log.Printf("Error while getting request fields from reuest's context: %v", ok)
@@ -36,10 +25,27 @@ func SaveRoutes(w http.ResponseWriter, req *http.Request) {
 		log.Printf("Error while getting userID from reuest's context: %v", ok)
 		return
 	}
+
 	userID := user.ID
 
-	//users collectionのmulti_route_titlesフィールドにルート名と作成時刻を追加($set)する。作成時刻はルート名取得時に作成時刻でソートするため
-	err := updateUsersRouteTitles(userID, reqFields.Title, "$set")
+	var err error
+	//編集するルートのユーザー
+	userDoc := bson.M{"_id": userID}
+
+	if reqFields.Title == reqFields.PreviousTitle {
+		//「タイムスタンプを更新」
+		err = updateUsersRouteTitles(userID, reqFields.Title, "$set")
+	} else {
+		//「元のルート名をuser documentから削除」
+		deleteField := bson.M{"multi_route_titles." + reqFields.PreviousTitle: ""}
+		//documentではなく、document内のフィールドを削除する場合、Deleteではなく、Update operatorの$unsetを使って削除する
+		//公式ドキュメントURL: https://docs.mongodb.com/manual/reference/operator/update/unset/
+		err = dbhandler.UpdateOne("googroutes", "users", "$unset", userDoc, deleteField)
+
+		//「新しいルート名とタイムスタンプを追加」
+		err = updateUsersRouteTitles(userID, reqFields.Title, "$set")
+	}
+
 	if err != nil {
 		msg := "エラ〜が発生しました。もう一度操作をしなおしてください。"
 		http.Error(w, msg, http.StatusInternalServerError)
@@ -48,12 +54,12 @@ func SaveRoutes(w http.ResponseWriter, req *http.Request) {
 	}
 
 	//routes collectionに保存
-	routeDocument := bson.D{
-		{"user_id", userID},
+	routeDoc := bson.M{"_id": reqFields.ID}
+	updateDoc := bson.D{
 		{"title", reqFields.Title},
 		{"routes", reqFields.Routes},
 	}
-	_, err = dbhandler.Insert("googroutes", "routes", routeDocument)
+	err = dbhandler.UpdateOne("googroutes", "routes", "$set", routeDoc, updateDoc)
 	if err != nil {
 		msg := "エラ〜が発生しました。もう一度操作をしなおしてください。"
 		http.Error(w, msg, http.StatusInternalServerError)
@@ -69,13 +75,4 @@ func SaveRoutes(w http.ResponseWriter, req *http.Request) {
 		log.Printf("Error while json marshaling: %v", err)
 	}
 	w.Write(respJson)
-}
-
-//user documentのmult_route_titlesに新しいルート名とタイムスタンプを追加する関数
-func updateUsersRouteTitles(userID primitive.ObjectID, routeTitle, operator string) error {
-	userDoc := bson.M{"_id": userID}
-	now := time.Now().UTC()                                        //MongoDBでは、timeはUTC表記で扱われ、タイムゾーン情報は入れられない
-	updateField := bson.M{"multi_route_titles." + routeTitle: now} //nested fieldsは.(ドット表記)で繋いで書く
-	err := dbhandler.UpdateOne("googroutes", "users", operator, userDoc, updateField)
-	return err
 }
