@@ -171,8 +171,9 @@ func UpdateRoute(w http.ResponseWriter, req *http.Request) {
 
 	} else {
 		//元のルート名を削除
-		deleteField := bson.M{"multi_route_titles": reqFields.PreviousTitle}
+		deleteField := bson.M{"multi_route_titles."+reqFields.PreviousTitle:""}
 		//documentではなく、document内のフィールドを削除する場合、Deleteではなく、Update operatorの$unsetを使って削除する
+		//公式ドキュメントURL: https://docs.mongodb.com/manual/reference/operator/update/unset/
 		err = dbhandler.UpdateOne("googroutes", "users", "$unset", userDoc, deleteField)
 		//新しいルート名とタイムスタンプを追加
 		updateField := bson.M{"multi_route_titles." + reqFields.Title: now} //nested fieldsは.(ドット表記)で繋いで書く
