@@ -38,8 +38,15 @@ $(function () {
                 }
             }
             //通信失敗
-        }).fail(function (xhr, status, error) {// HTTPエラー時
-            alert("Server Error. Pleasy try again later.");
+        }).fail(function (xhr, status, error) {
+            // HTTPエラー時
+            switch (xhr.status) {
+                case 400:
+                    alert(xhr.responseText);
+                    break;
+                case 500:
+                    alert(xhr.responseText);
+            }
             //通信終了後
         }).always(function (arg1, status, arg2) {
             //status が "success" の場合は always(data, status, xhr) となるが
