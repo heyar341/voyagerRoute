@@ -8,6 +8,7 @@ import (
 	"app/controllers/simulsearch"
 	"fmt"
 	"html/template"
+	"log"
 	"net/http"
 )
 
@@ -53,7 +54,11 @@ func main() {
 }
 
 func home(w http.ResponseWriter, req *http.Request) {
-	data, _ := req.Context().Value("data").(map[string]interface{})
+	data, ok := req.Context().Value("dat").(map[string]interface{})
+	if !ok {
+		log.Printf("Error whle gettibg data from context")
+		data = map[string]interface{}{"isLoggedIn":false}
+	}
 	data["msg"] = req.URL.Query().Get("msg")
 	data["success"] = req.URL.Query().Get("success")
 	home_tpl.ExecuteTemplate(w, "home.html", data)
