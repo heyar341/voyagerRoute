@@ -43,7 +43,7 @@ func main() {
 	http.HandleFunc("/do_simul_search", simulsearch.DoSimulSearch)                //検索実行用エンドポイント
 
 	//「マイページ」
-	http.HandleFunc("/mypage", middleware.Auth(mypage.ShowMypage))                //マイページ表示
+	http.HandleFunc("/mypage", middleware.Auth(mypage.ShowMypage))                 //マイページ表示
 	http.HandleFunc("/mypage/show_routes/", middleware.Auth(mypage.ShowAllRoutes)) //保存したルート一覧
 
 	//「ホーム」
@@ -53,7 +53,7 @@ func main() {
 }
 
 func home(w http.ResponseWriter, req *http.Request) {
-	data := req.Context().Value("data").(map[string]interface{})
+	data, _ := req.Context().Value("data").(map[string]interface{})
 	data["msg"] = req.URL.Query().Get("msg")
 	data["success"] = req.URL.Query().Get("success")
 	home_tpl.ExecuteTemplate(w, "home.html", data)
