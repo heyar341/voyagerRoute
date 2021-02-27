@@ -6,13 +6,14 @@ import (
 	"os"
 )
 
-func GetEnvVal(keyName string) string {
+func GetEnvVal(keyName string) (string, error) {
 	//API呼び出しの準備
-	env_err := godotenv.Load("env/dev.env")
-	if env_err != nil {
-		log.Println("Can't load env file")
+	err := godotenv.Load("env/dev.env")
+	if err != nil {
+		log.Println("Couldn't load env file")
+		return "", err
 	}
 	//envファイルからkeyNameに応じた値を取得
 	envVal := os.Getenv(keyName)
-	return envVal
+	return envVal, nil
 }
