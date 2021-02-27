@@ -16,20 +16,12 @@ type Resp struct {
 	Field map[string][]string `json:"resp"`
 }
 
-type SimulSearchRequest struct {
+type Params struct {
 	Origin        string            `json:"origin"`
 	Destinations  map[string]string `json:"destinations"`
 	Mode          string            `json:"mode"`
 	DepartureTime string            `json:"departure_time"`
 	Avoid         string            `json:"avoid"`
-}
-
-//目的地以外のパラメータは共通なので、structに値を入れて、simulSerach関数に引数として渡す。
-type RequestParam struct {
-	Origin        string
-	DepartureTime string
-	Mode          string
-	Avoid         string
 }
 
 func DoSimulSearch(w http.ResponseWriter, req *http.Request) {
@@ -45,26 +37,25 @@ func DoSimulSearch(w http.ResponseWriter, req *http.Request) {
 	}
 
 	//requestのフィールドを保存する変数
-	var reqFields SimulSearchRequest
+	var reqParams Params
 	body, _ := ioutil.ReadAll(req.Body)
-	err = json.Unmarshal(body, &reqFields)
+	err = json.Unmarshal(body, &reqParams)
 	if err != nil {
 		http.Error(w, "リクエストデータに不備があります。", http.StatusBadRequest)
 		log.Printf("Error while json marshaling simulSearch request: %v", err)
 	}
 
-	reqParam := setParameters(&reqFields)
-
+	reqParams.Origin = "place_id:" + reqParams.Origin
 	//検索結果を入れるmap
 	simulRoutes := map[string][]string{}
 	//同時検索
 	for i := 1; i < 10; i++ {
-		destination := reqFields.Destinations[strconv.Itoa(i)]
+		destination := reqParams.Destinations[strconv.Itoa(i)]
 		if destination == "" {
 			continue
 		}
 		destination = "place_id:" + destination
-		disntance, duration := simulSearch(client, destination, &reqParam)
+		disntance, duration := simulSearch(client, destination, &reqParams)
 		//エラーもしくは検索結果がない場合
 		if disntance == "" && duration == 0 {
 			simulRoutes[strconv.Itoa(i)] = []string{"検索結果なし", "検索結果なし"}
@@ -93,7 +84,7 @@ func DoSimulSearch(w http.ResponseWriter, req *http.Request) {
 }
 
 //google maps Directions APIを使用して、距離と所要時間お取得する関数
-func simulSearch(client *maps.Client, destination string, reqParam *RequestParam) (string, int) {
+func simulSearch(client *maps.Client, destination string, reqParam *Params) (string, int) {
 	//requestの変数宣言
 	SearchReq := &maps.DirectionsRequest{
 		Language:    "ja",
@@ -124,29 +115,4 @@ func simulSearch(client *maps.Client, destination string, reqParam *RequestParam
 		return "", 0
 	}
 	return routes[0].Legs[0].Distance.HumanReadable, int(routes[0].Legs[0].Duration.Minutes())
-}
-
-//リクエストから、パラメータを設定する関数
-func setParameters(reqFields *SimulSearchRequest) RequestParam {
-	//パラメータを入れる変数
-	var reqParam RequestParam
-
-	//出発地
-	origin := "place_id:" + reqFields.Origin
-	reqParam.Origin = origin
-
-	//徒歩、公共交通機関、自動車を選択
-	mode := reqFields.Mode
-	reqParam.Mode = mode
-	//自動車選択時、有料道路などを含めないオプション
-	if mode == "transit" {
-		//時間指定する場合
-		departureTime := reqFields.DepartureTime
-		reqParam.DepartureTime = departureTime
-	} else if mode == "driving" {
-		//運転時オプションを指定する場合
-		avoid := reqFields.Avoid
-		reqParam.Avoid = avoid
-	}
-	return reqParam
 }
