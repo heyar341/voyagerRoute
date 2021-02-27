@@ -5,29 +5,28 @@ import (
 	"encoding/json"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 	"log"
 	"net/http"
 )
 
 //ShowAndEditRoutesTplに編集するルートの情報を渡すための関数
-func GetRoute(w http.ResponseWriter, title string, userID primitive.ObjectID) string {
+func GetRoute(w http.ResponseWriter, title string, userID primitive.ObjectID) (string, error) {
 	//確認編集したいルートの名前
 	routeTitle := title
 
 	routeDoc := bson.M{"user_id": userID, "title": routeTitle}
 	DBresp, err := dbhandler.Find("googroutes", "routes", routeDoc, nil)
-	if err != nil {
-		msg := "エラ〜が発生しました。もう一度操作をしなおしてください。"
-		http.Error(w, msg, http.StatusInternalServerError)
-		log.Printf("Error while saving multi route: %v", err)
+	if err == mongo.ErrNoDocuments {
+		log.Printf("Error while getting multi_route document: %v", err)
+		return "", err
 	}
 
 	//DBから取得した値をmarshal
 	bsonByte, err := bson.Marshal(DBresp)
 	if err != nil {
-		msg := "エラ〜が発生しました。もう一度操作をしなおしてください。"
-		http.Error(w, msg, http.StatusInternalServerError)
-		log.Printf("Error while saving multi route: %v", err)
+		log.Printf("Error while bson marshaling multi_route document: %v", err)
+		return "", err
 	}
 
 	//DBから取得したルート情報
@@ -56,5 +55,5 @@ func GetRoute(w http.ResponseWriter, title string, userID primitive.ObjectID) st
 		log.Printf("Error while json marshaling: %v", err)
 	}
 
-	return string(respJson)
+	return string(respJson), nil
 }
