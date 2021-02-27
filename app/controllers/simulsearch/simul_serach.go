@@ -2,10 +2,10 @@ package simulsearch
 
 import (
 	"app/controllers/envhandler"
+	"app/model"
 	"context"
 	"encoding/json"
 	"googlemaps.github.io/maps"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"strconv"
@@ -16,18 +16,17 @@ type Resp struct {
 	Field map[string][]string `json:"resp"`
 }
 
-type Params struct {
-	Origin        string            `json:"origin"`
-	Destinations  map[string]string `json:"destinations"`
-	Mode          string            `json:"mode"`
-	DepartureTime string            `json:"departure_time"`
-	Avoid         string            `json:"avoid"`
-}
-
 func DoSimulSearch(w http.ResponseWriter, req *http.Request) {
+	//Validation後の炉クエストパラメータを取得
+	reqParams, ok := req.Context().Value("reqParams").(model.SimulParams)
+	if !ok {
+		http.Error(w, "リクエストパラメータに不備があります。", http.StatusInternalServerError)
+		log.Printf("Error while getting reqParams from context: %v", ok)
+		return
+	}
+
 	//envファイルからAPIキー取得
 	apiKey := envhandler.GetEnvVal("MAP_API_KEY")
-
 	//API呼び出しクライアントを作成
 	client, err := maps.NewClient(maps.WithAPIKey(apiKey), maps.WithRateLimit(10))
 	if err != nil {
@@ -36,25 +35,15 @@ func DoSimulSearch(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	//requestのフィールドを保存する変数
-	var reqParams Params
-	body, _ := ioutil.ReadAll(req.Body)
-	err = json.Unmarshal(body, &reqParams)
-	if err != nil {
-		http.Error(w, "リクエストデータに不備があります。", http.StatusBadRequest)
-		log.Printf("Error while json marshaling simulSearch request: %v", err)
-	}
-
-	reqParams.Origin = "place_id:" + reqParams.Origin
 	//検索結果を入れるmap
 	simulRoutes := map[string][]string{}
+
 	//同時検索
 	for i := 1; i < 10; i++ {
 		destination := reqParams.Destinations[strconv.Itoa(i)]
 		if destination == "" {
 			continue
 		}
-		destination = "place_id:" + destination
 		disntance, duration := simulSearch(client, destination, &reqParams)
 		//エラーもしくは検索結果がない場合
 		if disntance == "" && duration == 0 {
@@ -84,7 +73,7 @@ func DoSimulSearch(w http.ResponseWriter, req *http.Request) {
 }
 
 //google maps Directions APIを使用して、距離と所要時間お取得する関数
-func simulSearch(client *maps.Client, destination string, reqParam *Params) (string, int) {
+func simulSearch(client *maps.Client, destination string, reqParam *model.SimulParams) (string, int) {
 	//requestの変数宣言
 	SearchReq := &maps.DirectionsRequest{
 		Language:    "ja",

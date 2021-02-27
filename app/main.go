@@ -40,7 +40,7 @@ func main() {
 	http.HandleFunc("/update_route", middleware.Auth(middleware.UpdateRouteValidator(multiroute.UpdateRoute))) //編集用エンドポイント
 	//「同時検索」
 	http.HandleFunc("/simul_search", middleware.Auth(simulsearch.SimulSearchTpl)) //検索画面
-	http.HandleFunc("/do_simul_search", simulsearch.DoSimulSearch)                //検索実行用エンドポイント
+	http.HandleFunc("/do_simul_search", middleware.SimulSearchValidator(simulsearch.DoSimulSearch))                //検索実行用エンドポイント
 
 	//「マイページ」
 	http.HandleFunc("/mypage", middleware.Auth(mypage.ShowMypage))                //マイページ表示

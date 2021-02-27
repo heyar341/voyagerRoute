@@ -19,11 +19,19 @@ type SessionData struct {
 	UserID    primitive.ObjectID `json:"user_id" bson:"user_id"`
 }
 
-
 //ルート編集保存requestのフィールドを保存するstruct
 type RouteUpdateRequest struct {
 	ID            primitive.ObjectID     `json:"id" bson:"_id"`
 	Title         string                 `json:"title" bson:"title"`
 	PreviousTitle string                 `json:"previous_title" bson:"previous_title"`
 	Routes        map[string]interface{} `json:"routes" bson:"routes"`
+}
+
+//同時検索のリクエストパラメータ
+type SimulParams struct {
+	Origin        string            `json:"origin"`
+	Destinations  map[string]string `json:"destinations"`
+	Mode          string            `json:"mode"`
+	DepartureTime string            `json:"departure_time"`
+	Avoid         string            `json:"avoid"`
 }
