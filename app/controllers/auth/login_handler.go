@@ -5,6 +5,7 @@ import (
 	"app/model"
 	"go.mongodb.org/mongo-driver/bson"
 	"golang.org/x/crypto/bcrypt"
+	"log"
 	"net/http"
 	"net/url"
 )
@@ -35,10 +36,24 @@ func Login(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	//DBから取得した値をmarshal
-	bsonByte, _ := bson.Marshal(resp)
+	bsonByte, err := bson.Marshal(resp)
+	if err != nil {
+		msg = "エラ〜が発生しました。もう一度操作しなおしてください。"
+		email = url.QueryEscape(email)
+		http.Redirect(w, req, "/login_form/?msg="+msg+"&email="+email, http.StatusSeeOther)
+		log.Printf("Error while bson marshaling user document: %v", err)
+		return
+	}
 	var user model.UserData
 	//marshalした値をUnmarshalして、userに代入
-	bson.Unmarshal(bsonByte, &user)
+	err = bson.Unmarshal(bsonByte, &user)
+	if err != nil {
+		msg = "エラ〜が発生しました。もう一度操作しなおしてください。"
+		email = url.QueryEscape(email)
+		http.Redirect(w, req, "/login_form/?msg="+msg+"&email="+email, http.StatusSeeOther)
+		log.Printf("Error while bson unmarshaling :%v", err)
+		return
+	}
 
 	storedPass := user.Password
 	//DB内のハッシュ化されたパスワードと入力されたパスワードの一致を確認
