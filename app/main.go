@@ -44,7 +44,7 @@ func main() {
 
 	//「マイページ」
 	http.HandleFunc("/mypage", middleware.Auth(mypage.ShowMypage))                //マイページ表示
-	http.HandleFunc("/mypage/show_routes", middleware.Auth(mypage.ShowAllRoutes)) //保存したルート一覧
+	http.HandleFunc("/mypage/show_routes/", middleware.Auth(mypage.ShowAllRoutes)) //保存したルート一覧
 
 	//「ホーム」
 	http.HandleFunc("/", middleware.Auth(home))
