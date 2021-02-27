@@ -8,7 +8,9 @@
 </head>
 <body>
 {{ template "navbar" .}}
-
+{{if .msg}}
+<div class="py-2 d-flex" style="background-color: pink"><span class="mx-auto" style="color: brown">{{.msg}}</span></div>
+{{end}}
 <div class="mt-5 text-center">
     <h3>{{.userName}}さんが保存したルート</h3>
 </div>
