@@ -1,8 +1,8 @@
 package multiroute
 
 import (
-	"app/model"
 	"app/dbhandler"
+	"app/model"
 	"encoding/json"
 	"go.mongodb.org/mongo-driver/bson"
 	"log"

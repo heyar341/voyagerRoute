@@ -3,6 +3,7 @@ package simulsearch
 import (
 	"app/controllers/envhandler"
 	"html/template"
+	"log"
 	"net/http"
 )
 
@@ -15,7 +16,11 @@ func init() {
 func SimulSearchTpl(w http.ResponseWriter, req *http.Request) {
 	//envファイルからAPIキー取得
 	apiKey := envhandler.GetEnvVal("MAP_API_KEY")
-	data := req.Context().Value("data").(map[string]interface{})
+	data, ok := req.Context().Value("data").(map[string]interface{})
+	if !ok {
+		log.Printf("Error whle gettibg data from context")
+		data = map[string]interface{}{"isLoggedIn":false}
+	}
 	nineIterator := []int{1, 2, 3, 4, 5, 6, 7, 8, 9}
 	data["apiKey"] = apiKey
 	data["nineIterator"] = nineIterator

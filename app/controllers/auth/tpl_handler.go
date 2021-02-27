@@ -2,6 +2,7 @@ package auth
 
 import (
 	"html/template"
+	"log"
 	"net/http"
 )
 
@@ -12,16 +13,28 @@ func init() {
 }
 
 func AskConfirmEmail(w http.ResponseWriter, req *http.Request) {
-	data := req.Context().Value("data").(map[string]interface{})
+	data, ok := req.Context().Value("data").(map[string]interface{})
+	if !ok {
+		log.Printf("Error whle gettibg data from context")
+		data = map[string]interface{}{"isLoggedIn":false}
+	}
 	authTpl.ExecuteTemplate(w, "ask_confirm_email.html", data)
 }
 func RegisterForm(w http.ResponseWriter, req *http.Request) {
-	data := req.Context().Value("data").(map[string]interface{})
+	data, ok := req.Context().Value("data").(map[string]interface{})
+	if !ok {
+		log.Printf("Error whle gettibg data from context")
+		data = map[string]interface{}{"isLoggedIn":false}
+	}
 	data["qParams"] = req.URL.Query()
 	authTpl.ExecuteTemplate(w, "register.html", data)
 }
 func LoginForm(w http.ResponseWriter, req *http.Request) {
-	data := req.Context().Value("data").(map[string]interface{})
+	data, ok := req.Context().Value("data").(map[string]interface{})
+	if !ok {
+		log.Printf("Error whle gettibg data from context")
+		data = map[string]interface{}{"isLoggedIn":false}
+	}
 	data["qParams"] = req.URL.Query()
 	authTpl.ExecuteTemplate(w, "login.html", data)
 }
