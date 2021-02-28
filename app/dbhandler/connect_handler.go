@@ -10,10 +10,10 @@ import (
 	"time"
 )
 
-func connectDB() (*mongo.Client, context.Context, error) {
+func connectDB() (*mongo.Client, context.Context, func(), error) {
 	env_err := godotenv.Load("env/dev.env")
 	if env_err != nil {
-		panic("Can't load env file")
+		log.Println("Couldn't load env file")
 	}
 	//envファイルからDB情報取得
 	DB_HOST := os.Getenv("DB_HOST")
@@ -23,15 +23,15 @@ func connectDB() (*mongo.Client, context.Context, error) {
 	client, err := mongo.NewClient(options.Client().ApplyURI("mongodb://" + DB_USER + ":" + DB_PASSWORD + "@" + DB_HOST + ":" + DB_PORT))
 	if err != nil {
 		log.Fatalln("DB info :", err)
-		return nil, nil, err
+		return nil, nil, func() {}, err
 	}
-	ctx, _ := context.WithTimeout(context.Background(), 7*time.Second)
-	//7秒経っても処理が終了しない場合、強制終了
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	//5秒経っても処理が終了しない場合、強制終了
 	err = client.Connect(ctx)
 	if err != nil {
 		log.Fatalln("Connect DB :", err)
-		return nil, nil, err
+		return nil, nil, func() {}, err
 	}
 	//clientを返してDB操作をできるようにする
-	return client, ctx, nil
+	return client, ctx, cancel, nil
 }
