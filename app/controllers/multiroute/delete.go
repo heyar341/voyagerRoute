@@ -55,5 +55,5 @@ func DeleteRoute(w http.ResponseWriter, req *http.Request) {
 	//レスポンス作成
 	success := "ルート「" + routeTitle + "」を削除しました。"
 	http.Redirect(w, req, "/mypage/show_routes/?success="+success, http.StatusSeeOther)
-	log.Printf("Route [%v] was deleted", routeTitle)
+	log.Printf("User [%v] deleted route [%v]", user.UserName, routeTitle)
 }
