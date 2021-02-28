@@ -21,12 +21,18 @@ func init() {
 
 func MultiSearchTpl(w http.ResponseWriter, req *http.Request) {
 	//envファイルからAPIキー取得
-	apiKey := envhandler.GetEnvVal("MAP_API_KEY")
+	apiKey, err := envhandler.GetEnvVal("MAP_API_KEY")
+	if err != nil {
+		msg = "エラーが発生しました。しばらく経ってからもう一度ご利用ください。"
+		http.Redirect(w, req, "/?msg="+msg, http.StatusInternalServerError)
+		return
+	}
+
 	data, ok := req.Context().Value("data").(map[string]interface{})
 	if !ok {
 		msg = "エラ〜が発生しました。もう一度操作しなおしてください。"
 		http.Redirect(w, req, "/mypage/show_routes/?msg="+msg, http.StatusSeeOther)
-		log.Printf("Error while getting data from context: %v",ok)
+		log.Printf("Error while getting data from context: %v", ok)
 		return
 	}
 	data["apiKey"] = apiKey
@@ -39,7 +45,7 @@ func ShowAndEditRoutesTpl(w http.ResponseWriter, req *http.Request) {
 	if !ok {
 		msg = "エラ〜が発生しました。もう一度操作しなおしてください。"
 		http.Redirect(w, req, "/mypage/show_routes/?msg="+msg, http.StatusSeeOther)
-		log.Printf("Error while getting user from context: %v",ok)
+		log.Printf("Error while getting user from context: %v", ok)
 		return
 	}
 	routeInfo, err := GetRoute(w, routeTitle, user.ID)
@@ -54,12 +60,17 @@ func ShowAndEditRoutesTpl(w http.ResponseWriter, req *http.Request) {
 	}
 
 	//envファイルからAPIキー取得
-	apiKey := envhandler.GetEnvVal("MAP_API_KEY")
+	apiKey, err := envhandler.GetEnvVal("MAP_API_KEY")
+	if err != nil {
+		msg = "エラーが発生しました。しばらく経ってからもう一度ご利用ください。"
+		http.Redirect(w, req, "/?msg="+msg, http.StatusInternalServerError)
+		return
+	}
 	data, ok := req.Context().Value("data").(map[string]interface{})
 	if !ok {
 		msg = "エラ〜が発生しました。もう一度操作しなおしてください。"
 		http.Redirect(w, req, "/mypage/show_routes/?msg="+msg, http.StatusSeeOther)
-		log.Printf("Error while getting data from context: %v",ok)
+		log.Printf("Error while getting data from context: %v", ok)
 		return
 	}
 	data["apiKey"] = apiKey

@@ -21,7 +21,11 @@ func createToken(sessionID string) (string, error) {
 		SessionID: sessionID,
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claim)
-	key := []byte(envhandler.GetEnvVal("TOKENIZE_KEY"))
+	keyStr,err := envhandler.GetEnvVal("TOKENIZE_KEY")
+	if err != nil {
+		return "", err
+	}
+	key := []byte(keyStr)
 	signedString, err := token.SignedString(key)
 	if err != nil {
 		return "", fmt.Errorf("Error happend creating a token: %w", err)
@@ -30,7 +34,11 @@ func createToken(sessionID string) (string, error) {
 }
 
 func ParseToken(sessionValue string) (string, error) {
-	key := []byte(envhandler.GetEnvVal("TOKENIZE_KEY"))
+	keyStr,err := envhandler.GetEnvVal("TOKENIZE_KEY")
+	if err != nil {
+		return "", err
+	}
+	key := []byte(keyStr)
 	afterVerifToken, err := jwt.ParseWithClaims(sessionValue, &customClaim{}, func(token *jwt.Token) (interface{}, error) {
 		if token.Method.Alg() != jwt.SigningMethodHS256.Alg() {
 			return "", fmt.Errorf("Someone tried hack the site!")

@@ -71,7 +71,12 @@ func Register(w http.ResponseWriter, req *http.Request) {
 
 	//「メールでトークン付きのURLを送る」
 	//envファイルからGmailのアプリパスワード取得
-	gmailPassword := envhandler.GetEnvVal("GMAIL_APP_PASS")
+	gmailPassword,err := envhandler.GetEnvVal("GMAIL_APP_PASS")
+	if err != nil {
+		msg = "エラーが発生しました。しばらく経ってからもう一度ご利用ください。"
+		http.Redirect(w, req, "/?msg="+msg, http.StatusInternalServerError)
+		return
+	}
 	mailAuth := smtp.PlainAuth(
 		"",
 		"app.goog.routes@gmail.com",

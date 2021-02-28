@@ -26,7 +26,11 @@ func DoSimulSearch(w http.ResponseWriter, req *http.Request) {
 	}
 
 	//envファイルからAPIキー取得
-	apiKey := envhandler.GetEnvVal("MAP_API_KEY")
+	apiKey, err := envhandler.GetEnvVal("MAP_API_KEY")
+	if err != nil {
+		http.Error(w, "エラーが発生しました。", http.StatusInternalServerError)
+		return
+	}
 	//API呼び出しクライアントを作成
 	client, err := maps.NewClient(maps.WithAPIKey(apiKey), maps.WithRateLimit(10))
 	if err != nil {
