@@ -66,9 +66,14 @@ $(function () {
 //現在時刻を取得し、時間指定要素に挿入
 var today = new Date();
 var yyyy = today.getFullYear();
-var mm = ("0" + (today.getMonth() + 1)).slice(-2);
+var mm = ("0" + (today.getMonth() + 1)).slice(-2); //getMonthは0 ~ 11
 var dd = ("0" + today.getDate()).slice(-2);
-var now = today.getHours() + ":" + today.getMinutes() + ":00";
+var hr = ("0" + today.getHours()).slice(-2);
+var minu = ("0" + today.getMinutes()).slice(-2);
+var clock = hr + ":" + minu + ":00";
+
+//ブラウザのタイムゾーンのUTCからの時差をminutes単位で取得
+var tzoneOffsetminu = today.getTimezoneOffset();
 
 function initMap() {
   const map = new google.maps.Map(document.getElementById("map"), {
@@ -88,6 +93,7 @@ function initMap() {
     yyyy + "-" + mm + "-" + dd;
   document.getElementById("date" + String(routeID)).min =
     yyyy + "-" + mm + "-" + dd;
+  document.getElementById("time" + String(routeID)).value = clock;
   //AutocompleteとDiretionsServiceのインスタンス化
   new AutocompleteDirectionsHandler(map, String(routeID));
   $(".toggle-title").on("click", function () {
@@ -106,6 +112,7 @@ function initMap() {
       yyyy + "-" + mm + "-" + dd;
     document.getElementById("date" + String(routeID)).min =
       yyyy + "-" + mm + "-" + dd;
+    document.getElementById("time" + String(routeID)).value = clock;
     new AutocompleteDirectionsHandler(map, String(routeID));
     $(".toggle-title").on("click", function () {
       $(".toggle-title").off("click");
@@ -117,6 +124,8 @@ function initMap() {
     });
   });
 }
+
+var a = "";
 
 class AutocompleteDirectionsHandler {
   constructor(map, routeNum) {
@@ -138,6 +147,8 @@ class AutocompleteDirectionsHandler {
     this.map = map;
     this.directionsRequest = {};
     this.originPlaceId = "";
+    this.originLatitude = 0;
+    this.originLongitue = 0;
     this.destinationPlaceId = "";
     this.poly = [];
     this.travelMode = google.maps.TravelMode.WALKING;
@@ -219,6 +230,7 @@ class AutocompleteDirectionsHandler {
     autocomplete.bindTo("bounds", this.map);
     autocomplete.addListener("place_changed", () => {
       const place = autocomplete.getPlace();
+      console.log(place.geometry.location.lat());
       if (!place.place_id) {
         window.alert("表示された選択肢の中から選んでください。");
         return;
@@ -232,11 +244,14 @@ class AutocompleteDirectionsHandler {
         return;
       }
       if (mode === "ORIG") {
-        this.originPlaceId = place.place_id;
+        me.originPlaceId = place.place_id;
       } else {
-        this.destinationPlaceId = place.place_id;
+        me.destinationPlaceId = place.place_id;
       }
-      this.route();
+      //経度と緯度を設定
+      me.originLatitude = place.geometry.location.lat();
+      me.originLongitue = place.geometry.location.lng();
+      me.route();
     });
   }
 
@@ -248,12 +263,12 @@ class AutocompleteDirectionsHandler {
     });
   }
 
-  //すぐに出発ボタンを有効化
+  //「すぐに出発」ボタンを有効化
   setupTimeListener(id, rNum) {
     const timeNow = document.getElementById(id);
     timeNow.addEventListener("click", () => {
       document.getElementById("date" + rNum).value = yyyy + "-" + mm + "-" + dd;
-      document.getElementById("time" + rNum).value = now;
+      document.getElementById("time" + rNum).value = clock;
       this.route();
     });
   }
@@ -342,27 +357,74 @@ class AutocompleteDirectionsHandler {
     //公共交通機関を選択した場合
     if (document.getElementById("changemode-transit" + this.routeNum).checked) {
       this.directionsRequest.transitOptions = {};
-      //出発時間を指定した場合
-      if (document.getElementById("depart-time" + this.routeNum).checked) {
-        this.directionsRequest.transitOptions.departureTime = new Date(
-          document.getElementById("date" + this.routeNum).value +
+      //UTCとの時差をminnutes単位で入れる変数(Ajax function内だと、ローカル変数になるからここで宣言)
+      var timeDiff = 0;
+
+      //「すぐに出発」以外のボタンが押されている場合
+      if (!document.getElementById("depart-now" + me.routeNum).checked) {
+        $(function () {
+          $.ajax({
+            url: "/get_timezone", // 通信先のURL
+            type: "POST", // 使用するHTTPメソッド
+            data: JSON.stringify({
+              lat: String(me.originLatitude), //緯度
+              lng: String(me.originLongitue), //経度
+              unix_time: String(today.getTime()), //Unix表記の現在時刻
+            }),
+            contentType: "application/json",
+            dataType: "json", // responseのデータの種類
+            timespan: 1000, // 通信のタイムアウトの設定(ミリ秒)
+          })
+            .done(function (data, textStatus, jqXHR) {
+              //UTCとの時差をminnutes単位で取得
+              timeDiff = data.rawOffset;
+            })
+            //通信失敗
+            .fail(function (xhr, status, error) {
+              // HTTPエラー時
+              switch (xhr.status) {
+                case 401:
+                  alert(xhr.responseText);
+                  return;
+                case 500:
+                  alert(xhr.responseText);
+                  return;
+              }
+              //通信終了後
+            })
+            .always(function (arg1, status, arg2) {
+              //status が "success" の場合は always(data, status, xhr) となるが
+              //、"success" 以外の場合は always(xhr, status, error)となる。
+            });
+        });
+        //ブラウザのタイムゾーンでの指定時間
+        var specTime = new Date(
+          document.getElementById("date" + me.routeNum).value +
             "T" +
-            document.getElementById("time" + this.routeNum).value
+            document.getElementById("time" + me.routeNum).value
         );
-      }
-      //到着時間を指定した場合
-      else if (
-        document.getElementById("arrival-time" + this.routeNum).checked
-      ) {
-        this.directionsRequest.transitOptions.arrivalTime = new Date(
-          document.getElementById("date" + this.routeNum).value +
-            "T" +
-            document.getElementById("time" + this.routeNum).value
+        //(ブラウザのタイムゾーンの時刻) ー (ブラウザのタイムゾーンのUTCからの時差) ＋ (入力地のタイムゾーンのUTCからの時差) = (入力地のタイムゾーンの時刻)
+        //例:イギリスの鉄道の10:00出発を調べたい場合、(10:00 Asia/Tokyo) -(-9:00 Asia/Tokyo) + (0 GMT) = (19:00 Asia/Tokyo) = (10:00 GMT)
+        specTime.setHours(
+          today.getHours() -
+            Math.round(tzoneOffsetminu / 60) +
+            Math.round(timeDiff)
         );
+
+        //出発時間を指定した場合
+        if (document.getElementById("depart-time" + me.routeNum).checked) {
+          me.directionsRequest.transitOptions.departureTime = specTime;
+        }
+        //到着時間を指定した場合
+        else if (
+          document.getElementById("arrival-time" + me.routeNum).checked
+        ) {
+          me.directionsRequest.transitOptions.arrivalTime = specTime;
+        }
       }
-      this.directionsRequest.transitOptions.routingPreference =
-        "FEWER_TRANSFERS";
+      me.directionsRequest.transitOptions.routingPreference = "FEWER_TRANSFERS";
     }
+
     //自動車ルートを指定した場合
     else if (
       document.getElementById("changemode-driving" + this.routeNum).checked
@@ -387,7 +449,7 @@ class AutocompleteDirectionsHandler {
           }
           me.poly = [];
         }
-
+        console.log(this.directionsRequest.transitOptions.departureTime);
         if (
           response.request.travelMode == "TRANSIT" &&
           response.routes[0].legs[0].start_address.match(/日本/)
@@ -503,7 +565,7 @@ function genSearchBox(routeId, color) {
                 <div id="transit-time${routeId}" style="display: none">
                     <span>時間指定：</span>
                     <br>
-                    <input type="radio" name="timespec${routeId}" id="depart-now${routeId}"/>
+                    <input type="radio" name="timespec${routeId}" id="depart-now${routeId}" checked="checked"/>
                     <label class="mr-2" for="depart-now${routeId}">すぐに出発</label>
                     <input type="radio" name="timespec${routeId}" id="depart-time${routeId}"/>
                     <label class="mr-2" for="depart-time${routeId}">出発時間</label>

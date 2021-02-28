@@ -36,6 +36,7 @@ func main() {
 
 	//「まとめ検索」
 	http.HandleFunc("/multi_search", middleware.Auth(multiroute.MultiSearchTpl))                               //検索画面
+	http.HandleFunc("/get_timezone", middleware.Auth(multiroute.GetTimezone))                                  //タイムゾーン取得用エンドポイント
 	http.HandleFunc("/routes_save", middleware.Auth(middleware.SaveRoutesValidator(multiroute.SaveRoutes)))    //保存用エンドポイント
 	http.HandleFunc("/show_route/", middleware.Auth(multiroute.ShowAndEditRoutesTpl))                          //確認編集画面
 	http.HandleFunc("/update_route", middleware.Auth(middleware.UpdateRouteValidator(multiroute.UpdateRoute))) //編集用エンドポイント
