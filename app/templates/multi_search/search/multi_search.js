@@ -68,7 +68,10 @@ var today = new Date();
 var yyyy = today.getFullYear();
 var mm = ("0" + (today.getMonth() + 1)).slice(-2);
 var dd = ("0" + today.getDate()).slice(-2);
-var now = today.getHours() + ":" + today.getMinutes() + ":00";
+var clock = today.getHours() + ":" + today.getMinutes() + ":00";
+
+//ブラウザのタイムゾーンのUTCからの時差をminutes単位で取得
+var tzoneOffsetminu = today.getTimezoneOffset();
 
 function initMap() {
   const map = new google.maps.Map(document.getElementById("map"), {
@@ -88,6 +91,8 @@ function initMap() {
     yyyy + "-" + mm + "-" + dd;
   document.getElementById("date" + String(routeID)).min =
     yyyy + "-" + mm + "-" + dd;
+  document.getElementById("time" + String(routeID)).value =
+      clock;
   //AutocompleteとDiretionsServiceのインスタンス化
   new AutocompleteDirectionsHandler(map, String(routeID));
   $(".toggle-title").on("click", function () {
@@ -106,6 +111,8 @@ function initMap() {
       yyyy + "-" + mm + "-" + dd;
     document.getElementById("date" + String(routeID)).min =
       yyyy + "-" + mm + "-" + dd;
+    document.getElementById("time" + String(routeID)).value =
+        clock;
     new AutocompleteDirectionsHandler(map, String(routeID));
     $(".toggle-title").on("click", function () {
       $(".toggle-title").off("click");
@@ -117,7 +124,7 @@ function initMap() {
     });
   });
 }
-
+var a = "";
 class AutocompleteDirectionsHandler {
   constructor(map, routeNum) {
     /**
@@ -138,6 +145,8 @@ class AutocompleteDirectionsHandler {
     this.map = map;
     this.directionsRequest = {};
     this.originPlaceId = "";
+    this.originLatitude = 0;
+    this.originLongitue = 0;
     this.destinationPlaceId = "";
     this.poly = [];
     this.travelMode = google.maps.TravelMode.WALKING;
@@ -219,6 +228,7 @@ class AutocompleteDirectionsHandler {
     autocomplete.bindTo("bounds", this.map);
     autocomplete.addListener("place_changed", () => {
       const place = autocomplete.getPlace();
+      console.log(place.geometry.location.lat());
       if (!place.place_id) {
         window.alert("表示された選択肢の中から選んでください。");
         return;
@@ -232,11 +242,14 @@ class AutocompleteDirectionsHandler {
         return;
       }
       if (mode === "ORIG") {
-        this.originPlaceId = place.place_id;
+        me.originPlaceId = place.place_id;
       } else {
-        this.destinationPlaceId = place.place_id;
+        me.destinationPlaceId = place.place_id;
       }
-      this.route();
+      //経度と緯度を設定
+      me.originLatitude = place.geometry.location.lat();
+      me.originLongitue = place.geometry.location.lng();
+      me.route();
     });
   }
 
@@ -248,12 +261,12 @@ class AutocompleteDirectionsHandler {
     });
   }
 
-  //すぐに出発ボタンを有効化
+  //「すぐに出発」ボタンを有効化
   setupTimeListener(id, rNum) {
     const timeNow = document.getElementById(id);
     timeNow.addEventListener("click", () => {
       document.getElementById("date" + rNum).value = yyyy + "-" + mm + "-" + dd;
-      document.getElementById("time" + rNum).value = now;
+      document.getElementById("time" + rNum).value = clock;
       this.route();
     });
   }
