@@ -9,7 +9,8 @@ import (
 
 func UpdateOne(dbName, collectionName, updateMode string, document, updateField interface{}) error {
 
-	client, ctx, err := connectDB()
+	client, ctx, cancel, err := connectDB()
+	defer cancel()
 	if err != nil {
 		return err
 	}

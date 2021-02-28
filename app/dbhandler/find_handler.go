@@ -10,7 +10,8 @@ import (
 
 ///optionDoc(フィールド指定)は順番関係ないからtypeはDでなくM
 func Find(dbName, collectionName string, document interface{}, optionDoc bson.M) (interface{}, error) {
-	client, ctx, err := connectDB()
+	client, ctx, cancel, err := connectDB()
+	defer cancel()
 	if err != nil {
 		return nil, err
 	}
@@ -32,7 +33,8 @@ func Find(dbName, collectionName string, document interface{}, optionDoc bson.M)
 }
 
 func FindAll(dbName, collectionName string, document interface{}, optionDoc bson.M) (interface{}, error) {
-	client, ctx, err := connectDB()
+	client, ctx, cancel, err := connectDB()
+	defer cancel()
 	if err != nil {
 		return nil, err
 	}

@@ -8,7 +8,8 @@ import (
 
 func Delete(dbName, collectionName string, document interface{}) error {
 	//objectIDを取得するには、１番目の帰り値のInsertedIDフィールドを取得する
-	client, ctx, err := connectDB()
+	client, ctx, cancel, err := connectDB()
+	defer cancel()
 	if err != nil {
 		return err
 	}
