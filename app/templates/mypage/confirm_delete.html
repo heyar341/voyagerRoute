@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+
+    <title>保存済みルート一覧</title>
+</head>
+<body>
+{{ template "navbar" .}}
+<div class="mt-5 text-center">
+    <h3>削除の確認</h3>
+    <p>ルート{{.title}}を削除します。よろしいですか？</p>
+</div>
+<div class="d-flex">
+    <div class="mx-auto d-flex">
+        <form action="/delete_route" method="POST">
+            <button class="btn-danger mr-3" type="submit" name="title" value="{{.title}}">削除する</button>
+        </form>
+        <a href="show_routes.html">
+            <button class="btn-success">戻る</button>
+        </a>
+    </div>
+</div>
+
+</body>
+</html>

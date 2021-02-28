@@ -47,7 +47,7 @@ func UpdateRoute(w http.ResponseWriter, req *http.Request) {
 	}
 
 	if err != nil {
-		msg := "エラ〜が発生しました。もう一度操作をしなおしてください。"
+		msg = "エラーが発生しました。もう一度操作をしなおしてください。"
 		http.Error(w, msg, http.StatusInternalServerError)
 		log.Printf("Error while saving multi route: %v", err)
 		return
@@ -61,7 +61,7 @@ func UpdateRoute(w http.ResponseWriter, req *http.Request) {
 	}
 	err = dbhandler.UpdateOne("googroutes", "routes", "$set", routeDoc, updateDoc)
 	if err != nil {
-		msg := "エラ〜が発生しました。もう一度操作をしなおしてください。"
+		msg = "エラーが発生しました。もう一度操作をしなおしてください。"
 		http.Error(w, msg, http.StatusInternalServerError)
 		log.Printf("Error while saving multi route: %v", err)
 		return
@@ -69,8 +69,8 @@ func UpdateRoute(w http.ResponseWriter, req *http.Request) {
 
 	//レスポンス作成
 	w.Header().Set("Content-Type", "application/json")
-	msg := ResponseMsg{Msg: "OK"}
-	respJson, err := json.Marshal(msg)
+	respMsg := ResponseMsg{Msg: "OK"}
+	respJson, err := json.Marshal(respMsg)
 	if err != nil {
 		log.Printf("Error while json marshaling: %v", err)
 	}

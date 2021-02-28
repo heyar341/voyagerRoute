@@ -10,6 +10,9 @@
 {{ template "navbar" .}}
 {{if .msg}}
 <div class="py-2 d-flex" style="background-color: pink"><span class="mx-auto" style="color: brown">{{.msg}}</span></div>
+{{else if .success}}
+<div class="py-2 d-flex" style="background-color: lightblue"><span class="mx-auto"
+                                                                   style="color: green">{{.success}}</span></div>
 {{end}}
 <div class="mt-5 text-center">
     <h3>{{.userName}}さんが保存したルート</h3>
@@ -27,6 +30,10 @@
                     <a href="/show_route/?route_title={{$title}}">
                         <button class="btn-success" type="button">確認または編集</button>
                     </a>
+                    <hr>
+                    <form action="/mypage/delete_route" method="POST">
+                        <button class="btn-danger" type="submit" name="title" value="{{$title}}">削除する</button>
+                    </form>
                 </div><!-- card-body end .// -->
             </div><!-- card end.// -->
         </div>

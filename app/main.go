@@ -39,13 +39,16 @@ func main() {
 	http.HandleFunc("/routes_save", middleware.Auth(middleware.SaveRoutesValidator(multiroute.SaveRoutes)))    //保存用エンドポイント
 	http.HandleFunc("/show_route/", middleware.Auth(multiroute.ShowAndEditRoutesTpl))                          //確認編集画面
 	http.HandleFunc("/update_route", middleware.Auth(middleware.UpdateRouteValidator(multiroute.UpdateRoute))) //編集用エンドポイント
+	http.HandleFunc("/delete_route", middleware.Auth(multiroute.DeleteRoute))                                  //削除用エンドポイント
+
 	//「同時検索」
-	http.HandleFunc("/simul_search", middleware.Auth(simulsearch.SimulSearchTpl)) //検索画面
-	http.HandleFunc("/do_simul_search", middleware.SimulSearchValidator(simulsearch.DoSimulSearch))                //検索実行用エンドポイント
+	http.HandleFunc("/simul_search", middleware.Auth(simulsearch.SimulSearchTpl))                   //検索画面
+	http.HandleFunc("/do_simul_search", middleware.SimulSearchValidator(simulsearch.DoSimulSearch)) //検索実行用エンドポイント
 
 	//「マイページ」
 	http.HandleFunc("/mypage", middleware.Auth(mypage.ShowMypage))                 //マイページ表示
 	http.HandleFunc("/mypage/show_routes/", middleware.Auth(mypage.ShowAllRoutes)) //保存したルート一覧
+	http.HandleFunc("/mypage/delete_route", middleware.Auth(mypage.ConfirmDelete)) //削除確認
 
 	//「ホーム」
 	http.HandleFunc("/", middleware.Auth(home))
@@ -57,7 +60,7 @@ func home(w http.ResponseWriter, req *http.Request) {
 	data, ok := req.Context().Value("data").(map[string]interface{})
 	if !ok {
 		log.Printf("Error whle gettibg data from context")
-		data = map[string]interface{}{"isLoggedIn":false}
+		data = map[string]interface{}{"isLoggedIn": false}
 	}
 	data["msg"] = req.URL.Query().Get("msg")
 	data["success"] = req.URL.Query().Get("success")
