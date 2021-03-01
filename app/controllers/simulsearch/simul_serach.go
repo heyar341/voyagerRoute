@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"googlemaps.github.io/maps"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"strconv"
@@ -14,6 +15,14 @@ import (
 
 type Resp struct {
 	Field map[string][]string `json:"resp"`
+}
+
+type TimeZoneResp struct {
+	SummerTimeOffset int    `json:"dstOffset"` //サマータイム時のオフセット
+	RawOffset        int    `json:"rawOffset"` //通常時のオフセット
+	Status           string `json:"status"`
+	TimeZoneID       string `json:"timeZoneId"`
+	TimeZoneName     string `json:"timeZoneName"`
 }
 
 func DoSimulSearch(w http.ResponseWriter, req *http.Request) {
@@ -55,7 +64,10 @@ func DoSimulSearch(w http.ResponseWriter, req *http.Request) {
 		} else {
 			var durationResp string
 			//１時間以上の場合、〜時間〜分にフォーマットを変える
-			if duration >= 60 {
+			if duration >= 24*60 {
+				durationResp = strconv.Itoa(int(duration/(24*60))) + "日" + strconv.Itoa(int(duration%(24*60)/60)) + "時間" +
+					strconv.Itoa(int(duration%(24*60)%60)) + "分"
+			} else if duration >= 60 {
 				durationResp = strconv.Itoa(int(duration/60)) + "時間" + strconv.Itoa(int(duration%60)) + "分"
 			} else {
 				durationResp = strconv.Itoa(duration) + "分"
@@ -90,16 +102,32 @@ func simulSearch(client *maps.Client, destination string, reqParam *model.SimulP
 		TrafficModel: maps.TrafficModelBestGuess,
 	}
 
-	//オプション指定されている場合、SearchReqにその値を入れる
-	if reqParam.DepartureTime != "" {
-		t, _ := time.Parse(time.RFC3339, reqParam.DepartureTime)
-		SearchReq.DepartureTime = strconv.Itoa(int(t.Unix()))
-	}
-	if reqParam.Mode != "" {
+	if reqParam.Mode == "trasit" {
 		lookupMode(reqParam.Mode, SearchReq)
-	}
-	if reqParam.Avoid != "" {
-		lookupAvoid(reqParam.Avoid, SearchReq)
+		//オプション指定されている場合、SearchReqにその値を入れる
+		if reqParam.DepartureTime != "" {
+			lat := reqParam.LatLng.Lat
+			lng := reqParam.LatLng.Lng
+			offset,err := getTimeZoneOffset(lat, lng)
+			//オフセットを追加して、出発地のタイムゾーンの時間に合わせる
+			if err != nil {
+				return "", 0
+			}
+			specTime := reqParam.DepartureTime + offset
+			t, err := time.Parse(time.RFC3339, specTime)
+			if err != nil {
+				log.Printf("Invalid specTime :%v", err)
+				return "", 0
+			}
+			SearchReq.DepartureTime = strconv.Itoa(int(t.Unix()))
+		}
+	} else if reqParam.Mode == "driving" {
+		lookupMode(reqParam.Mode, SearchReq)
+		if len(reqParam.Avoid) > 0 {
+			lookupAvoid(reqParam.Avoid, SearchReq)
+		}
+	} else {
+		lookupMode(reqParam.Mode, SearchReq)
 	}
 
 	//ルートを取得
@@ -108,4 +136,45 @@ func simulSearch(client *maps.Client, destination string, reqParam *model.SimulP
 		return "", 0
 	}
 	return routes[0].Legs[0].Distance.HumanReadable, int(routes[0].Legs[0].Duration.Minutes())
+}
+
+//緯度と経度からタイムゾーンオフセットを取得する関数
+func getTimeZoneOffset(lat, lng string) (string, error) {
+	apiKey, err := envhandler.GetEnvVal("TIMEZONE_API_KEY")
+	if err != nil {
+		return "", err
+	}
+	//timezone API用URL
+	reqURL := "https://maps.googleapis.com/maps/api/timezone/json?location=" +
+		lat + "," + lng + "&timestamp=" + strconv.Itoa(int(time.Now().Unix())) + "&key=" + apiKey
+
+	resp, err := http.Get(reqURL)
+	if err != nil {
+		log.Printf("Error while getting timezone response: %v", err)
+		return "", err
+	}
+	//responseのフィールドを保存する変数
+	var tZResp TimeZoneResp
+	body, _ := ioutil.ReadAll(resp.Body)
+	err = json.Unmarshal(body, &tZResp)
+	if err != nil {
+		log.Printf("Error while json unmarshaling timezone response: %v", err)
+		return "", err
+	}
+	err = resp.Body.Close()
+	offset := tZResp.RawOffset //seconds
+	offsetHour := int(offset / 3600) //hours
+	if offsetHour == 0 {
+		return "Z", nil //UTC
+	} else if offsetHour > 0 {
+		//UTCより進んでいる場所
+		strOffset := "0" + strconv.Itoa(offsetHour)
+		strOffset = "+" + strOffset[len(strOffset)-2:] + ":00" //1桁なら+0(number):00, 2桁なら+1or2(number):00
+		return strOffset, nil
+	} else {
+		//UTCより遅れている場所
+		strOffset := "0" + strconv.Itoa(-offsetHour)
+		strOffset = "-" + strOffset[len(strOffset)-2:] + ":00"
+		return strOffset, nil
+	}
 }
