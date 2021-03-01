@@ -68,6 +68,7 @@ var today = new Date();
 var yyyy = today.getFullYear();
 var mm = ("0" + (today.getMonth() + 1)).slice(-2); //getMonthは0 ~ 11
 var dd = ("0" + today.getDate()).slice(-2);
+
 var hr = ("0" + today.getHours()).slice(-2);
 var minu = ("0" + today.getMinutes()).slice(-2);
 var clock = hr + ":" + minu + ":00";
@@ -136,7 +137,10 @@ class AutocompleteDirectionsHandler {
      * @param {Object} map - google mapオブジェクト
      * @param {Object} directionRequest - directionServiceの引数に指定するオブジェクト
      * @param {String} originPlaceId - Autocomplete Serviceで地名から変換された地点ID
+     * @param {Number} originLatitude - Autocomplete Serviceで地名から取得された緯度
+     * @param {Number} originLongitude - Autocomplete Serviceで地名から取得された経度
      * @param {String} destinationPlaceId - Autocomplete Serviceで地名から変換された地点ID
+     * @param {Number} timeDiffMin - TimeZone APIから取得された出発地のoffset
      * @param {Array} poly - ルートごとのdirectionRendererオブジェクトの配列
      * @param {Object} travelMode - directionsRequestのオプションフィールド
      * @param {Object} directionsService - google maps API Javascriptのオブジェクト
@@ -150,6 +154,7 @@ class AutocompleteDirectionsHandler {
     this.originLatitude = 0;
     this.originLongitue = 0;
     this.destinationPlaceId = "";
+    this.timeDiffMin = 0;
     this.poly = [];
     this.travelMode = google.maps.TravelMode.WALKING;
     this.directionsService = new google.maps.DirectionsService();
@@ -230,7 +235,6 @@ class AutocompleteDirectionsHandler {
     autocomplete.bindTo("bounds", this.map);
     autocomplete.addListener("place_changed", () => {
       const place = autocomplete.getPlace();
-      console.log(place.geometry.location.lat());
       if (!place.place_id) {
         window.alert("表示された選択肢の中から選んでください。");
         return;
@@ -341,6 +345,39 @@ class AutocompleteDirectionsHandler {
       });
   }
 
+  getTimeZone(me) {
+    $.ajax({
+      url: "/get_timezone", // 通信先のURL
+      async: false, //プログラムの途中で実行するので、同期通信で行う
+      type: "POST", // 使用するHTTPメソッド
+      data: JSON.stringify({
+        lat: String(me.originLatitude), //緯度
+        lng: String(me.originLongitue), //経度
+        unix_time: String(today.getTime()).slice(0, 10), //Unix表記の現在時
+      }),
+      contentType: "application/json",
+      dataType: "json", // responseのデータの種類
+      timespan: 1000, // 通信のタイムアウトの設定(ミリ秒)
+    })
+      .done(function (data, textStatus, jqXHR) {
+        //UTCとの時差をminnutes単位で取得
+        me.timeDiffMin = data.rawOffset;
+      })
+      //通信失敗
+      .fail(function (xhr, status, error) {
+        // HTTPエラー時
+        switch (xhr.status) {
+          case 401:
+            alert(xhr.responseText);
+            return 0;
+          case 500:
+            alert(xhr.responseText);
+            return 0;
+        }
+        //通信終了後
+      });
+  }
+
   //directions Serviceを使用し、ルート検索
   route() {
     if (!this.originPlaceId || !this.destinationPlaceId) {
@@ -357,58 +394,30 @@ class AutocompleteDirectionsHandler {
     //公共交通機関を選択した場合
     if (document.getElementById("changemode-transit" + this.routeNum).checked) {
       this.directionsRequest.transitOptions = {};
-      //UTCとの時差をminnutes単位で入れる変数(Ajax function内だと、ローカル変数になるからここで宣言)
-      var timeDiff = 0;
+      //時間指定しない場合、現在時刻に設定
+      me.directionsRequest.transitOptions.departureTime = new Date(
+        yyyy + "-" + mm + "-" + dd + "T" + clock
+      );
 
       //「すぐに出発」以外のボタンが押されている場合
       if (!document.getElementById("depart-now" + me.routeNum).checked) {
-        $(function () {
-          $.ajax({
-            url: "/get_timezone", // 通信先のURL
-            type: "POST", // 使用するHTTPメソッド
-            data: JSON.stringify({
-              lat: String(me.originLatitude), //緯度
-              lng: String(me.originLongitue), //経度
-              unix_time: String(today.getTime()), //Unix表記の現在時刻
-            }),
-            contentType: "application/json",
-            dataType: "json", // responseのデータの種類
-            timespan: 1000, // 通信のタイムアウトの設定(ミリ秒)
-          })
-            .done(function (data, textStatus, jqXHR) {
-              //UTCとの時差をminnutes単位で取得
-              timeDiff = data.rawOffset;
-            })
-            //通信失敗
-            .fail(function (xhr, status, error) {
-              // HTTPエラー時
-              switch (xhr.status) {
-                case 401:
-                  alert(xhr.responseText);
-                  return;
-                case 500:
-                  alert(xhr.responseText);
-                  return;
-              }
-              //通信終了後
-            })
-            .always(function (arg1, status, arg2) {
-              //status が "success" の場合は always(data, status, xhr) となるが
-              //、"success" 以外の場合は always(xhr, status, error)となる。
-            });
-        });
         //ブラウザのタイムゾーンでの指定時間
         var specTime = new Date(
           document.getElementById("date" + me.routeNum).value +
             "T" +
             document.getElementById("time" + me.routeNum).value
         );
-        //(ブラウザのタイムゾーンの時刻) ー (ブラウザのタイムゾーンのUTCからの時差) ＋ (入力地のタイムゾーンのUTCからの時差) = (入力地のタイムゾーンの時刻)
-        //例:イギリスの鉄道の10:00出発を調べたい場合、(10:00 Asia/Tokyo) -(-9:00 Asia/Tokyo) + (0 GMT) = (19:00 Asia/Tokyo) = (10:00 GMT)
+        //入力された場所のタイムゾーンを取得
+        me.getTimeZone(me);
+
+        /*(ブラウザのタイムゾーンの時刻) ー (ブラウザのタイムゾーンのoffset) ー (入力地のタイムゾーンのoffset) = (入力地のタイムゾーンの時刻)
+                例:ロサンゼルスの鉄道の3月1日,10:00出発を調べたい場合、
+                (3月1日,10:00 Asia/Tokyo) -(-9 hors) - (-8 hours) = (3月2日 3:00 Asia/Tokyo) = (3月1日,10:00 America/Los_Angeles)
+                (注意)Javascriptの場合、offsetはGMTより進んでいる場合、マイナスになり、TimeZone APIの場合、逆に進んでいる場合プラスになる*/
         specTime.setHours(
           today.getHours() -
-            Math.round(tzoneOffsetminu / 60) +
-            Math.round(timeDiff)
+            Math.round(tzoneOffsetminu / 60) -
+            Math.round(me.timeDiffMin / 3600)
         );
 
         //出発時間を指定した場合
@@ -449,7 +458,6 @@ class AutocompleteDirectionsHandler {
           }
           me.poly = [];
         }
-        console.log(this.directionsRequest.transitOptions.departureTime);
         if (
           response.request.travelMode == "TRANSIT" &&
           response.routes[0].legs[0].start_address.match(/日本/)
