@@ -405,9 +405,9 @@ class AutocompleteDirectionsHandler {
         me.getTimeZone(me);
 
         /*(ブラウザのタイムゾーンの時刻) ー (ブラウザのタイムゾーンのoffset) ー (入力地のタイムゾーンのoffset) = (入力地のタイムゾーンの時刻)
-                                        例:ロサンゼルスの鉄道の3月1日,10:00出発を調べたい場合、
-                                        (3月1日,10:00 Asia/Tokyo) -(-9 hors) - (-8 hours) = (3月2日 3:00 Asia/Tokyo) = (3月1日,10:00 America/Los_Angeles)
-                                        (注意)Javascriptの場合、offsetはGMTより進んでいる場合、マイナスになり、TimeZone APIの場合、逆に進んでいる場合プラスになる*/
+        例:ロサンゼルスの鉄道の3月1日,10:00出発を調べたい場合、
+        (3月1日,10:00 Asia/Tokyo) -(-9 hors) - (-8 hours) = (3月2日 3:00 Asia/Tokyo) = (3月1日,10:00 America/Los_Angeles)
+        (注意)Javascriptの場合、offsetはGMTより進んでいる場合、マイナスになり、TimeZone APIの場合、逆に進んでいる場合プラスになる*/
         specTime.setHours(
           today.getHours() -
             Math.round(tzoneOffsetminu / 60) -
@@ -508,7 +508,7 @@ class AutocompleteDirectionsHandler {
             "one-result-panel" + me.routeNum
           ).style.display = "none";
         }
-      //STATUS != OKの場合
+        //STATUS != OKの場合
       } else {
         document.getElementById("route-decide" + me.routeNum).style.display =
           "none";
