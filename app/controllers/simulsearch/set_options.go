@@ -64,8 +64,8 @@ func lookupTrafficModel(trafficModel string, r *maps.DirectionsRequest) {
 }
 
 //有料道路、高速道路、フェリーを除外する場合選択
-func lookupAvoid(avoid string, r *maps.DirectionsRequest) {
-	for _, a := range strings.Split(avoid, "|") {
+func lookupAvoid(avoid []string, r *maps.DirectionsRequest) {
+	for _, a := range avoid {
 		switch a {
 		case "tolls":
 			r.Avoid = append(r.Avoid, maps.AvoidTolls)
