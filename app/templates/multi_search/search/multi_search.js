@@ -68,7 +68,7 @@ var today = new Date();
 var yyyy = today.getFullYear();
 var mm = ("0" + (today.getMonth() + 1)).slice(-2); //getMonthは0 ~ 11
 var dd = ("0" + today.getDate()).slice(-2);
-
+var ymd = yyyy + "-" + mm + "-" + dd;
 var hr = ("0" + today.getHours()).slice(-2);
 var minu = ("0" + today.getMinutes()).slice(-2);
 var clock = hr + ":" + minu + ":00";
@@ -90,10 +90,8 @@ function initMap() {
 
   //１番目のルート要素をHTMLに追加
   $("#search-box").append(genSearchBox(routeID, colorMap[routeID]));
-  document.getElementById("date" + String(routeID)).value =
-    yyyy + "-" + mm + "-" + dd;
-  document.getElementById("date" + String(routeID)).min =
-    yyyy + "-" + mm + "-" + dd;
+  document.getElementById("date" + String(routeID)).value = ymd;
+  document.getElementById("date" + String(routeID)).min = ymd;
   document.getElementById("time" + String(routeID)).value = clock;
   //AutocompleteとDiretionsServiceのインスタンス化
   new AutocompleteDirectionsHandler(map, String(routeID));
@@ -109,10 +107,8 @@ function initMap() {
       document.getElementById("add-route").style.display = "none";
     }
     $("#search-box").append(genSearchBox(routeID, colorMap[routeID]));
-    document.getElementById("date" + String(routeID)).value =
-      yyyy + "-" + mm + "-" + dd;
-    document.getElementById("date" + String(routeID)).min =
-      yyyy + "-" + mm + "-" + dd;
+    document.getElementById("date" + String(routeID)).value = ymd;
+    document.getElementById("date" + String(routeID)).min = ymd;
     document.getElementById("time" + String(routeID)).value = clock;
     new AutocompleteDirectionsHandler(map, String(routeID));
     $(".toggle-title").on("click", function () {
@@ -164,7 +160,9 @@ class AutocompleteDirectionsHandler {
     this.directionsRenderer.setPanel(
       document.getElementById("route-detail-panel" + this.routeNum)
     );
+    //出発地の入力値
     const originInput = document.getElementById("origin-input" + this.routeNum);
+    //目的地の入力値
     const destinationInput = document.getElementById(
       "destination-input" + this.routeNum
     );
@@ -345,6 +343,7 @@ class AutocompleteDirectionsHandler {
       });
   }
 
+  //TimeZOne APIを使用し、出発地のタイムゾーンを取得するメソッド
   getTimeZone(me) {
     $.ajax({
       url: "/get_timezone", // 通信先のURL
@@ -369,12 +368,11 @@ class AutocompleteDirectionsHandler {
         switch (xhr.status) {
           case 401:
             alert(xhr.responseText);
-            return 0;
+            return;
           case 500:
             alert(xhr.responseText);
-            return 0;
+            return;
         }
-        //通信終了後
       });
   }
 
@@ -396,24 +394,20 @@ class AutocompleteDirectionsHandler {
       this.directionsRequest.transitOptions = {};
       //時間指定しない場合、現在時刻に設定
       me.directionsRequest.transitOptions.departureTime = new Date(
-        yyyy + "-" + mm + "-" + dd + "T" + clock
+        ymd + "T" + clock
       );
 
       //「すぐに出発」以外のボタンが押されている場合
       if (!document.getElementById("depart-now" + me.routeNum).checked) {
         //ブラウザのタイムゾーンでの指定時間
-        var specTime = new Date(
-          document.getElementById("date" + me.routeNum).value +
-            "T" +
-            document.getElementById("time" + me.routeNum).value
-        );
+        var specTime = new Date(ymd + "T" + clock);
         //入力された場所のタイムゾーンを取得
         me.getTimeZone(me);
 
         /*(ブラウザのタイムゾーンの時刻) ー (ブラウザのタイムゾーンのoffset) ー (入力地のタイムゾーンのoffset) = (入力地のタイムゾーンの時刻)
-                例:ロサンゼルスの鉄道の3月1日,10:00出発を調べたい場合、
-                (3月1日,10:00 Asia/Tokyo) -(-9 hors) - (-8 hours) = (3月2日 3:00 Asia/Tokyo) = (3月1日,10:00 America/Los_Angeles)
-                (注意)Javascriptの場合、offsetはGMTより進んでいる場合、マイナスになり、TimeZone APIの場合、逆に進んでいる場合プラスになる*/
+                                        例:ロサンゼルスの鉄道の3月1日,10:00出発を調べたい場合、
+                                        (3月1日,10:00 Asia/Tokyo) -(-9 hors) - (-8 hours) = (3月2日 3:00 Asia/Tokyo) = (3月1日,10:00 America/Los_Angeles)
+                                        (注意)Javascriptの場合、offsetはGMTより進んでいる場合、マイナスになり、TimeZone APIの場合、逆に進んでいる場合プラスになる*/
         specTime.setHours(
           today.getHours() -
             Math.round(tzoneOffsetminu / 60) -
@@ -431,6 +425,7 @@ class AutocompleteDirectionsHandler {
           me.directionsRequest.transitOptions.arrivalTime = specTime;
         }
       }
+      //乗り換え回数が最小になるようセット
       me.directionsRequest.transitOptions.routingPreference = "FEWER_TRANSFERS";
     }
 
@@ -459,7 +454,7 @@ class AutocompleteDirectionsHandler {
           me.poly = [];
         }
         if (
-          response.request.travelMode == "TRANSIT" &&
+          response.request.travelMode === "TRANSIT" &&
           response.routes[0].legs[0].start_address.match(/日本/)
         ) {
           document.getElementById("route-decide" + me.routeNum).style.display =
@@ -476,11 +471,10 @@ class AutocompleteDirectionsHandler {
           var subRouteRenderer = new google.maps.DirectionsRenderer();
           //ドキュメントURL: https://developers.google.com/maps/documentation/javascript/reference/directions#DirectionsRendererOptions
           subRouteRenderer.setOptions({
-            //Colorとopacity(不透明度)と太さを設定
             polylineOptions: {
-              strokeColor: "#808080",
-              strokeOpacity: 0.5,
-              strokeWeight: 7,
+              strokeColor: "#808080", //線の色
+              strokeOpacity: 0.5, //線の透明度
+              strokeWeight: 7, //線の太さ
             },
           });
           subRouteRenderer.setDirections(sub_res);
@@ -497,7 +491,7 @@ class AutocompleteDirectionsHandler {
         // console.log(response.routes[0].legs[0].duration.text);
 
         //ルートが１つのみの場合、detail-panelが表示されないので、span要素で距離、所要時間を表示する
-        if (response.routes.length == 1) {
+        if (response.routes.length === 1) {
           document.getElementById(
             "one-result-panel" + me.routeNum
           ).style.display = "block";
@@ -514,21 +508,13 @@ class AutocompleteDirectionsHandler {
             "one-result-panel" + me.routeNum
           ).style.display = "none";
         }
+      //STATUS != OKの場合
       } else {
         document.getElementById("route-decide" + me.routeNum).style.display =
           "none";
-        if (
-          this.directionsRequest.travelMode === google.maps.TravelMode.TRANSIT
-        ) {
-          window.alert(
-            "出発地と目的地の距離が遠すぎる場合、結果が表示されない場合があります。\n" +
-              "また、日本国内の公共交通機関情報はご利用いただけません。"
-          );
-        } else {
-          window.alert(
-            "出発地と目的地の距離が遠すぎる場合、結果が表示されない場合があります。"
-          );
-        }
+        window.alert(
+          "ルートが見つかりませんでした。出発地と目的地の距離が遠すぎる場合、結果が表示されない場合があります。"
+        );
       }
     });
   }
