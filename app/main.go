@@ -5,6 +5,7 @@ import (
 	"app/controllers/middleware"
 	"app/controllers/multiroute"
 	"app/controllers/mypage"
+	"app/controllers/profile"
 	"app/controllers/simulsearch"
 	"fmt"
 	"html/template"
@@ -50,6 +51,9 @@ func main() {
 	http.HandleFunc("/mypage", middleware.Auth(mypage.ShowMypage))                 //マイページ表示
 	http.HandleFunc("/mypage/show_routes/", middleware.Auth(mypage.ShowAllRoutes)) //保存したルート一覧
 	http.HandleFunc("/mypage/delete_route", middleware.Auth(mypage.ConfirmDelete)) //削除確認
+
+	//「プロフィール」
+	http.HandleFunc("/profile", middleware.Auth(profile.ShowProfile)) //プロフィール画面
 
 	//「ホーム」
 	http.HandleFunc("/", middleware.Auth(home))
