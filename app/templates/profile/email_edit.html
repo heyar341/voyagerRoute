@@ -2,6 +2,8 @@
 <head>
     <meta charset="UTF-8">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="/templates/profile/email_edit.js"></script>
 
     <title>メールアドレスの編集</title>
 </head>
@@ -28,13 +30,15 @@
                         <hr>
                         <div class="form-group">
                             <label>新しいメールアドレス:</label>
-                            <input class="form-control" id="email" name="email" type="text" required>
+                            <input class="form-control" id="email" name="email" type="text"
+                                   {{if .newEmail}}
+                                   value="{{.newEmail}}"
+                                   {{end}}
+                                   required>
                         </div> <!-- form-group end.// -->
-                        {{if .msg}}
-                        <span style="color: red">{{.msg}}</span>
-                        {{end}}
                         <div class="form-group">
-                            <button type="submit" id="register-btn" class="btn btn-primary btn-block">メールアドレスを変更する</button>
+                            <button type="submit" id="update-btn" class="btn btn-primary btn-block">メールアドレスを変更する
+                            </button>
                         </div> <!-- form-group// -->
                     </form>
                 </article> <!-- card-body end .// -->
