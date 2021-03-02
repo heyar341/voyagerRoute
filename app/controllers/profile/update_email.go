@@ -8,10 +8,17 @@ import (
 	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
 	"log"
+	"net"
 	"net/http"
 	"net/smtp"
 	"net/url"
+	"regexp"
+	"strings"
+	"time"
 )
+
+//メールアドレスの正規表現
+var emailRegex = regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
 
 func UpdateEmail(w http.ResponseWriter, req *http.Request) {
 	if req.Method != "POST" {
@@ -28,6 +35,10 @@ func UpdateEmail(w http.ResponseWriter, req *http.Request) {
 	}
 
 	newEmail := req.FormValue("email")
+	if !isEmailValid(newEmail) {
+		msg = url.QueryEscape("メールアドレスに不備があります。")
+		http.Redirect(w, req, "/profile/email_edit_form/?msg="+msg, http.StatusSeeOther)
+	}
 
 	//メールアドレス認証用のトークンを作成
 	token := uuid.New().String()
@@ -36,9 +47,10 @@ func UpdateEmail(w http.ResponseWriter, req *http.Request) {
 	//保存するドキュメント
 	editingDoc := bson.D{
 		{"email", newEmail},
+		{"expires_at", time.Now().Add(24 * time.Hour).Unix()},
 		{"token", token},
 	}
-	//DBに保存
+	//editing_email collectionに保存
 	_, err := dbhandler.Insert("googroutes", "editing_email", editingDoc)
 	if err != nil {
 		msg = "エラーが発生しました。しばらく経ってからもう一度ご利用ください。"
@@ -50,7 +62,6 @@ func UpdateEmail(w http.ResponseWriter, req *http.Request) {
 	http.Redirect(w, req, "/ask_confirm", http.StatusSeeOther)
 
 	//「メールでトークン付きのURLを送る」
-	//envファイルからGmailのアプリパスワード取得
 	gmailPassword, err := envhandler.GetEnvVal("GMAIL_APP_PASS")
 	if err != nil {
 		msg = "エラーが発生しました。しばらく経ってからもう一度ご利用ください。"
@@ -75,6 +86,22 @@ func UpdateEmail(w http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		log.Printf("Error while sending email:%v", err)
 	}
+}
+
+func isEmailValid(email string) bool {
+	if len(email) < 3 && len(email) > 254 {
+		return false
+	} else if !emailRegex.MatchString(email) {
+		return false
+	}
+	domain := strings.Split(email, "@")[1]
+	mx, err := net.LookupMX(domain)
+	if err != nil {
+		return false
+	} else if len(mx) == 0 {
+		return false
+	}
+	return true
 }
 
 func ConfirmUpdateEmail(w http.ResponseWriter, req *http.Request) {
@@ -111,13 +138,21 @@ func ConfirmUpdateEmail(w http.ResponseWriter, req *http.Request) {
 	bsonByte, _ := bson.Marshal(resp)
 
 	type NewEmail struct {
-		Email string `bson:"email"`
-		Token string `bson:"token"`
+		Email     string    `bson:"email"`
+		ExpiresAt time.Time `bson:"expires_at"`
+		Token     string    `bson:"token"`
 	}
 
 	var confirmedEmail NewEmail
 	//marshalした値をUnmarshalして、userに代入
 	bson.Unmarshal(bsonByte, &confirmedEmail)
+	//トークンの有効期限を確認
+	if confirmedEmail.ExpiresAt.After(time.Now()) {
+		msg = "トークンの有効期限が切れています。もう一度メールアドレス変更のお手続きをしてください。"
+		http.Redirect(w, req, "/profile/email_edit_form/?msg="+msg, http.StatusSeeOther)
+		log.Printf("Editing_email token is expired")
+		return
+	}
 	//user documentを更新
 	userDoc := bson.M{"_id": userID}
 	updateDoc := bson.D{{"email", confirmedEmail.Email}}
@@ -130,5 +165,5 @@ func ConfirmUpdateEmail(w http.ResponseWriter, req *http.Request) {
 	}
 
 	success := "メールアドレスの変更が完了しました。"
-	http.Redirect(w, req, "/?success="+success, http.StatusSeeOther)
+	http.Redirect(w, req, "/profile/?success="+success, http.StatusSeeOther)
 }
