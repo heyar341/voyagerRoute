@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+
+    <title>メールアドレスの編集</title>
+</head>
+<body>
+{{ template "navbar" .}}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <header class="card-header">
+                    <h4 class="card-title mt-2">メールアドレスを編集</h4>
+                </header>
+                <article class="card-body">
+                    <form action="/profile/email_edit" method="POST">
+                        <div class="form-row">
+                            <div class="col form-group">
+                                <span>現在のメールアドレス:{{.email}}</span>
+                            </div> <!-- form-group end.// -->
+                        </div> <!-- form-row end.// -->
+
+                        <hr>
+                        <div class="form-group">
+                            <label>新しいメールアドレス:</label>
+                            <input class="form-control" id="email" name="email" type="text" required>
+                        </div> <!-- form-group end.// -->
+                        {{if .msg}}
+                        <span style="color: red">{{.msg}}</span>
+                        {{end}}
+                        <div class="form-group">
+                            <button type="submit" id="register-btn" class="btn btn-primary btn-block">メールアドレスを変更する</button>
+                        </div> <!-- form-group// -->
+                    </form>
+                </article> <!-- card-body end .// -->
+            </div> <!-- card.// -->
+        </div> <!-- col.//-->
+    </div> <!-- row.//-->
+</div>
+
+</body>
+</html>
