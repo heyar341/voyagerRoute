@@ -2,7 +2,8 @@
 <head>
     <meta charset="UTF-8">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
-
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="/templates/profile/username_edit.js"></script>
     <title>ユーザー名の編集</title>
 </head>
 <body>
@@ -30,11 +31,8 @@
                             <label>新しいユーザー名:</label>
                             <input class="form-control" id="username" name="username" type="text" required>
                         </div> <!-- form-group end.// -->
-                        {{if .msg}}
-                        <span style="color: red">{{.msg}}</span>
-                        {{end}}
                         <div class="form-group">
-                            <button type="submit" id="register-btn" class="btn btn-primary btn-block">ユーザー名を変更する
+                            <button type="submit" id="update-btn" class="btn btn-primary btn-block">ユーザー名を変更する
                             </button>
                         </div> <!-- form-group// -->
                     </form>
