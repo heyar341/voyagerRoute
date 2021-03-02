@@ -37,7 +37,9 @@ func UpdateEmail(w http.ResponseWriter, req *http.Request) {
 	newEmail := req.FormValue("email")
 	if !isEmailValid(newEmail) {
 		msg = url.QueryEscape("メールアドレスに不備があります。")
-		http.Redirect(w, req, "/profile/email_edit_form/?msg="+msg, http.StatusSeeOther)
+		newEmail = url.QueryEscape(newEmail)
+		http.Redirect(w, req, "/profile/email_edit_form/?msg="+msg+"&newEmail="+newEmail, http.StatusSeeOther)
+		return
 	}
 
 	//メールアドレス認証用のトークンを作成

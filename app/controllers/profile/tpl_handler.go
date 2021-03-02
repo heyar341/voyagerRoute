@@ -73,6 +73,8 @@ func EditEmailForm(w http.ResponseWriter, req *http.Request) {
 	data["email"] = user.Email
 	msg = req.URL.Query().Get("msg")
 	data["msg"] = msg
+	newEmail := req.URL.Query().Get("newEmail")
+	data["newEmail"] = newEmail
 	profileTpl.ExecuteTemplate(w, "email_edit.html", data)
 }
 func EditPasswordForm(w http.ResponseWriter, req *http.Request) {
