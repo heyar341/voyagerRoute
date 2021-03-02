@@ -33,5 +33,12 @@ type SimulParams struct {
 	Destinations  map[string]string `json:"destinations"`
 	Mode          string            `json:"mode"`
 	DepartureTime string            `json:"departure_time"`
-	Avoid         string            `json:"avoid"`
+	LatLng        LatLng            `json:"latlng"`
+	Avoid         []string          `json:"avoid"`
+}
+
+//SimulParamの緯度と経度
+type LatLng struct {
+	Lat string `json:"lat"`
+	Lng string `json:"lng"`
 }

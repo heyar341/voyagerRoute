@@ -66,9 +66,15 @@ $(function () {
 //現在時刻を取得し、時間指定要素に挿入
 var today = new Date();
 var yyyy = today.getFullYear();
-var mm = ("0" + (today.getMonth() + 1)).slice(-2);
+var mm = ("0" + (today.getMonth() + 1)).slice(-2); //getMonthは0 ~ 11
 var dd = ("0" + today.getDate()).slice(-2);
-var now = today.getHours() + ":" + today.getMinutes() + ":00";
+var ymd = yyyy + "-" + mm + "-" + dd;
+var hr = ("0" + today.getHours()).slice(-2);
+var minu = ("0" + today.getMinutes()).slice(-2);
+var clock = hr + ":" + minu + ":00";
+
+//ブラウザのタイムゾーンのUTCからの時差をminutes単位で取得
+var tzoneOffsetminu = today.getTimezoneOffset();
 
 function initMap() {
   const map = new google.maps.Map(document.getElementById("map"), {
@@ -93,10 +99,9 @@ function initMap() {
       routeInfo.routes[i].routes[0].legs[0].start_address;
     document.getElementById("destination-input" + String(i)).value =
       routeInfo.routes[i].routes[0].legs[0].end_address;
-    document.getElementById("date" + String(i)).value =
-      yyyy + "-" + mm + "-" + dd;
-    document.getElementById("date" + String(i)).min =
-      yyyy + "-" + mm + "-" + dd;
+    document.getElementById("date" + String(i)).value = ymd;
+    document.getElementById("date" + String(i)).min = ymd;
+    document.getElementById("time" + String(i)).value = clock;
     //AutocompleteとDiretionsServiceのインスタンス化
     var originID = routeInfo.routes[i].request.origin["placeId"];
     var destID = routeInfo.routes[i].request.destination["placeId"];
@@ -123,10 +128,9 @@ function initMap() {
       document.getElementById("add-route").style.display = "none";
     }
     $("#search-box").append(genSearchBox(routeID, colorMap[routeID]));
-    document.getElementById("date" + String(routeID)).value =
-      yyyy + "-" + mm + "-" + dd;
-    document.getElementById("date" + String(routeID)).min =
-      yyyy + "-" + mm + "-" + dd;
+    document.getElementById("date" + String(routeID)).value = ymd;
+    document.getElementById("date" + String(routeID)).min = ymd;
+    document.getElementById("time" + String(i)).value = clock;
     new AutocompleteDirectionsHandler(map, String(routeID), "", "");
     $(".toggle-title").on("click", function () {
       $(".toggle-title").off("click");
@@ -148,7 +152,10 @@ class AutocompleteDirectionsHandler {
      * @param {Object} map - google mapオブジェクト
      * @param {Object} directionRequest - directionServiceの引数に指定するオブジェクト
      * @param {String} originPlaceId - Autocomplete Serviceで地名から変換された地点ID
+     * @param {Number} originLatitude - Autocomplete Serviceで地名から取得された緯度
+     * @param {Number} originLongitude - Autocomplete Serviceで地名から取得された経度
      * @param {String} destinationPlaceId - Autocomplete Serviceで地名から変換された地点ID
+     * @param {Number} timeDiffMin - TimeZone APIから取得された出発地のoffset
      * @param {Array} poly - ルートごとのdirectionRendererオブジェクトの配列
      * @param {Object} travelMode - directionsRequestのオプションフィールド
      * @param {Object} directionsService - google maps API Javascriptのオブジェクト
@@ -159,7 +166,10 @@ class AutocompleteDirectionsHandler {
     this.map = map;
     this.directionsRequest = {};
     this.originPlaceId = originID;
+    this.originLatitude = 0;
+    this.originLongitue = 0;
     this.destinationPlaceId = destID;
+    this.timeDiffMin = 0;
     this.poly = [];
     this.travelMode = google.maps.TravelMode.WALKING;
     this.directionsService = new google.maps.DirectionsService();
@@ -191,7 +201,9 @@ class AutocompleteDirectionsHandler {
         " ," +
         routeInfo.routes[routeNum].routes[0].legs[0].duration.text;
     }
+    //出発地の入力値
     const originInput = document.getElementById("origin-input" + this.routeNum);
+    //目的地の入力値
     const destinationInput = document.getElementById(
       "destination-input" + this.routeNum
     );
@@ -275,10 +287,13 @@ class AutocompleteDirectionsHandler {
         return;
       }
       if (mode === "ORIG") {
-        this.originPlaceId = place.place_id;
+        me.originPlaceId = place.place_id;
       } else {
-        this.destinationPlaceId = place.place_id;
+        me.destinationPlaceId = place.place_id;
       }
+      //経度と緯度を設定
+      me.originLatitude = place.geometry.location.lat();
+      me.originLongitue = place.geometry.location.lng();
       this.route();
     });
   }
@@ -295,8 +310,8 @@ class AutocompleteDirectionsHandler {
   setupTimeListener(id, rNum) {
     const timeNow = document.getElementById(id);
     timeNow.addEventListener("click", () => {
-      document.getElementById("date" + rNum).value = yyyy + "-" + mm + "-" + dd;
-      document.getElementById("time" + rNum).value = now;
+      document.getElementById("date" + rNum).value = ymd;
+      document.getElementById("time" + rNum).value = clock;
       this.route();
     });
   }
@@ -369,6 +384,39 @@ class AutocompleteDirectionsHandler {
       });
   }
 
+  //TimeZOne APIを使用し、出発地のタイムゾーンを取得するメソッド
+  getTimeZone(me) {
+    $.ajax({
+      url: "/get_timezone", // 通信先のURL
+      async: false, //プログラムの途中で実行するので、同期通信で行う
+      type: "POST", // 使用するHTTPメソッド
+      data: JSON.stringify({
+        lat: String(me.originLatitude), //緯度
+        lng: String(me.originLongitue), //経度
+        unix_time: String(today.getTime()).slice(0, 10), //Unix表記の現在時
+      }),
+      contentType: "application/json",
+      dataType: "json", // responseのデータの種類
+      timespan: 1000, // 通信のタイムアウトの設定(ミリ秒)
+    })
+      .done(function (data, textStatus, jqXHR) {
+        //UTCとの時差をminnutes単位で取得
+        me.timeDiffMin = data.rawOffset;
+      })
+      //通信失敗
+      .fail(function (xhr, status, error) {
+        // HTTPエラー時
+        switch (xhr.status) {
+          case 401:
+            alert(xhr.responseText);
+            return;
+          case 500:
+            alert(xhr.responseText);
+            return;
+        }
+      });
+  }
+
   //directions Serviceを使用し、ルート検索
   route() {
     if (!this.originPlaceId || !this.destinationPlaceId) {
@@ -385,24 +433,46 @@ class AutocompleteDirectionsHandler {
     //公共交通機関を選択した場合
     if (document.getElementById("changemode-transit" + this.routeNum).checked) {
       this.directionsRequest.transitOptions = {};
-      //出発時間を指定した場合
-      if (document.getElementById("depart-time" + this.routeNum).checked) {
-        this.directionsRequest.transitOptions.departureTime = new Date(
+      //時間指定しない場合、現在時刻に設定
+      me.directionsRequest.transitOptions.departureTime = new Date(
+        ymd + "T" + clock
+      );
+
+      //「すぐに出発」以外のボタンが押されている場合
+      if (!document.getElementById("depart-now" + me.routeNum).checked) {
+        //ブラウザのタイムゾーンでの指定時間
+        var specTime = new Date(
           document.getElementById("date" + this.routeNum).value +
             "T" +
             document.getElementById("time" + this.routeNum).value
         );
-      }
-      //到着時間を指定した場合
-      else if (
-        document.getElementById("arrival-time" + this.routeNum).checked
-      ) {
-        this.directionsRequest.transitOptions.arrivalTime = new Date(
-          document.getElementById("date" + this.routeNum).value +
-            "T" +
-            document.getElementById("time" + this.routeNum).value
+
+        //入力された場所のタイムゾーンを取得
+        me.getTimeZone(me);
+
+        /*(ブラウザのタイムゾーンの時刻) ー (ブラウザのタイムゾーンのoffset) ー (入力地のタイムゾーンのoffset) = (入力地のタイムゾーンの時刻)
+        例:ロサンゼルスの鉄道の3月1日,10:00出発を調べたい場合、
+        (3月1日,10:00 Asia/Tokyo) -(-9 hors) - (-8 hours) = (3月2日 3:00 Asia/Tokyo) = (3月1日,10:00 America/Los_Angeles)
+        (注意)Javascriptの場合、offsetはGMTより進んでいる場合、マイナスになり、TimeZone APIの場合、逆に進んでいる場合プラスになる*/
+        specTime.setHours(
+          specTime.getHours() -
+            Math.round(tzoneOffsetminu / 60) -
+            Math.round(me.timeDiffMin / 3600)
         );
+
+        //出発時間を指定した場合
+        if (document.getElementById("depart-time" + me.routeNum).checked) {
+          me.directionsRequest.transitOptions.departureTime = specTime;
+        }
+        //到着時間を指定した場合
+        else if (
+          document.getElementById("arrival-time" + me.routeNum).checked
+        ) {
+          me.directionsRequest.transitOptions.arrivalTime = specTime;
+        }
       }
+
+      //乗り換え回数が最小になるようセット
       this.directionsRequest.transitOptions.routingPreference =
         "FEWER_TRANSFERS";
     }
@@ -470,7 +540,7 @@ class AutocompleteDirectionsHandler {
         // console.log(response.routes[0].legs[0].duration.text);
 
         //ルートが１つのみの場合、detail-panelが表示されないので、span要素で距離、所要時間を表示する
-        if (response.routes.length == 1) {
+        if (response.routes.length === 1) {
           document.getElementById(
             "one-result-panel" + me.routeNum
           ).style.display = "block";
@@ -490,18 +560,9 @@ class AutocompleteDirectionsHandler {
       } else {
         document.getElementById("route-decide" + me.routeNum).style.display =
           "none";
-        if (
-          this.directionsRequest.travelMode === google.maps.TravelMode.TRANSIT
-        ) {
-          window.alert(
-            "出発地と目的地の距離が遠すぎる場合、結果が表示されない場合があります。\n" +
-              "また、日本国内の公共交通機関情報はご利用いただけません。"
-          );
-        } else {
-          window.alert(
-            "出発地と目的地の距離が遠すぎる場合、結果が表示されない場合があります。"
-          );
-        }
+        window.alert(
+          "ルートが見つかりませんでした。出発地と目的地の距離が遠すぎる場合、結果が表示されない場合があります。"
+        );
       }
     });
   }

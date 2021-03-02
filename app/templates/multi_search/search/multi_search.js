@@ -400,7 +400,11 @@ class AutocompleteDirectionsHandler {
       //「すぐに出発」以外のボタンが押されている場合
       if (!document.getElementById("depart-now" + me.routeNum).checked) {
         //ブラウザのタイムゾーンでの指定時間
-        var specTime = new Date(ymd + "T" + clock);
+        var specTime = new Date(
+          document.getElementById("date" + this.routeNum).value +
+            "T" +
+            document.getElementById("time" + this.routeNum).value
+        );
         //入力された場所のタイムゾーンを取得
         me.getTimeZone(me);
 
@@ -409,7 +413,7 @@ class AutocompleteDirectionsHandler {
         (3月1日,10:00 Asia/Tokyo) -(-9 hors) - (-8 hours) = (3月2日 3:00 Asia/Tokyo) = (3月1日,10:00 America/Los_Angeles)
         (注意)Javascriptの場合、offsetはGMTより進んでいる場合、マイナスになり、TimeZone APIの場合、逆に進んでいる場合プラスになる*/
         specTime.setHours(
-          today.getHours() -
+          specTime.getHours() -
             Math.round(tzoneOffsetminu / 60) -
             Math.round(me.timeDiffMin / 3600)
         );
@@ -478,7 +482,7 @@ class AutocompleteDirectionsHandler {
             },
           });
           subRouteRenderer.setDirections(sub_res);
-          subRouteRenderer.setMap(this.map);
+          subRouteRenderer.setMap(me.map);
           me.poly.push(subRouteRenderer);
         }
         //responseをRendererに渡して、パネルにルートを表示
