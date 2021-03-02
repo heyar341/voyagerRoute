@@ -33,7 +33,10 @@ func ShowProfile(w http.ResponseWriter, req *http.Request) {
 	}
 	data["userName"] = user.UserName
 	data["email"] = user.Email
-
+	msg = req.URL.Query().Get("msg")
+	data["msg"] = msg
+	success := req.URL.Query().Get("success")
+	data["success"] = success
 	profileTpl.ExecuteTemplate(w, "profile.html", data)
 }
 
@@ -53,6 +56,8 @@ func EditUserNameForm(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	data["userName"] = user.UserName
+	msg = req.URL.Query().Get("msg")
+	data["msg"] = msg
 
 	profileTpl.ExecuteTemplate(w, "username_edit.html", data)
 }
@@ -72,7 +77,8 @@ func EditEmailForm(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	data["email"] = user.Email
-
+	msg = req.URL.Query().Get("msg")
+	data["msg"] = msg
 	profileTpl.ExecuteTemplate(w, "email_edit.html", data)
 }
 func EditPasswordForm(w http.ResponseWriter, req *http.Request) {
@@ -84,5 +90,7 @@ func EditPasswordForm(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	msg = req.URL.Query().Get("msg")
+	data["msg"] = msg
 	profileTpl.ExecuteTemplate(w, "password_edit.html", data)
 }

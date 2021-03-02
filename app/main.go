@@ -60,7 +60,7 @@ func main() {
 	http.HandleFunc("/confirm_email/", middleware.Auth(profile.ConfirmUpdateEmail))            //メールアドレス編集用画面
 	http.HandleFunc("/profile/password_edit_form/", middleware.Auth(profile.EditPasswordForm)) //パスワード編集画面
 	http.HandleFunc("/profile/password_edit", middleware.Auth(profile.UpdatePassword))         //パスワード編集用画面
-	http.HandleFunc("/profile", middleware.Auth(profile.ShowProfile))                          //プロフィール画面
+	http.HandleFunc("/profile/", middleware.Auth(profile.ShowProfile))                          //プロフィール画面
 
 	//「ホーム」
 	http.HandleFunc("/", middleware.Auth(home))

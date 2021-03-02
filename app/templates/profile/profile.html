@@ -7,7 +7,11 @@
 </head>
 <body>
 {{ template "navbar" .}}
-
+{{if .msg}}
+<div class="py-2 d-flex" style="background-color: pink"><span class="mx-auto" style="color: brown">{{.msg}}</span></div>
+{{else if .success}}
+<div class="py-2 d-flex" style="background-color: lightblue"><span class="mx-auto" style="color: green">{{.success}}</span></div>
+{{end}}
 <div class="container mt-5">
     <div class="row card-deck mb-1 text-center d-flex">
         <div class="col-12 mb-5 shadow-sm mx-auto" style="max-width: 900px">

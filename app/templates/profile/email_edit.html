@@ -7,6 +7,9 @@
 </head>
 <body>
 {{ template "navbar" .}}
+{{if .msg}}
+<div class="py-2 d-flex" style="background-color: pink"><span class="mx-auto" style="color: brown">{{.msg}}</span></div>
+{{end}}
 <div class="container mt-5">
     <div class="row justify-content-center">
         <div class="col-md-6">
