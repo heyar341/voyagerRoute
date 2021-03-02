@@ -84,9 +84,13 @@ func UpdatePassword(w http.ResponseWriter, req *http.Request) {
 		http.Redirect(w, req, "/profile/password_edit_form/?msg="+msg, http.StatusSeeOther)
 	}
 
-	c, err := req.Cookie("session_id")
 	//Cookieを削除
-	c.MaxAge = -1
+	c := &http.Cookie{
+		Name:  "session_id",
+		Value: "",
+		Path:  "/",
+		MaxAge: -1,//３０日間有効
+	}
 	http.SetCookie(w, c)
 
 	success := "パスワードの変更に成功しました。ログインしてください。"
