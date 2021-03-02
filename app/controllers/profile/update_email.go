@@ -21,6 +21,7 @@ import (
 var emailRegex = regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
 
 func UpdateEmail(w http.ResponseWriter, req *http.Request) {
+	msg := "エラーが発生しました。もう一度操作を行ってください。"
 	if req.Method != "POST" {
 		msg = "リクエストメソッドが不正です。"
 		http.Redirect(w, req, "/profile/username_edit_form/?msg="+msg, http.StatusInternalServerError)
@@ -28,7 +29,6 @@ func UpdateEmail(w http.ResponseWriter, req *http.Request) {
 	//Auth middlewareからuserIDを取得
 	user, ok := req.Context().Value("user").(model.UserData)
 	if !ok {
-		msg = "エラーが発生しました。もう一度操作を行ってください。"
 		http.Redirect(w, req, "/profile/email_edit_form/?msg="+msg, http.StatusSeeOther)
 		log.Printf("Error while getting userID from reuest's context: %v", ok)
 		return
@@ -53,7 +53,6 @@ func UpdateEmail(w http.ResponseWriter, req *http.Request) {
 	//editing_email collectionに保存
 	_, err := dbhandler.Insert("googroutes", "editing_email", editingDoc)
 	if err != nil {
-		msg = "エラーが発生しました。しばらく経ってからもう一度ご利用ください。"
 		http.Redirect(w, req, "/profile/email_edit_form/?msg="+msg+"&email="+newEmail, http.StatusSeeOther)
 		log.Println(err)
 		return
@@ -64,7 +63,6 @@ func UpdateEmail(w http.ResponseWriter, req *http.Request) {
 	//「メールでトークン付きのURLを送る」
 	gmailPassword, err := envhandler.GetEnvVal("GMAIL_APP_PASS")
 	if err != nil {
-		msg = "エラーが発生しました。しばらく経ってからもう一度ご利用ください。"
 		http.Redirect(w, req, "/profile/email_edit_form/?msg="+msg+"&email="+newEmail, http.StatusSeeOther)
 		return
 	}
@@ -89,8 +87,10 @@ func UpdateEmail(w http.ResponseWriter, req *http.Request) {
 }
 
 func isEmailValid(email string) bool {
+	//文字数チェック
 	if len(email) < 3 && len(email) > 254 {
 		return false
+		//正規表現でチェック
 	} else if !emailRegex.MatchString(email) {
 		return false
 	}
@@ -105,10 +105,10 @@ func isEmailValid(email string) bool {
 }
 
 func ConfirmUpdateEmail(w http.ResponseWriter, req *http.Request) {
+	msg := "エラーが発生しました。もう一度操作を行ってください。"
 	//Auth middlewareからuserIDを取得
 	user, ok := req.Context().Value("user").(model.UserData)
 	if !ok {
-		msg = "エラーが発生しました。もう一度操作を行ってください。"
 		http.Redirect(w, req, "/profile/email_edit_form/?msg="+msg, http.StatusSeeOther)
 		log.Printf("Error while getting userID from reuest's context: %v", ok)
 		return
@@ -158,7 +158,6 @@ func ConfirmUpdateEmail(w http.ResponseWriter, req *http.Request) {
 	updateDoc := bson.D{{"email", confirmedEmail.Email}}
 	err = dbhandler.UpdateOne("googroutes", "users", "$set", userDoc, updateDoc)
 	if err != nil {
-		msg = "エラーが発生しました。もう一度操作を行ってください。"
 		http.Redirect(w, req, "/profile/email_edit_form/?msg="+msg+"&email="+confirmedEmail.Email, http.StatusSeeOther)
 		log.Printf("Error while updating email: %v", err)
 		return

@@ -15,14 +15,23 @@ func UpdatePassword(w http.ResponseWriter, req *http.Request) {
 	//Auth middlewareからuserIDを取得
 	user, ok := req.Context().Value("user").(model.UserData)
 	if !ok {
-		msg = "エラーが発生しました。もう一度操作を行ってください。"
 		http.Redirect(w, req, "/profile/email_edit_form/?msg="+msg, http.StatusSeeOther)
 		log.Printf("Error while getting userID from reuest's context: %v", ok)
 		return
 	}
 
 	currPassword := req.FormValue("current-password")
+	if len(currPassword) < 8{
+		msg = "パスワードが正しくありません。"
+		http.Redirect(w, req, "/profile/password_edit_form/?msg="+msg, http.StatusSeeOther)
+		return
+	}
 	newPassword := req.FormValue("password")
+	if len(newPassword) < 8 {
+		msg = "パスワードは８文字以上入力してください。"
+		http.Redirect(w, req, "/profile/password_edit_form/?msg="+msg, http.StatusSeeOther)
+		return
+	}
 
 	//取得するドキュメントの条件
 	userDoc := bson.D{{"_id", user.ID}}
@@ -36,7 +45,6 @@ func UpdatePassword(w http.ResponseWriter, req *http.Request) {
 	//DBから取得した値をmarshal
 	bsonByte, err := bson.Marshal(resp)
 	if err != nil {
-		msg = "エラ〜が発生しました。もう一度操作しなおしてください。"
 		http.Redirect(w, req, "/profile/password_edit_form/?msg="+msg, http.StatusSeeOther)
 		log.Printf("Error while bson marshaling user document: %v", err)
 		return
@@ -45,7 +53,6 @@ func UpdatePassword(w http.ResponseWriter, req *http.Request) {
 	//marshalした値をUnmarshalして、userに代入
 	err = bson.Unmarshal(bsonByte, &u)
 	if err != nil {
-		msg = "エラ〜が発生しました。もう一度操作しなおしてください。"
 		http.Redirect(w, req, "/profile/password_edit_form/?msg="+msg, http.StatusSeeOther)
 		log.Printf("Error while bson unmarshaling :%v", err)
 		return
@@ -64,7 +71,6 @@ func UpdatePassword(w http.ResponseWriter, req *http.Request) {
 	//パスワードをハッシュ化
 	securedPassword, err := bcrypt.GenerateFromPassword([]byte(newPassword), 5)
 	if err != nil {
-		msg = "エラ〜が発生しました。もう一度操作しなおしてください。"
 		http.Redirect(w, req, "/profile/password_edit_form/?msg="+msg, http.StatusSeeOther)
 		log.Printf("Error while hashing password :%v", err)
 		return
@@ -73,14 +79,12 @@ func UpdatePassword(w http.ResponseWriter, req *http.Request) {
 	updateDoc := bson.D{{"password", securedPassword}}
 	err = dbhandler.UpdateOne("googroutes", "users", "$set", userDoc, updateDoc)
 	if err != nil {
-		msg = "エラーが発生しました。もう一度操作を行ってください。"
 		http.Redirect(w, req, "/profile/profile/password_edit_form/?msg="+msg, http.StatusSeeOther)
 		log.Printf("Error while hashing password :%v", err)
 		return
 	}
 
 	if err != nil {
-		msg = "エラーが発生しました。もう一度操作を行ってください。"
 		http.Redirect(w, req, "/profile/password_edit_form/?msg="+msg, http.StatusSeeOther)
 	}
 
