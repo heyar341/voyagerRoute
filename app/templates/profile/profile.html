@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+
+    <title>プロフィール</title>
+</head>
+<body>
+{{ template "navbar" .}}
+{{if .msg}}
+<div class="py-2 d-flex" style="background-color: pink"><span class="mx-auto" style="color: brown">{{.msg}}</span></div>
+{{else if .success}}
+<div class="py-2 d-flex" style="background-color: lightblue"><span class="mx-auto" style="color: green">{{.success}}</span></div>
+{{end}}
+<div class="container mt-5">
+    <div class="row card-deck mb-1 text-center d-flex">
+        <div class="col-12 mb-5 shadow-sm mx-auto" style="max-width: 900px">
+            <div class="card">
+                <div class="card-header" style="background-color: #1A73E8">
+                    <h4 class="my-0 font-weight-normal" style="color: white">プロフィール</h4>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex p-3 border">
+                    <span class="mr-auto">ユーザー名: {{.userName}}</span>
+                        <a class="ml-auto text-right" href="/profile/username_edit_form">
+                            <button class="btn-light">編集</button>
+                        </a>
+                    </div>
+                    <div class="d-flex p-3 border">
+                        <span class="mr-auto">メールアドレス: {{.email}}</span>
+                        <a class="ml-auto text-right" href="/profile/email_edit_form">
+                            <button class="btn-light">編集</button>
+                        </a>
+                    </div>
+                    <div class="d-flex p-3 border">
+                        <span class="mr-auto">パスワード: ********</span>
+                        <a class="ml-auto text-right" href="/profile/password_edit_form">
+                            <button class="btn-light">編集</button>
+                        </a>
+                    </div>
+                </div><!-- card-body end .// -->
+            </div><!-- card end.// -->
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

@@ -5,6 +5,7 @@ import (
 	"app/controllers/middleware"
 	"app/controllers/multiroute"
 	"app/controllers/mypage"
+	"app/controllers/profile"
 	"app/controllers/simulsearch"
 	"fmt"
 	"html/template"
@@ -50,6 +51,16 @@ func main() {
 	http.HandleFunc("/mypage", middleware.Auth(mypage.ShowMypage))                 //マイページ表示
 	http.HandleFunc("/mypage/show_routes/", middleware.Auth(mypage.ShowAllRoutes)) //保存したルート一覧
 	http.HandleFunc("/mypage/delete_route", middleware.Auth(mypage.ConfirmDelete)) //削除確認
+
+	//「プロフィール」
+	http.HandleFunc("/profile/username_edit_form/", middleware.Auth(profile.EditUserNameForm)) //プロフィール画面
+	http.HandleFunc("/profile/username_edit", middleware.Auth(profile.UpdateUserName))         //ユーザー名編集画面
+	http.HandleFunc("/profile/email_edit_form/", middleware.Auth(profile.EditEmailForm))       //ユーザー名編集用エンドポインt
+	http.HandleFunc("/profile/email_edit", middleware.Auth(profile.UpdateEmail))               //メールアドレス編集画面
+	http.HandleFunc("/confirm_email/", middleware.Auth(profile.ConfirmUpdateEmail))            //メールアドレス編集用画面
+	http.HandleFunc("/profile/password_edit_form/", middleware.Auth(profile.EditPasswordForm)) //パスワード編集画面
+	http.HandleFunc("/profile/password_edit", middleware.Auth(profile.UpdatePassword))         //パスワード編集用画面
+	http.HandleFunc("/profile/", middleware.Auth(profile.ShowProfile))                          //プロフィール画面
 
 	//「ホーム」
 	http.HandleFunc("/", middleware.Auth(home))

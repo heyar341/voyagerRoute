@@ -34,6 +34,7 @@ func genNewSession(userID primitive.ObjectID, w http.ResponseWriter) error {
 		Name:  "session_id",
 		Value: signedStr,
 		Path:  "/",
+		MaxAge: 60*60*24*30,//３０日間有効
 	}
 	http.SetCookie(w, c)
 
