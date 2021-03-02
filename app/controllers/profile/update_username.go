@@ -24,6 +24,12 @@ func UpdateUserName(w http.ResponseWriter, req *http.Request) {
 	userID := user.ID
 
 	newUserName := req.FormValue("username")
+	if newUserName == "" {
+		msg = "ユーザー名は１文字以上入力してください。"
+		http.Redirect(w, req, "/profile/username_edit_form/?msg="+msg, http.StatusInternalServerError)
+		log.Printf("Error while getting userID from reuest's context: %v", ok)
+		return
+	}
 
 	//user documentを更新
 	userDoc := bson.M{"_id": userID}
@@ -37,5 +43,5 @@ func UpdateUserName(w http.ResponseWriter, req *http.Request) {
 	}
 
 	success := "ユーザー名を変更しました。"
-	http.Redirect(w, req, "/mypage/?success="+success, http.StatusSeeOther)
+	http.Redirect(w, req, "/profile/?success="+success, http.StatusSeeOther)
 }
