@@ -5,16 +5,17 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"log"
 	"net/http"
+	"net/url"
 )
 
 func Logout(w http.ResponseWriter, req *http.Request) {
 	if req.Method != "POST" {
 		http.Redirect(w, req, "/", http.StatusSeeOther)
 	}
+	msg := url.QueryEscape("ログインしていません")
 	//Cookieからセッション情報取得
 	c, err := req.Cookie("session_id")
 	if err != nil {
-		msg := "ログインしていません"
 		http.Redirect(w, req, "/?msg="+msg, http.StatusSeeOther)
 		log.Println(err)
 		return
@@ -22,7 +23,6 @@ func Logout(w http.ResponseWriter, req *http.Request) {
 
 	sessionID, err := ParseToken(c.Value)
 	if err != nil {
-		msg := "ログインしていません"
 		http.Redirect(w, req, "/?msg="+msg, http.StatusSeeOther)
 		log.Println(err)
 		return
@@ -32,7 +32,7 @@ func Logout(w http.ResponseWriter, req *http.Request) {
 	sesDoc := bson.D{{"session_id", sessionID}}
 	err = dbhandler.Delete("googroutes", "sessions", sesDoc)
 	if err != nil {
-		msg := "ログアウト中エラーが発生しました。"
+		msg = url.QueryEscape("ログアウト中エラーが発生しました。")
 		http.Redirect(w, req, "/?msg="+msg, http.StatusSeeOther)
 		return
 	}
@@ -41,6 +41,6 @@ func Logout(w http.ResponseWriter, req *http.Request) {
 	c.MaxAge = -1
 	http.SetCookie(w, c)
 
-	success := "ログアウトしました"
+	success := url.QueryEscape("ログアウトしました")
 	http.Redirect(w, req, "/?success="+success, http.StatusSeeOther)
 }

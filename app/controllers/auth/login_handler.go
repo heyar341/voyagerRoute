@@ -11,7 +11,7 @@ import (
 
 func Login(w http.ResponseWriter, req *http.Request) {
 	//エラーメッセージを定義
-	msg := "エラーが発生しました。もう一度操作をしなおしてください。"
+	msg := url.QueryEscape("エラーが発生しました。もう一度操作をしなおしてください。")
 	//Validation完了後のメールアドレスを取得
 	email, ok := req.Context().Value("email").(string)
 	if !ok {
@@ -28,7 +28,7 @@ func Login(w http.ResponseWriter, req *http.Request) {
 	}
 
 	//以下のコード内のエラーメッセージ
-	msg2 := "メールアドレスまたはパスワードが正しくありません。"
+	msg2 := url.QueryEscape("メールアドレスまたはパスワードが正しくありません。")
 
 	//取得するドキュメントの条件
 	userDoc := bson.D{{"email", email}}
@@ -58,7 +58,7 @@ func Login(w http.ResponseWriter, req *http.Request) {
 	userID := respUDoc["_id"].(primitive.ObjectID)
 	err = genNewSession(userID, w)
 	if err != nil {
-		msg = " ログインに失敗しました。もう一度操作をしなおしてください。"
+		msg = url.QueryEscape("ログインに失敗しました。もう一度操作をしなおしてください。")
 		http.Redirect(w, req, "/login_form/?msg="+msg+"&email="+email, http.StatusSeeOther)
 	}
 

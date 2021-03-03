@@ -37,8 +37,7 @@ func UpdateEmail(w http.ResponseWriter, req *http.Request) {
 	newEmail := req.FormValue("email")
 	if !isEmailValid(newEmail) {
 		msg = url.QueryEscape("メールアドレスに不備があります。")
-		newEmail = url.QueryEscape(newEmail)
-		http.Redirect(w, req, "/profile/email_edit_form/?msg="+msg+"&newEmail="+newEmail, http.StatusSeeOther)
+		http.Redirect(w, req, "/profile/email_edit_form/?msg="+msg+"&newEmail="+url.QueryEscape(newEmail), http.StatusSeeOther)
 		return
 	}
 
@@ -55,7 +54,7 @@ func UpdateEmail(w http.ResponseWriter, req *http.Request) {
 	//editing_email collectionに保存
 	_, err := dbhandler.Insert("googroutes", "editing_email", editingDoc)
 	if err != nil {
-		http.Redirect(w, req, "/profile/email_edit_form/?msg="+msg+"&email="+newEmail, http.StatusSeeOther)
+		http.Redirect(w, req, "/profile/email_edit_form/?msg="+msg+"&email="+url.QueryEscape(newEmail), http.StatusSeeOther)
 		log.Println(err)
 		return
 	}
@@ -65,7 +64,7 @@ func UpdateEmail(w http.ResponseWriter, req *http.Request) {
 	//「メールでトークン付きのURLを送る」
 	gmailPassword, err := envhandler.GetEnvVal("GMAIL_APP_PASS")
 	if err != nil {
-		http.Redirect(w, req, "/profile/email_edit_form/?msg="+msg+"&email="+newEmail, http.StatusSeeOther)
+		http.Redirect(w, req, "/profile/email_edit_form/?msg="+msg+"&email="+url.QueryEscape(newEmail), http.StatusSeeOther)
 		return
 	}
 	mailAuth := smtp.PlainAuth(
@@ -107,7 +106,7 @@ func isEmailValid(email string) bool {
 }
 
 func ConfirmUpdateEmail(w http.ResponseWriter, req *http.Request) {
-	msg := "エラーが発生しました。もう一度操作を行ってください。"
+	msg := url.QueryEscape("エラーが発生しました。もう一度操作を行ってください。")
 	//Auth middlewareからuserIDを取得
 	user, ok := req.Context().Value("user").(model.UserData)
 	if !ok {
@@ -150,7 +149,7 @@ func ConfirmUpdateEmail(w http.ResponseWriter, req *http.Request) {
 	bson.Unmarshal(bsonByte, &confirmedEmail)
 	//トークンの有効期限を確認
 	if confirmedEmail.ExpiresAt.After(time.Now()) {
-		msg = "トークンの有効期限が切れています。もう一度メールアドレス変更のお手続きをしてください。"
+		msg = url.QueryEscape("トークンの有効期限が切れています。もう一度メールアドレス変更のお手続きをしてください。")
 		http.Redirect(w, req, "/profile/email_edit_form/?msg="+msg, http.StatusSeeOther)
 		log.Printf("Editing_email token is expired")
 		return
@@ -160,11 +159,11 @@ func ConfirmUpdateEmail(w http.ResponseWriter, req *http.Request) {
 	updateDoc := bson.D{{"email", confirmedEmail.Email}}
 	err = dbhandler.UpdateOne("googroutes", "users", "$set", userDoc, updateDoc)
 	if err != nil {
-		http.Redirect(w, req, "/profile/email_edit_form/?msg="+msg+"&email="+confirmedEmail.Email, http.StatusSeeOther)
+		http.Redirect(w, req, "/profile/email_edit_form/?msg="+msg+"&email="+url.QueryEscape(confirmedEmail.Email), http.StatusSeeOther)
 		log.Printf("Error while updating email: %v", err)
 		return
 	}
 
-	success := "メールアドレスの変更が完了しました。"
+	success := url.QueryEscape("メールアドレスの変更が完了しました。")
 	http.Redirect(w, req, "/profile/?success="+success, http.StatusSeeOther)
 }

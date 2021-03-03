@@ -7,11 +7,12 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"log"
 	"net/http"
+	"net/url"
 )
 
 func UpdatePassword(w http.ResponseWriter, req *http.Request) {
 	//エラーメッセージを定義
-	msg := "エラ〜が発生しました。もう一度操作をしなおしてください。"
+	msg := url.QueryEscape("エラ〜が発生しました。もう一度操作をしなおしてください。")
 	//Auth middlewareからuserIDを取得
 	user, ok := req.Context().Value("user").(model.UserData)
 	if !ok {
@@ -22,13 +23,13 @@ func UpdatePassword(w http.ResponseWriter, req *http.Request) {
 
 	currPassword := req.FormValue("current-password")
 	if len(currPassword) < 8{
-		msg = "パスワードが正しくありません。"
+		msg = url.QueryEscape("パスワードが正しくありません。")
 		http.Redirect(w, req, "/profile/password_edit_form/?msg="+msg, http.StatusSeeOther)
 		return
 	}
 	newPassword := req.FormValue("password")
 	if len(newPassword) < 8 {
-		msg = "パスワードは８文字以上入力してください。"
+		msg = url.QueryEscape("パスワードは８文字以上入力してください。")
 		http.Redirect(w, req, "/profile/password_edit_form/?msg="+msg, http.StatusSeeOther)
 		return
 	}
@@ -38,7 +39,7 @@ func UpdatePassword(w http.ResponseWriter, req *http.Request) {
 	//DBから取得
 	resp, err := dbhandler.Find("googroutes", "users", userDoc, nil)
 	if err != nil {
-		msg = "パスワードが正しくありません。"
+		msg = url.QueryEscape("パスワードが正しくありません。")
 		http.Redirect(w, req, "/profile/password_edit_form/?msg="+msg, http.StatusSeeOther)
 		return
 	}
@@ -63,7 +64,7 @@ func UpdatePassword(w http.ResponseWriter, req *http.Request) {
 	err = bcrypt.CompareHashAndPassword(storedPass, []byte(currPassword))
 	//一致しない場合
 	if err != nil {
-		msg = "パスワードが正しくありません。"
+		msg = url.QueryEscape("パスワードが正しくありません。")
 		http.Redirect(w, req, "/profile/password_edit_form/?msg="+msg, http.StatusSeeOther)
 		return
 	}
@@ -97,7 +98,7 @@ func UpdatePassword(w http.ResponseWriter, req *http.Request) {
 	}
 	http.SetCookie(w, c)
 
-	success := "パスワードの変更に成功しました。ログインしてください。"
+	success := url.QueryEscape("パスワードの変更に成功しました。ログインしてください。")
 	http.Redirect(w, req, "/login_form/?success="+success, http.StatusSeeOther)
 
 }

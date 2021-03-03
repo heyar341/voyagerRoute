@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"net/url"
 )
 
 var simulSearchTpl *template.Template
@@ -14,17 +15,16 @@ func init() {
 }
 
 func SimulSearchTpl(w http.ResponseWriter, req *http.Request) {
+	msg := url.QueryEscape("エラーが発生しました。しばらく経ってからもう一度ご利用ください。")
 	data, ok := req.Context().Value("data").(map[string]interface{})
 	if !ok {
 		log.Printf("Error whle gettibg data from context")
-		msg := "エラーが発生しました。しばらく経ってからもう一度ご利用ください。"
 		http.Redirect(w, req, "/?msg="+msg, http.StatusInternalServerError)
 		return
 	}
 	//envファイルからAPIキー取得
 	apiKey, err := envhandler.GetEnvVal("MAP_API_KEY")
 	if err != nil {
-		msg := "エラーが発生しました。しばらく経ってからもう一度ご利用ください。"
 		http.Redirect(w, req, "/?msg="+msg, http.StatusInternalServerError)
 		return
 	}

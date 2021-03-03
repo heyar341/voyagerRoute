@@ -19,7 +19,7 @@ import (
 
 func Register(w http.ResponseWriter, req *http.Request) {
 	//ユーザーに表示するエラーメッセージを定義
-	msg := "エラ〜が発生しました。もう一度操作をしなおしてください。"
+	msg := url.QueryEscape("エラ〜が発生しました。もう一度操作をしなおしてください。")
 	//Validation完了後のユーザー名を取得
 	userName, ok := req.Context().Value("username").(string)
 	if !ok {
@@ -134,9 +134,9 @@ func ConfirmRegister(w http.ResponseWriter, req *http.Request) {
 
 	//「userをDBに保存」
 	//DBに保存
+	msg := url.QueryEscape("エラーが発生しました。もう一度操作をしなおしてください。")
 	userID, err := dbhandler.Insert("googroutes", "users", userDoc)
 	if err != nil {
-		msg := url.QueryEscape("エラーが発生しました。もう一度操作をしなおしてください。")
 		http.Redirect(w, req, "/?msg="+msg, http.StatusSeeOther)
 		log.Printf("Error while inserting user data into DB: %v", err)
 		return
@@ -145,7 +145,6 @@ func ConfirmRegister(w http.ResponseWriter, req *http.Request) {
 	//「session作成」
 	err = genNewSession(userID, w)
 	if err != nil {
-		msg := url.QueryEscape("エラ〜が発生しました。もう一度操作をしなおしてください。")
 		http.Redirect(w, req, "/?msg="+msg, http.StatusSeeOther)
 		return
 	}

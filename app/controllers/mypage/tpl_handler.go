@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"net/url"
 )
 
 var mypageTpl *template.Template
@@ -17,16 +18,15 @@ func init() {
 }
 
 func ShowMypage(w http.ResponseWriter, req *http.Request) {
+	msg = url.QueryEscape("エラ〜が発生しました。もう一度操作しなおしてください。")
 	data, ok := req.Context().Value("data").(map[string]interface{})
 	if !ok {
-		msg = "エラ〜が発生しました。もう一度操作しなおしてください。"
 		http.Redirect(w, req, "/?msg="+msg, http.StatusSeeOther)
 		log.Printf("Error while getting data from context: %v", ok)
 		return
 	}
 	user, ok := req.Context().Value("user").(model.UserData)
 	if !ok {
-		msg = "エラ〜が発生しました。もう一度操作しなおしてください。"
 		http.Redirect(w, req, "/?msg="+msg, http.StatusSeeOther)
 		log.Printf("Error while getting user from context: %v", ok)
 		return
@@ -36,16 +36,15 @@ func ShowMypage(w http.ResponseWriter, req *http.Request) {
 }
 
 func ShowAllRoutes(w http.ResponseWriter, req *http.Request) {
+	msg = url.QueryEscape("エラ〜が発生しました。もう一度操作しなおしてください。")
 	data, ok := req.Context().Value("data").(map[string]interface{})
 	if !ok {
-		msg = "エラ〜が発生しました。もう一度操作しなおしてください。"
 		http.Redirect(w, req, "/mypage/?msg="+msg, http.StatusSeeOther)
 		log.Printf("Error while getting data from context: %v", ok)
 		return
 	}
 	user, ok := req.Context().Value("user").(model.UserData)
 	if !ok {
-		msg = "エラ〜が発生しました。もう一度操作しなおしてください。"
 		http.Redirect(w, req, "/mypage/?msg="+msg, http.StatusSeeOther)
 		log.Printf("Error while getting user from context: %v", ok)
 		return
@@ -62,7 +61,7 @@ func ShowAllRoutes(w http.ResponseWriter, req *http.Request) {
 func ConfirmDelete(w http.ResponseWriter, req *http.Request) {
 	data, ok := req.Context().Value("data").(map[string]interface{})
 	if !ok {
-		msg = "エラ〜が発生しました。もう一度操作しなおしてください。"
+		msg = url.QueryEscape("エラ〜が発生しました。もう一度操作しなおしてください。")
 		http.Redirect(w, req, "/mypage/show_routes/?msg="+msg, http.StatusSeeOther)
 		log.Printf("Error while getting data from context: %v", ok)
 		return
