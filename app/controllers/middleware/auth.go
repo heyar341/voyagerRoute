@@ -18,7 +18,7 @@ func Auth(next http.HandlerFunc) http.HandlerFunc {
 		data := map[string]interface{}{"isLoggedIn": false} //初期値はログインしていないとしてfalse
 
 		//sessionデータを取得
-		session, err := getUserIDFromSession(req)
+		userID, err := getUserIDFromSession(req)
 		if err != nil {
 			ctx = context.WithValue(ctx, "data", data)
 			next.ServeHTTP(w, req.WithContext(ctx))
@@ -26,7 +26,7 @@ func Auth(next http.HandlerFunc) http.HandlerFunc {
 		}
 
 		//ログインユーザーのデータ取得
-		user, err := getLoginUser(session.UserID)
+		user, err := getLoginUser(userID)
 		if err != nil {
 			ctx = context.WithValue(ctx, "data", data)
 			next.ServeHTTP(w, req.WithContext(ctx))
