@@ -2,7 +2,6 @@ package mypage
 
 import (
 	"app/dbhandler"
-	"app/model"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"log"
@@ -25,19 +24,24 @@ func (t TitileSlice) Swap(i, j int) { t[i], t[j] = t[j], t[i] }
 func (t TitileSlice) Less(i, j int) bool { return t[i].TimeStamp.After(t[j].TimeStamp) }
 
 func RouteTitles(userID primitive.ObjectID) []string {
-	result, err := dbhandler.Find("googroutes", "users", bson.D{{"_id", userID}}, bson.M{"username": 1, "multi_route_titles": 1})
+	userDoc := bson.D{{"_id", userID}}
+	bsonDoc, err := dbhandler.Find("googroutes", "users", userDoc, nil)
 	if err != nil {
 		return []string{}
 	}
-	bsonByte, err := bson.Marshal(result)
-	if err != nil {
-		log.Println("Error while json marshaling: %v", err)
-	}
 
-	var user model.UserData
-	//marshalした値をUnmarshalして、userに代入
-	bson.Unmarshal(bsonByte, &user)
-	titles := user.MultiRouteTitles
+	titlesM := bsonDoc["multi_route_titles"].(primitive.M) //bson M型 (map[string]interface{})
+
+	var titles = make(map[string]time.Time)
+	for title, tStamp := range titlesM {
+		mongoTS, ok := tStamp.(primitive.DateTime)
+		if !ok {
+			log.Println("Assertion error at checking timestamp type")
+			return []string{}
+		}
+		timeStamp := mongoTS.Time() //time.Time型に変換
+		titles[title] = timeStamp
+	}
 
 	tSlice := make(TitileSlice, len(titles))
 	i := 0
