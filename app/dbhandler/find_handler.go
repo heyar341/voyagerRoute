@@ -9,7 +9,7 @@ import (
 )
 
 ///optionDoc(フィールド指定)は順番関係ないからtypeはDでなくM
-func Find(dbName, collectionName string, document interface{}, optionDoc bson.M) (interface{}, error) {
+func Find(dbName, collectionName string, document interface{}, optionDoc bson.M) (bson.M, error) {
 	client, ctx, cancel, err := connectDB()
 	defer cancel()
 	if err != nil {
@@ -21,7 +21,7 @@ func Find(dbName, collectionName string, document interface{}, optionDoc bson.M)
 	collection := database.Collection(collectionName)
 	opts := options.FindOne().SetProjection(optionDoc)
 	//DBからのレスポンスを挿入する変数
-	var response bson.D
+	var response bson.M
 	err = collection.FindOne(ctx, document, opts).Decode(&response)
 	if err != nil {
 		if err != mongo.ErrNoDocuments {
