@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"golang.org/x/crypto/bcrypt"
 	"io/ioutil"
@@ -117,10 +116,9 @@ func ConfirmRegister(w http.ResponseWriter, req *http.Request) {
 
 	//取得するドキュメントの条件
 	tokenDoc := bson.D{{"token", token}}
-	//返すフィールドを指定
-	resFields := bson.M{"username": 1, "email": 1, "password": 1}
+
 	//DBから取得
-	userDoc, err := dbhandler.Find("googroutes", "registering", tokenDoc, resFields)
+	userM, err := dbhandler.Find("googroutes", "registering", tokenDoc, nil)
 	if err != nil {
 		msg := url.QueryEscape("認証トークンが一致しません。")
 		http.Redirect(w, req, "/?msg="+msg, http.StatusSeeOther)
@@ -128,11 +126,15 @@ func ConfirmRegister(w http.ResponseWriter, req *http.Request) {
 	}
 
 	//multi_route_titlesフィールドを追加
-	userDoc = append(userDoc, bson.E{"multi_route_titles", map[string]time.Time{}})
+	userDoc := bson.D{{"username", userM["username"]},
+		{"email", userM["email"]},
+		{"password", userM["password"]},
+		{"multi_route_titles", map[string]time.Time{}},
+	}
 
 	//「userをDBに保存」
 	//DBに保存
-	insertRes, err := dbhandler.Insert("googroutes", "users", userDoc)
+	userID, err := dbhandler.Insert("googroutes", "users", userDoc)
 	if err != nil {
 		msg := url.QueryEscape("エラーが発生しました。もう一度操作をしなおしてください。")
 		http.Redirect(w, req, "/?msg="+msg, http.StatusSeeOther)
@@ -141,8 +143,6 @@ func ConfirmRegister(w http.ResponseWriter, req *http.Request) {
 	}
 
 	//「session作成」
-	//insertResから、userのドキュメントIDを取得
-	userID := insertRes.InsertedID.(primitive.ObjectID)
 	err = genNewSession(userID, w)
 	if err != nil {
 		msg := url.QueryEscape("エラ〜が発生しました。もう一度操作をしなおしてください。")
@@ -177,9 +177,8 @@ func EmailIsAvailable(w http.ResponseWriter, req *http.Request) {
 	//メールアドレスが使用可能か入れる変数
 	var isValid = false
 	emailDoc := bson.D{{"email", reqFields.Email}}
-	resFiled := bson.M{"email": 1}
 	//DBから取得
-	_, err = dbhandler.Find("googroutes", "users", emailDoc, resFiled)
+	_, err = dbhandler.Find("googroutes", "users", emailDoc, nil)
 	//ドキュメントがない場合、メールアドレスは使用可能
 	if err == mongo.ErrNoDocuments {
 		isValid = true
