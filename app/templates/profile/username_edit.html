@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<head>
+    <meta charset="UTF-8">
+    <title>ユーザー名の編集</title>
+    {{ template "imports" }}
+
+    <script src="/templates/profile/username_edit.js"></script>
+</head>
+<body>
+{{ template "navbar" .}}
+{{if .msg}}
+<div class="py-2 d-flex" style="background-color: pink"><span class="mx-auto" style="color: brown">{{.msg}}</span></div>
+{{end}}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <header class="card-header">
+                    <h4 class="card-title mt-2">ユーザー名を編集</h4>
+                </header>
+                <article class="card-body">
+                    <form action="/profile/username_edit" method="POST">
+                        <div class="form-row">
+                            <div class="col form-group">
+                                <span>現在のユーザー名:{{.userName}}</span>
+                            </div> <!-- form-group end.// -->
+                        </div> <!-- form-row end.// -->
+
+                        <hr>
+                        <div class="form-group">
+                            <label>新しいユーザー名:</label>
+                            <input class="form-control" id="username" name="username" type="text" required>
+                        </div> <!-- form-group end.// -->
+                        <div class="form-group">
+                            <button type="submit" id="update-btn" class="btn btn-primary btn-block">ユーザー名を変更する
+                            </button>
+                        </div> <!-- form-group// -->
+                    </form>
+                </article> <!-- card-body end .// -->
+            </div> <!-- card.// -->
+        </div> <!-- col.//-->
+    </div> <!-- row.//-->
+</div>
+
+</body>
+</html>

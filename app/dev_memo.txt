@@ -1,0 +1,56 @@
+　MAPS javascript APIとMAPS Direction APIでは、Response形式が違うので、
+DirectionRendererにDirection APIのResponseを渡してもレンダリングされない。
+
+　direction Rendererは一度に一本しかルートを描画できないので、複数描画したい場合、
+new google.maps.DirectionsRenderer()で新しくインスタンスを生成し、for文で
+それぞれのルートについて描画する必要がある。
+
+　route-detailパネルで選択したルートを取得する機能はgoogle.maps.event.addListener
+を使って、Event typeを'routeindex_changed'に設定することで実装できる。ドキュメントに明記
+されていないので、探すのに手間取った。参考URL: ↓
+https://stackoverflow.com/questions/24773753/get-selected-route-or-route-index
+
+　選択したルートのみ色をつけたい場合、まず最初に全てのルートについて,
+directionsRedererのsetOptionメソッドで薄い色に設定してレンダリングし、
+for文を使って選択したルートのみsetOptionメソッドで色を変更するようにすればよい。
+
+　google maps API JavacriptとbootstrapのJavascriptを使う機能が干渉してmapが
+うまく表示されなくなるので、bootstrapはCSSを使った機能しか使用できない。そのため、
+toggleボタンなどはjQueryで自分で実装する必要あり。
+
+　JavascriptではTemplate literal(shift+@)を使うことで、複数行の文章をそのまま変数に格納できる。
+今回の場合、serach-box要素を丸ごと変数に格納して、複数回使えるようにした。
+
+　http.HandleFuncでクエリーパラメータを使う場合、URIパスの最後に/を入れないと、クエリー部は無視されて
+意図したように動作しないため注意
+
+  MongoDBでフィールドをuniqueにする場合、indexを作成する。
+(indexを作成する手順)
+MongoDBを実行中のマシンで
+$mongo -u < ユーザー名> -p
+//MongoDb shell
+$use googroutes;
+$db.users.createIndex({"email":1},{unique:true})
+
+　json packageを使ってmarshalすると[]byte型のJsonが得られる。template実行時に[]byte型のまま渡すと、エラーとなるので、
+[]byte → stringへの変換が必要。
+
+　multi_routes_show.html内でtemplate実行時にJSONが入った変数routeInfoをmulti_route_show.jsより上部で宣言することで、
+multi_route_show.js内でroutesInfoが使用可能になる。
+
+　CookieのPathを指定しないと、ConfirmRegisterでリダイレクトしたときに、Cookieが設定されない。
+Loginの時はCookieが設定されていて、違いはリクエストメソッドがGETかPOSTであることのみ。おそらく、
+GETで/confirm_emailにGETでアクセスして、リダイレクトだと、最初のレスポンス先のパス(/confirm_email)にCookie
+が設定されて、リダイレクトで(/)にアクセスする時、異なるドメインとして扱われてしまうのではないかと思われる。
+
+　loginとregisterの処理を一まとめにして、リクエストメソッドごとに処理を振り分けようとしたが、失敗した。
+まず、レスポンスをtemplateで返すようにすると、ページ再読み込み時にもう一度POSTリクエストを送ってしまうので、
+よくない。次にリダイレクトでクエリーパラメータを使ってmsgを追加しようとしたが、GETとPOSTのURIが同じだと、
+リダイレクト時にクエリー部が自動で省略されてしまうため、パラメータを渡せなかった。
+解決策として、GETとPOSTのURIを別のまま、リダイレクトすればクエリーパラメータを渡すことができた。
+
+  MongoDBのdocument内でフィールドの一部を削除する場合、
+deleteField := bson.M{"<フィールド名>":""} ←目的のフィールド名を設定し、値を""にする。
+そして、$unsetを使うことで、１つだけ削除できる。
+dbhandler.UpdateOne("googroutes", "users", "$unset", userDoc, deleteField)
+公式ドキュメントURL: https://docs.mongodb.com/manual/reference/operator/update/unset/

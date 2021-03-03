@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ルート検索</title>
+    {{ template "imports" }}
+    <!--GoogleMaps APIの呼び出し-->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=default"></script>
+    <script
+            src="https://maps.googleapis.com/maps/api/js?key={{.apiKey}}&callback=initMap&libraries=places&v=weekly"
+            defer
+    ></script>
+
+    <link rel="stylesheet" type="text/css" href="templates/multi_search/search/multi_search.css"/>
+    <script src="templates/multi_search/search/multi_search.js"></script>
+</head>
+<body>
+
+<!--navbarを埋め込み-->
+{{template "navbar" . }}
+
+<div id="left-panel">
+    <div id="search-box">
+    </div>
+    <hr>
+    <div class="ml-2">
+        <input type="button" class="mt-3 mb-3 btn-warning" id="add-route" value="次のルートを追加"><br>
+        <hr>
+        <span class="ml-2" style="color: black">まとめルートの保存:</span>
+        <input type="text" class="mt-3" id="route-name" style="width: 350px" placeholder="保存するタイトルを入力(.,$以外の文字)"><br>
+        <input type="button" class="mt-1 btn-success" id="save-route" value="ルートを保存">
+    </div>
+</div>
+<div id="map"></div>
+</body>
+</html>

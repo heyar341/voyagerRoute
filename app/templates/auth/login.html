@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<head>
+    <meta charset="UTF-8">
+    <title>ログイン</title>
+    {{ template "imports" }}
+
+</head>
+
+<body>
+<!--navbarを埋め込み-->
+{{ template "navbar" . }} <!-- .を入れることでデータをnavbarに通せる -->
+{{if .msg}}
+<div class="py-2 d-flex" style="background-color: pink"><span class="mx-auto" style="color: brown">{{.msg}}</span></div>
+{{else if .success}}
+<div class="py-2 d-flex" style="background-color: lightblue"><span class="mx-auto" style="color: green">{{.success}}</span></div>
+{{end}}
+<div class="container">
+    <br>
+    <br>
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <header class="card-header">
+                    <h4 class="card-title mt-2">ログイン</h4>
+                </header>
+                <article class="card-body">
+                    <form action="/login" method="POST">
+                        <div class="form-group">
+                            <label>メールアドレス:</label>
+                            <input type="email" name="email" class="form-control" placeholder="メールアドレスを入力"
+                            {{if .qParams.email}}
+                                value={{index .qParams.email 0}}
+                            {{end}}
+                                   required>
+                        </div> <!-- form-group end.// -->
+
+                        <div class="form-group">
+                            <label>パスワード:</label>
+                            <input class="form-control" name="password" type="password" placeholder="パスワードを入力" required>
+                        </div> <!-- form-group end.// -->
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-primary btn-block">ログイン</button>
+                        </div> <!-- form-group// -->
+                    </form>
+                </article> <!-- card-body end .// -->
+                <div class="border-top card-body text-center">アカウントをお持ちでない方はこちら<a href="/register_form">新規登録</a></div>
+            </div> <!-- card.// -->
+        </div> <!-- col.//-->
+    </div> <!-- row.//-->
+</div>
+<!--container end.//-->
+
+</body>
+</html>
+
