@@ -18,7 +18,7 @@ func Auth(next http.HandlerFunc) http.HandlerFunc {
 		data := map[string]interface{}{"isLoggedIn": false} //初期値はログインしていないとしてfalse
 
 		//sessionデータを取得
-		session, err := getSession(req)
+		session, err := getUserIDFromSession(req)
 		if err != nil {
 			ctx = context.WithValue(ctx, "data", data)
 			next.ServeHTTP(w, req.WithContext(ctx))
@@ -43,35 +43,27 @@ func Auth(next http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-func getSession(req *http.Request) (model.SessionData, error) {
+func getUserIDFromSession(req *http.Request) (primitive.ObjectID, error) {
 	//Cookieからセッション情報取得
 	c, err := req.Cookie("session_id")
 	//Cookieが設定されてない場合
 	if err != nil {
-		return model.SessionData{}, err
+		return primitive.NilObjectID, err
 	}
 
 	//tokenからsessionID取得
 	sessionID, _ := auth.ParseToken(c.Value)
 	sessionDoc := bson.D{{"session_id", sessionID}}
 	//DBから読み込み
-	resp, err := dbhandler.Find("googroutes", "sessions", sessionDoc, nil)
+	sBSON, err := dbhandler.Find("googroutes", "sessions", sessionDoc, nil)
 	if err != nil {
 		log.Printf("Error while finding session data: %v", err)
-		return model.SessionData{}, err
+		return primitive.NilObjectID, err
 	}
 
-	//DBから取得した値をmarshal
-	bsonByte, err := bson.Marshal(resp)
-	if err != nil {
-		log.Printf("Error while bson marshaling session data: %v", err)
-		return model.SessionData{}, err
-	}
+	userID := sBSON["user_id"].(primitive.ObjectID)
 
-	var session model.SessionData
-	//marshalした値をUnmarshalして、userに代入
-	bson.Unmarshal(bsonByte, &session)
-	return session, nil
+	return userID, nil
 }
 
 func getLoginUser(userID primitive.ObjectID) (model.UserData, error) {
@@ -85,13 +77,16 @@ func getLoginUser(userID primitive.ObjectID) (model.UserData, error) {
 	//DBから取得した値をmarshal
 	bsonByte, err := bson.Marshal(resp)
 	if err != nil {
-		log.Printf("Error while bson marshaling session data: %v", err)
+		log.Printf("Error while bson marshaling user data: %v", err)
 		return model.UserData{}, err
 	}
 
 	var user model.UserData
 	//marshalした値をUnmarshalして、userに代入
-	bson.Unmarshal(bsonByte, &user)
-
+	err = bson.Unmarshal(bsonByte, &user)
+	if err != nil {
+		log.Printf("Error while bson unmarshaling user data: %v", err)
+		return model.UserData{}, err
+	}
 	return user, nil
 }
