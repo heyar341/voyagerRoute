@@ -11,17 +11,18 @@ import (
 
 //ルートを更新保存するための関数
 func UpdateRoute(w http.ResponseWriter, req *http.Request) {
+	msg := "エラーが発生しました。もう一度操作を行ってください。"
 	//バリデーション完了後のrequestFieldsを取得
 	reqFields, ok := req.Context().Value("reqFields").(model.RouteUpdateRequest)
 	if !ok {
-		http.Error(w, "エラーが発生しました。もう一度操作を行ってください。", http.StatusInternalServerError)
+		http.Error(w, msg, http.StatusInternalServerError)
 		log.Printf("Error while getting request fields from reuest's context: %v", ok)
 		return
 	}
 	//Auth middlewareからuserIDを取得
 	user, ok := req.Context().Value("user").(model.UserData)
 	if !ok {
-		http.Error(w, "エラーが発生しました。もう一度操作を行ってください。", http.StatusInternalServerError)
+		http.Error(w, msg, http.StatusInternalServerError)
 		log.Printf("Error while getting userID from reuest's context: %v", ok)
 		return
 	}
@@ -47,7 +48,6 @@ func UpdateRoute(w http.ResponseWriter, req *http.Request) {
 	}
 
 	if err != nil {
-		msg = "エラーが発生しました。もう一度操作をしなおしてください。"
 		http.Error(w, msg, http.StatusInternalServerError)
 		log.Printf("Error while saving multi route: %v", err)
 		return
@@ -61,7 +61,6 @@ func UpdateRoute(w http.ResponseWriter, req *http.Request) {
 	}
 	err = dbhandler.UpdateOne("googroutes", "routes", "$set", routeDoc, updateDoc)
 	if err != nil {
-		msg = "エラーが発生しました。もう一度操作をしなおしてください。"
 		http.Error(w, msg, http.StatusInternalServerError)
 		log.Printf("Error while saving multi route: %v", err)
 		return

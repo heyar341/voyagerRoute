@@ -10,15 +10,14 @@ import (
 
 func DeleteRoute(w http.ResponseWriter, req *http.Request) {
 	if req.Method != "POST" {
-		msg = "HTTPメソッドが不正です。"
+		msg := "HTTPメソッドが不正です。"
 		http.Redirect(w, req, "/mypage/show_routes/?msg="+msg, http.StatusSeeOther)
 		return
 	}
-
+	msg := "エラーが発生しました。もう一度操作を行ってください。"
 	//Auth middlewareからuserIDを取得
 	user, ok := req.Context().Value("user").(model.UserData)
 	if !ok {
-		msg = "エラーが発生しました。もう一度操作を行ってください。"
 		http.Redirect(w, req, "/mypage/show_routes/?msg="+msg, http.StatusSeeOther)
 		log.Printf("Error while getting userID from reuest's context: %v", ok)
 		return
@@ -36,7 +35,6 @@ func DeleteRoute(w http.ResponseWriter, req *http.Request) {
 	//公式ドキュメントURL: https://docs.mongodb.com/manual/reference/operator/update/unset/
 	err := dbhandler.UpdateOne("googroutes", "users", "$unset", userDoc, deleteField)
 	if err != nil {
-		msg = "エラ-が発生しました。もう一度操作をしなおしてください。"
 		http.Redirect(w, req, "/mypage/show_routes/?msg="+msg, http.StatusSeeOther)
 		log.Printf("Error while deleting %v from multi_route_titles: %v", routeTitle, err)
 		return
