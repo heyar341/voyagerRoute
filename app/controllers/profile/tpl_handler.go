@@ -37,7 +37,7 @@ func ShowProfile(w http.ResponseWriter, req *http.Request) {
 }
 
 func EditUserNameForm(w http.ResponseWriter, req *http.Request) {
-	msg := "エラ〜が発生しました。もう一度操作しなおしてください。"
+	msg := "エラーが発生しました。もう一度操作しなおしてください。"
 	data, ok := req.Context().Value("data").(map[string]interface{})
 	if !ok {
 		http.Redirect(w, req, "/mypage/?msg="+msg, http.StatusSeeOther)
@@ -57,7 +57,7 @@ func EditUserNameForm(w http.ResponseWriter, req *http.Request) {
 	profileTpl.ExecuteTemplate(w, "username_edit.html", data)
 }
 func EditEmailForm(w http.ResponseWriter, req *http.Request) {
-	msg := "エラ〜が発生しました。もう一度操作しなおしてください。"
+	msg := "エラーが発生しました。もう一度操作しなおしてください。"
 	data, ok := req.Context().Value("data").(map[string]interface{})
 	if !ok {
 		http.Redirect(w, req, "/mypage/?msg="+msg, http.StatusSeeOther)
@@ -78,7 +78,7 @@ func EditEmailForm(w http.ResponseWriter, req *http.Request) {
 	profileTpl.ExecuteTemplate(w, "email_edit.html", data)
 }
 func EditPasswordForm(w http.ResponseWriter, req *http.Request) {
-	msg := "エラ〜が発生しました。もう一度操作しなおしてください。"
+	msg := "エラーが発生しました。もう一度操作しなおしてください。"
 	data, ok := req.Context().Value("data").(map[string]interface{})
 	if !ok {
 		http.Redirect(w, req, "/mypage/?msg="+msg, http.StatusSeeOther)
