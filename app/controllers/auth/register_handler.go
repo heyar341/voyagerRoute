@@ -62,7 +62,7 @@ func Register(w http.ResponseWriter, req *http.Request) {
 	_, err = dbhandler.Insert("googroutes", "registering", registerDoc)
 	if err != nil {
 		http.Redirect(w, req, "/register_form/?msg="+msg+"&username="+userName+"&email="+email, http.StatusSeeOther)
-		log.Println(err)
+		log.Printf("Error while inserting registering user to registering collection :%v", err)
 		return
 	}
 
@@ -70,12 +70,19 @@ func Register(w http.ResponseWriter, req *http.Request) {
 	http.Redirect(w, req, "/ask_confirm", http.StatusSeeOther)
 
 	//「メールでトークン付きのURLを送る」
-	//envファイルからGmailのアプリパスワード取得
-	gmailPassword,err := envhandler.GetEnvVal("GMAIL_APP_PASS")
+	err = sendConfirmEmail(token, email, userName)
 	if err != nil {
-		msg = "エラーが発生しました。しばらく経ってからもう一度ご利用ください。"
 		http.Redirect(w, req, "/?msg="+msg, http.StatusInternalServerError)
 		return
+	}
+}
+
+func sendConfirmEmail(token, email, userName string) error {
+	//envファイルからGmailのアプリパスワード取得
+	gmailPassword, err := envhandler.GetEnvVal("GMAIL_APP_PASS")
+	if err != nil {
+		log.Printf("Error while getting gmail app password form env file: %v", err)
+		return err
 	}
 	mailAuth := smtp.PlainAuth(
 		"",
@@ -93,8 +100,10 @@ func Register(w http.ResponseWriter, req *http.Request) {
 		[]byte(fmt.Sprintf("To:%s\r\nSubject:メールアドレス認証のお願い\r\n\r\n%s", userName, tokenURL)),
 	)
 	if err != nil {
-		log.Println(err)
+		log.Printf("Error sending email for confir registering: %v", err)
+		return err
 	}
+	return nil
 }
 
 func ConfirmRegister(w http.ResponseWriter, req *http.Request) {
@@ -108,39 +117,24 @@ func ConfirmRegister(w http.ResponseWriter, req *http.Request) {
 
 	//取得するドキュメントの条件
 	tokenDoc := bson.D{{"token", token}}
+	//返すフィールドを指定
+	resFields := bson.M{"username": 1, "email": 1, "password": 1}
 	//DBから取得
-	resp, err := dbhandler.Find("googroutes", "registering", tokenDoc, nil)
+	userDoc, err := dbhandler.Find("googroutes", "registering", tokenDoc, resFields)
 	if err != nil {
 		msg := url.QueryEscape("認証トークンが一致しません。")
 		http.Redirect(w, req, "/?msg="+msg, http.StatusSeeOther)
 		return
 	}
-	//DBから取得した値をmarshal
-	bsonByte, _ := bson.Marshal(resp)
-	//user情報取得型
-	type registeringUser struct {
-		ID       primitive.ObjectID `json:"id" bson:"_id"`
-		Username string             `json:"username" bson:"username"`
-		Email    string             `json:"email" bson:"email"`
-		Password []byte             `json:"password" bson:"password"`
-		Token    string             `json:"token" bson:"token"`
-	}
-	var user registeringUser
-	//marshalした値をUnmarshalして、userに代入
-	bson.Unmarshal(bsonByte, &user)
+
+	//multi_route_titlesフィールドを追加
+	userDoc = append(userDoc, bson.E{"multi_route_titles", map[string]time.Time{}})
 
 	//「userをDBに保存」
-	//保存するドキュメント
-	userDoc := bson.D{
-		{"username", user.Username},
-		{"email", user.Email},
-		{"password", user.Password},
-		{"multi_route_titles", map[string]time.Time{}},
-	}
 	//DBに保存
 	insertRes, err := dbhandler.Insert("googroutes", "users", userDoc)
 	if err != nil {
-		msg := url.QueryEscape("エラ〜が発生しました。もう一度操作をしなおしてください。")
+		msg := url.QueryEscape("エラーが発生しました。もう一度操作をしなおしてください。")
 		http.Redirect(w, req, "/?msg="+msg, http.StatusSeeOther)
 		log.Printf("Error while inserting user data into DB: %v", err)
 		return
@@ -183,8 +177,9 @@ func EmailIsAvailable(w http.ResponseWriter, req *http.Request) {
 	//メールアドレスが使用可能か入れる変数
 	var isValid = false
 	emailDoc := bson.D{{"email", reqFields.Email}}
+	resFiled := bson.M{"email": 1}
 	//DBから取得
-	_, err = dbhandler.Find("googroutes", "users", emailDoc, nil)
+	_, err = dbhandler.Find("googroutes", "users", emailDoc, resFiled)
 	//ドキュメントがない場合、メールアドレスは使用可能
 	if err == mongo.ErrNoDocuments {
 		isValid = true
