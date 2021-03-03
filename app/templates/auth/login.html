@@ -1,15 +1,19 @@
 <!DOCTYPE html>
-<html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>ログイン</title>
-    <link href="//maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
+    {{ template "imports" }}
+
 </head>
 
 <body>
 <!--navbarを埋め込み-->
 {{ template "navbar" . }} <!-- .を入れることでデータをnavbarに通せる -->
-
+{{if .msg}}
+<div class="py-2 d-flex" style="background-color: pink"><span class="mx-auto" style="color: brown">{{.msg}}</span></div>
+{{else if .success}}
+<div class="py-2 d-flex" style="background-color: lightblue"><span class="mx-auto" style="color: green">{{.success}}</span></div>
+{{end}}
 <div class="container">
     <br>
     <br>
@@ -34,9 +38,6 @@
                             <label>パスワード:</label>
                             <input class="form-control" name="password" type="password" placeholder="パスワードを入力" required>
                         </div> <!-- form-group end.// -->
-                        {{if .qParams.msg }}
-                        <span style="color: red">{{index .qParams.msg 0}}</span>
-                        {{end}}
                         <div class="form-group">
                             <button type="submit" class="btn btn-primary btn-block">ログイン</button>
                         </div> <!-- form-group// -->
