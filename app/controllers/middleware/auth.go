@@ -85,13 +85,16 @@ func getLoginUser(userID primitive.ObjectID) (model.UserData, error) {
 	//DBから取得した値をmarshal
 	bsonByte, err := bson.Marshal(resp)
 	if err != nil {
-		log.Printf("Error while bson marshaling session data: %v", err)
+		log.Printf("Error while bson marshaling user data: %v", err)
 		return model.UserData{}, err
 	}
 
 	var user model.UserData
 	//marshalした値をUnmarshalして、userに代入
-	bson.Unmarshal(bsonByte, &user)
-
+	err = bson.Unmarshal(bsonByte, &user)
+	if err != nil {
+		log.Printf("Error while bson unmarshaling user data: %v", err)
+		return model.UserData{}, err
+	}
 	return user, nil
 }
