@@ -2,21 +2,16 @@
 <html>
 <head>
     <title>ルート検索</title>
-    {{/*GoogleMaps APIの呼び出し*/}}
+    {{ template "imports" }}
+    <!--GoogleMaps APIの呼び出し-->
     <script src="https://polyfill.io/v3/polyfill.min.js?features=default"></script>
     <script
             src="https://maps.googleapis.com/maps/api/js?key={{.apiKey}}&callback=initMap&libraries=places&v=weekly"
             defer
     ></script>
-    {{/*jQueryの呼び出し*/}}
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-    {{/*bootStrapの呼び出し*/}}
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"
-          integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
 
     <link rel="stylesheet" type="text/css" href="templates/multi_search/search/multi_search.css"/>
     <script src="templates/multi_search/search/multi_search.js"></script>
-
 </head>
 <body>
 

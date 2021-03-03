@@ -1,13 +1,15 @@
+//入力されるまでボタンを無効化
+$(function () {
+  var button = $("#register-btn");
+  button.attr("disabled", true);
+});
 //メールアドレス形式のチェックおよび登録可能かチェック
 $(function () {
   $("#email").on("input", function () {
-    //validation OKまで新規登録ボタンを無効化
-    var button = $("#register-btn");
-    button.attr("disabled", true);
     var email_error = false;
     //メールアドレスの形式チェック
     if (
-      !/^[A-Za-z0-9]{1}[A-Za-z0-9_.-]*@{1}[A-Za-z0-9_.-]{1,}\.[A-Za-z0-9]{1,}$/.test(
+      !/^[a-zA-Z0-9.!#$%&'*+\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/.test(
         $(this).val()
       )
     ) {
@@ -35,9 +37,7 @@ $(function () {
           if ($("#email").nextAll("span.error-info").length) {
             $("#email").nextAll("span.error-info").remove();
           }
-          if (data.valid === true) {
-            button.attr("disabled", false); // ボタンを再び enableにする
-          } else {
+          if (!data.valid) {
             $("#email").after(
               '<span class="text-danger error-info">このメールアドレスはすでに登録されています。</span>'
             );
@@ -55,9 +55,6 @@ $(function () {
 //パスワードの文字数チェック
 $(function () {
   $("#password").on("input", function () {
-    //validation OKまで新規登録ボタンを無効化
-    var button = $("#register-btn");
-    button.attr("disabled", true);
     var password_error = false;
     if ($(this).val().length < 8) {
       password_error = true;
@@ -69,7 +66,6 @@ $(function () {
         );
       }
     } else {
-      button.attr("disabled", false);
       if ($(this).nextAll("span.error-info").length) {
         $(this).nextAll("span.error-info").remove();
       }
@@ -82,7 +78,6 @@ $(function () {
   $("#password-confirm").on("input", function () {
     //validation OKまで新規登録ボタンを無効化
     var button = $("#register-btn");
-    button.attr("disabled", true);
     var confirm_pass_error = false;
     if ($(this).val() !== $("#password").val()) {
       confirm_pass_error = true;

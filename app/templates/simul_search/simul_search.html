@@ -1,19 +1,19 @@
 <!doctype html>
-<html lang="ja">
 <head>
     <title>9地点同時検索</title>
-    <script src="https://polyfill.io/v3/polyfill.min.js?features=default"></script>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+    {{ template "imports" }}
+    <!--CSS-->
     <link href="https://fonts.googleapis.com/css?family=Noto+Sans+JP&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="templates/simul_search/simul_search.css">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
 
+    <!--Javascript-->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=default"></script>
+    <!--Google Maps APIの読み込み-->
     <script
             src="https://maps.googleapis.com/maps/api/js?key={{.apiKey}}&callback=initAutocomplete&libraries=places&v=weekly"
             defer
     ></script>
     <script src="templates/simul_search/simul_search.js"></script>
-
 </head>
 
 <body>
