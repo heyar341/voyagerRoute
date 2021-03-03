@@ -9,7 +9,7 @@ import (
 )
 
 ///optionDoc(フィールド指定)は順番関係ないからtypeはDでなくM
-func Find(dbName, collectionName string, document interface{}, optionDoc bson.M) (bson.D, error) {
+func Find(dbName, collectionName string, document interface{}, optionDoc bson.M) (interface{}, error) {
 	client, ctx, cancel, err := connectDB()
 	defer cancel()
 	if err != nil {
