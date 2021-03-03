@@ -19,8 +19,8 @@ type TimeZoneResp struct {
 	SummerTimeOffset int    `json:"dstOffset"` //サマータイム時のオフセット
 	RawOffset        int    `json:"rawOffset"` //通常時のオフセット
 	Status           string `json:"status"`
-	TimeZoneID       string `json:"timeZoneId"`
-	TimeZoneName     string `json:"timeZoneName"`
+	//TimeZoneID       string `json:"timeZoneId"`
+	//TimeZoneName     string `json:"timeZoneName"`
 }
 
 //TimeZone API公式ドキュメント：https://developers.google.com/maps/documentation/timezone/get-started
@@ -28,13 +28,14 @@ type TimeZoneResp struct {
 func GetTimezone(w http.ResponseWriter, req *http.Request) {
 	//リクエストメソッドについて確認
 	if req.Header.Get("Content-Type") != "application/json" || req.Method != "POST" {
-		http.Error(w, "リクエスト方法が不正です。", http.StatusBadRequest)
+		http.Error(w, "リクエストメソッドが不正です。", http.StatusBadRequest)
 		log.Printf("Someone sended data not from multi_search page for TimeZone data")
+		return
 	}
 
 	apiKey, err := envhandler.GetEnvVal("TIMEZONE_API_KEY")
 	if err != nil {
-		msg = "エラーが発生しました。現在サービスをご利用いただけません。"
+		msg := "エラーが発生しました。現在サービスをご利用いただけません。"
 		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
@@ -46,6 +47,7 @@ func GetTimezone(w http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		http.Error(w, "リクエストデータに不備があります。", http.StatusBadRequest)
 		log.Printf("Error while json unmarshaling timezone request: %v", err)
+		return
 	}
 	err = req.Body.Close()
 
@@ -57,6 +59,7 @@ func GetTimezone(w http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		http.Error(w, "データの取得に失敗しました。", http.StatusInternalServerError)
 		log.Printf("Error while json unmarshaling timezone response: %v", err)
+		return
 	}
 	//requestのフィールドを保存する変数
 	var tZResp TimeZoneResp
@@ -65,6 +68,7 @@ func GetTimezone(w http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		http.Error(w, "データの取得に失敗しました。", http.StatusInternalServerError)
 		log.Printf("Error while json unmarshaling timezone response: %v", err)
+		return
 	}
 	err = resp.Body.Close()
 
@@ -76,7 +80,9 @@ func GetTimezone(w http.ResponseWriter, req *http.Request) {
 	offsetInfo := OffsetJSON{RawOffset: strconv.Itoa(tZResp.RawOffset)}
 	respJson, err := json.Marshal(offsetInfo)
 	if err != nil {
+		http.Error(w, "データの取得に失敗しました。", http.StatusInternalServerError)
 		log.Printf("Error while json marshaling timezone data: %v", err)
+		return
 	}
 	w.Write(respJson)
 }
