@@ -6,7 +6,6 @@ import (
 	"app/model"
 	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"log"
 	"net/http"
 	"net/url"
@@ -94,7 +93,7 @@ func ConfirmUpdateEmail(w http.ResponseWriter, req *http.Request) {
 	}
 
 	newEmail := em["email"]
-	expiresUnix, ok := userM["expires_at"].(int64)
+	expiresUnix, ok := em["expires_at"].(int64)
 	if !ok {
 		msg = url.QueryEscape("データの処理中にエラーが発生しました。申し訳ありませんが、もう一度メールアドレス変更のお手続きをしてください。")
 		http.Redirect(w, req, "/profile/email_edit_form/?msg="+msg, http.StatusSeeOther)
