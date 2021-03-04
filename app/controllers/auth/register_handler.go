@@ -98,16 +98,16 @@ func ConfirmRegister(w http.ResponseWriter, req *http.Request) {
 	expireBSON, ok := userM["expires_at"].(primitive.DateTime)
 	if !ok {
 		msg := url.QueryEscape("データの処理中にエラーが発生しました。申し訳ありませんが、もう一度新規登録操作をお願いいたします。")
-		http.Redirect(w, req, "/profile/register_form/?msg="+msg, http.StatusSeeOther)
+		http.Redirect(w, req, "/register_form/?msg="+msg, http.StatusSeeOther)
 		log.Printf("Error while confirming register. type asserting token's expires time: %v", err)
 		return
 	}
 	expires := expireBSON.Time() //time.Time
 
 	//トークンの有効期限を確認
-	if expires.After(time.Now()) {
+	if !expires.After(time.Now()) {
 		msg := url.QueryEscape("トークンの有効期限が切れています。もう一度新規登録操作をお願いいたします。")
-		http.Redirect(w, req, "/profile/register_form/?msg="+msg, http.StatusSeeOther)
+		http.Redirect(w, req, "/register_form/?msg="+msg, http.StatusSeeOther)
 		log.Printf("registering token of %v is expired", userM["email"])
 		return
 	}
