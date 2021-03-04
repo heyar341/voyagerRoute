@@ -65,7 +65,7 @@ func main() {
 	//「ホーム」
 	http.HandleFunc("/", middleware.Auth(home))
 
-	http.ListenAndServe(":80", nil)
+	http.ListenAndServe(":8080", nil)
 }
 
 func home(w http.ResponseWriter, req *http.Request) {
