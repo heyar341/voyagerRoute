@@ -96,6 +96,7 @@ func simulSearch(client *maps.Client, destination string, reqParam *model.SimulP
 		Region:      "JP",
 		Origin:      reqParam.Origin,
 		Destination: destination,
+		Mode: maps.TravelModeWalking,
 		//出発時間はデフォルトで現在時刻に設定
 		DepartureTime: strconv.Itoa(int(time.Now().Unix())),
 		//過去のデータから予想される最適な所要時間を返すよう設定
