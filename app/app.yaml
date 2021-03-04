@@ -1,0 +1,22 @@
+runtime: go114
+
+default_expiration: "5h"
+
+instance_class: F1
+
+automatic_scaling:
+  max_instances: 2
+  max_idle_instances: 1
+  target_cpu_utilization: 0.8
+  target_throughput_utilization: 0.7
+  max_concurrent_requests: 30
+
+handlers:
+  - url: /templates
+    static_dir: templates
+
+  - url: /.*
+    script: auto
+
+#includes:
+#  - env_variables.yaml
