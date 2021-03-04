@@ -54,3 +54,6 @@ deleteField := bson.M{"<フィールド名>":""} ←目的のフィールド名�
 そして、$unsetを使うことで、１つだけ削除できる。
 dbhandler.UpdateOne("googroutes", "users", "$unset", userDoc, deleteField)
 公式ドキュメントURL: https://docs.mongodb.com/manual/reference/operator/update/unset/
+
+  GAE(Google Cloud App Engine)は、サーバー側でTLS処理をしてくれるから、ListenAndServeTLS
+を使わないでListenAndServeを使えばいい
