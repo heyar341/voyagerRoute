@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"golang.org/x/crypto/bcrypt"
 	"io/ioutil"
@@ -95,14 +94,14 @@ func ConfirmRegister(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	expireBSON, ok := userM["expires_at"].(primitive.DateTime)
+	expiresUnix, ok := userM["expires_at"].(int64)
 	if !ok {
 		msg := url.QueryEscape("データの処理中にエラーが発生しました。申し訳ありませんが、もう一度新規登録操作をお願いいたします。")
 		http.Redirect(w, req, "/register_form/?msg="+msg, http.StatusSeeOther)
-		log.Printf("Error while confirming register. type asserting token's expires time: %v", err)
+		log.Printf("Error while confirming register. type asserting token's expires time")
 		return
 	}
-	expires := expireBSON.Time() //time.Time
+	expires := time.Unix(expiresUnix, 0) //time.Time
 
 	//トークンの有効期限を確認
 	if !expires.After(time.Now()) {
