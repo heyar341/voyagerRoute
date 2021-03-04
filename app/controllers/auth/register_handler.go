@@ -1,10 +1,9 @@
 package auth
 
 import (
-	"app/controllers/envhandler"
 	"app/dbhandler"
+	"app/mailhandler"
 	"encoding/json"
-	"fmt"
 	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -12,7 +11,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"net/smtp"
 	"net/url"
 	"time"
 )
@@ -55,6 +53,7 @@ func Register(w http.ResponseWriter, req *http.Request) {
 		{"username", userName},
 		{"email", email},
 		{"password", securedPassword},
+		{"expires_at", time.Now().Add(1 * time.Hour).Unix()},
 		{"token", token},
 	}
 	//DBに保存
@@ -69,40 +68,10 @@ func Register(w http.ResponseWriter, req *http.Request) {
 	http.Redirect(w, req, "/ask_confirm", http.StatusSeeOther)
 
 	//「メールでトークン付きのURLを送る」
-	err = sendConfirmEmail(token, email, userName)
+	err = mailhandler.SendConfirmEmail(token, email, userName)
 	if err != nil {
-		http.Redirect(w, req, "/?msg="+msg, http.StatusInternalServerError)
-		return
+		log.Printf("Error while sending email at registering: %v", err)
 	}
-}
-
-func sendConfirmEmail(token, email, userName string) error {
-	//envファイルからGmailのアプリパスワード取得
-	gmailPassword, err := envhandler.GetEnvVal("GMAIL_APP_PASS")
-	if err != nil {
-		log.Printf("Error while getting gmail app password form env file: %v", err)
-		return err
-	}
-	mailAuth := smtp.PlainAuth(
-		"",
-		"app.goog.routes@gmail.com",
-		gmailPassword,
-		"smtp.gmail.com",
-	)
-
-	tokenURL := "http://localhost:8080/confirm_register/?token=" + token //localhostは本番で変更
-	err = smtp.SendMail(
-		"smtp.gmail.com:587",
-		mailAuth,
-		"app.goog.routes@gmail.com",
-		[]string{email},
-		[]byte(fmt.Sprintf("To:%s\r\nSubject:メールアドレス認証のお願い\r\n\r\n%s", userName, tokenURL)),
-	)
-	if err != nil {
-		log.Printf("Error sending email for confir registering: %v", err)
-		return err
-	}
-	return nil
 }
 
 func ConfirmRegister(w http.ResponseWriter, req *http.Request) {
@@ -122,6 +91,23 @@ func ConfirmRegister(w http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		msg := url.QueryEscape("認証トークンが一致しません。")
 		http.Redirect(w, req, "/?msg="+msg, http.StatusSeeOther)
+		return
+	}
+
+	expiresUnix, ok := userM["expires_at"].(int64)
+	if !ok {
+		msg := url.QueryEscape("データの処理中にエラーが発生しました。申し訳ありませんが、もう一度新規登録操作をお願いいたします。")
+		http.Redirect(w, req, "/register_form/?msg="+msg, http.StatusSeeOther)
+		log.Printf("Error while confirming register. type asserting token's expires time")
+		return
+	}
+	expires := time.Unix(expiresUnix, 0) //time.Time
+
+	//トークンの有効期限を確認
+	if !expires.After(time.Now()) {
+		msg := url.QueryEscape("トークンの有効期限が切れています。もう一度新規登録操作をお願いいたします。")
+		http.Redirect(w, req, "/register_form/?msg="+msg, http.StatusSeeOther)
+		log.Printf("registering token of %v is expired", userM["email"])
 		return
 	}
 

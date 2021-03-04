@@ -9,7 +9,7 @@ services:
     - ../app:/go/src/app
     - gopkg:/go/pkg/mod
     ports:
-    - 8080:80
+    - 8080:8080
 #mongoDB
   db:
     image: mongo:4.4.2-bionic
