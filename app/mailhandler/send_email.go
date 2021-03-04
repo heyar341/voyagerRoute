@@ -23,7 +23,7 @@ func SendConfirmEmail(token, email, userName string) error {
 
 	tokenURL := "グーグる〜とをご利用いただきありがとうございます。\n" +
 		"このメールはメールアドレス認証用に送信されたメールです。\n" +
-		"このメールを受診してから１時間以内に認証を行ってください。\n" +
+		"このメールを受信してから１時間以内に認証を行ってください。\n" +
 		"１時間以内に認証が行われない場合、認証はキャンセルされます。\n\n" +
 		"認証用URL:\n" +
 		"https://googroutes.com/confirm_register/?token=" + token
