@@ -4,6 +4,9 @@ default_expiration: "5h"
 
 instance_class: F1
 
+env_variables:
+  APP_ENV: "prod"
+
 automatic_scaling:
   max_instances: 2
   max_idle_instances: 1
