@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"app/mailhandler"
 	"context"
 	"net/http"
 	"net/url"
@@ -26,6 +27,10 @@ func RegisterValidator(Register http.HandlerFunc) http.HandlerFunc {
 		}
 		if email == "" {
 			msg := url.QueryEscape("メールアドレスを入力してください。")
+			http.Redirect(w, req, "/register_form/?msg="+msg+"&username="+u+"&email="+m, http.StatusSeeOther)
+			return
+		} else if !mailhandler.IsEmailValid(email) {
+			msg := url.QueryEscape("メールアドレスに不備があります。")
 			http.Redirect(w, req, "/register_form/?msg="+msg+"&username="+u+"&email="+m, http.StatusSeeOther)
 			return
 		}
