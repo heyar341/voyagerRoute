@@ -94,14 +94,14 @@ func ConfirmUpdateEmail(w http.ResponseWriter, req *http.Request) {
 	}
 
 	newEmail := em["email"]
-	expireBSON, ok := em["expires_at"].(primitive.DateTime)
+	expiresUnix, ok := userM["expires_at"].(int64)
 	if !ok {
 		msg = url.QueryEscape("データの処理中にエラーが発生しました。申し訳ありませんが、もう一度メールアドレス変更のお手続きをしてください。")
 		http.Redirect(w, req, "/profile/email_edit_form/?msg="+msg, http.StatusSeeOther)
-		log.Printf("Error while type asserting token's expires time: %v", err)
+		log.Printf("Error while type asserting token's expires time")
 		return
 	}
-	expires := expireBSON.Time() //time.Time
+	expires := time.Unix(expiresUnix, 0) //time.Time
 
 	//トークンの有効期限を確認
 	if expires.After(time.Now()) {
