@@ -1,7 +1,7 @@
 package simulsearch
 
 import (
-	"app/controllers/envhandler"
+	"app/envhandler"
 	"html/template"
 	"log"
 	"net/http"

@@ -1,7 +1,7 @@
 package multiroute
 
 import (
-	"app/controllers/envhandler"
+	"app/envhandler"
 	"app/model"
 	"go.mongodb.org/mongo-driver/mongo"
 	"html/template"

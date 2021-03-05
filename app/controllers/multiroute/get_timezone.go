@@ -1,7 +1,7 @@
 package multiroute
 
 import (
-	"app/controllers/envhandler"
+	"app/envhandler"
 	"encoding/json"
 	"io/ioutil"
 	"log"

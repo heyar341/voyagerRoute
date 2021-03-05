@@ -1,7 +1,7 @@
 package auth
 
 import (
-	"app/controllers/envhandler"
+	"app/envhandler"
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	"time"
