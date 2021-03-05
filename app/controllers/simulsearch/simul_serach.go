@@ -1,7 +1,7 @@
 package simulsearch
 
 import (
-	"app/controllers/envhandler"
+	"app/envhandler"
 	"app/model"
 	"context"
 	"encoding/json"

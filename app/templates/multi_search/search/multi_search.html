@@ -3,12 +3,7 @@
 <head>
     <title>ルート検索</title>
     {{ template "imports" }}
-    <!--GoogleMaps APIの呼び出し-->
     <script src="https://polyfill.io/v3/polyfill.min.js?features=default"></script>
-    <script
-            src="https://maps.googleapis.com/maps/api/js?key={{.apiKey}}&callback=initMap&libraries=places&v=weekly"
-            defer
-    ></script>
 
     <link rel="stylesheet" type="text/css" href="templates/multi_search/search/multi_search.css"/>
     <script src="templates/multi_search/search/multi_search.js"></script>

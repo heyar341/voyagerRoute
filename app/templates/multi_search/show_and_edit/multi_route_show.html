@@ -7,12 +7,8 @@
     <script>routeInfo = JSON.parse(
         {{.routeInfo}});
     </script>
-    <!--GoogleMaps APIの呼び出し-->
+
     <script src="https://polyfill.io/v3/polyfill.min.js?features=default"></script>
-    <script
-            src="https://maps.googleapis.com/maps/api/js?key={{.apiKey}}&callback=initMap&libraries=places&v=weekly"
-            defer
-    ></script>
 
     <link rel="stylesheet" type="text/css" href="/templates/multi_search/show_and_edit/multi_route_show.css"/>
     <script src="/templates/multi_search/show_and_edit/multi_route_show.js"></script>
