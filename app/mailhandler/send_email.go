@@ -1,7 +1,7 @@
 package mailhandler
 
 import (
-	"app/controllers/envhandler"
+	"app/envhandler"
 	"fmt"
 	"log"
 	"net/smtp"
