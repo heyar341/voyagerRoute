@@ -14,7 +14,7 @@ type UserData struct {
 
 //ルート編集保存requestのフィールドを保存するstruct
 type RouteUpdateRequest struct {
-	ID            primitive.ObjectID     `json:"id" bson:"_id"`
+	ID            primitive.ObjectID     `json:"_id" bson:"_id"`
 	Title         string                 `json:"title" bson:"title"`
 	PreviousTitle string                 `json:"previous_title" bson:"previous_title"`
 	Routes        map[string]interface{} `json:"routes" bson:"routes"`

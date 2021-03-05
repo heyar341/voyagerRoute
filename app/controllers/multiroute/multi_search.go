@@ -8,6 +8,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -22,7 +23,7 @@ type MultiSearchRequest struct {
 }
 
 func SaveRoutes(w http.ResponseWriter, req *http.Request) {
-	msg := "エラーが発生しました。もう一度操作を行ってください。"
+	msg := "エラーが発生しました。"
 	//バリデーション完了後のrequestFieldsを取得
 	reqFields, ok := req.Context().Value("reqFields").(MultiSearchRequest)
 	if !ok {
@@ -54,8 +55,15 @@ func SaveRoutes(w http.ResponseWriter, req *http.Request) {
 		{"title", reqFields.Title},
 		{"routes", reqFields.Routes},
 	}
+
 	_, err = dbhandler.Insert("googroutes", "routes", routeDocument)
 	if err != nil {
+		if strings.Contains(err.Error(), "(BSONObjectTooLarge)") {
+			msg = "ルートのデータサイズが大きすぎるため、保存できません。\nルートの分割をお願いします。"
+			http.Error(w, msg, http.StatusInternalServerError)
+			log.Printf("Error while saving multi route: %v", err)
+			return
+		}
 		http.Error(w, msg, http.StatusInternalServerError)
 		log.Printf("Error while saving multi route: %v", err)
 		return
