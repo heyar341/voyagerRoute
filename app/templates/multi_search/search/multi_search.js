@@ -40,7 +40,7 @@ $(function () {
     })
       //通信成功
       .done(function (data, textStatus, jqXHR) {
-        window.location.href = "https://googroutes.com/multi_search";
+        window.location.href = "/multi_search";
         //通信失敗
       })
       .fail(function (xhr, status, error) {
