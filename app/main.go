@@ -2,7 +2,7 @@ package main
 
 import (
 	"app/controllers/auth"
-	"app/controllers/middleware"
+	"app/middleware"
 	"app/controllers/multiroute"
 	"app/controllers/mypage"
 	"app/controllers/profile"
