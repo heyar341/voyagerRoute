@@ -7,6 +7,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"log"
 	"net/http"
+	"strings"
 )
 
 //ルートを更新保存するための関数
@@ -27,9 +28,30 @@ func UpdateRoute(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	var err error
+
+	//routes collectionに保存
+	routeDoc := bson.M{"_id": reqFields.ID}
+	updateDoc := bson.D{
+		{"title", reqFields.Title},
+		{"routes", reqFields.Routes},
+	}
+	err = dbhandler.UpdateOne("googroutes", "routes", "$set", routeDoc, updateDoc)
+	if err != nil {
+		if strings.Contains(err.Error(), "(BSONObjectTooLarge)") {
+			msg = "ルートのデータサイズが大きすぎるため、保存できません。\nルートの分割をお願いします。"
+			http.Error(w, msg, http.StatusInternalServerError)
+			log.Printf("Error while updating multi route: %v", err)
+			return
+		}
+		http.Error(w, msg, http.StatusInternalServerError)
+		log.Printf("Error while updating multi route: %v", err)
+		return
+	}
+
+
 	userID := user.ID
 
-	var err error
 	//編集するルートのユーザー
 	userDoc := bson.M{"_id": userID}
 
@@ -49,20 +71,7 @@ func UpdateRoute(w http.ResponseWriter, req *http.Request) {
 
 	if err != nil {
 		http.Error(w, msg, http.StatusInternalServerError)
-		log.Printf("Error while saving multi route: %v", err)
-		return
-	}
-
-	//routes collectionに保存
-	routeDoc := bson.M{"_id": reqFields.ID}
-	updateDoc := bson.D{
-		{"title", reqFields.Title},
-		{"routes", reqFields.Routes},
-	}
-	err = dbhandler.UpdateOne("googroutes", "routes", "$set", routeDoc, updateDoc)
-	if err != nil {
-		http.Error(w, msg, http.StatusInternalServerError)
-		log.Printf("Error while saving multi route: %v", err)
+		log.Printf("Error while updating multi route titles in user document field: %v", err)
 		return
 	}
 
