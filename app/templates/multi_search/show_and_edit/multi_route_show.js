@@ -469,6 +469,12 @@ class AutocompleteDirectionsHandler {
     };
     //公共交通機関を選択した場合
     if (document.getElementById("changemode-transit" + this.routeNum).checked) {
+      if (document.getElementById("origin-input" + me.routeNum).value.indexOf("日本") !== -1) {
+        window.alert(
+            "日本の公共交通機関情報はGoogle Maps APIの仕様上、ご利用いただけません。"
+        );
+        return;
+      }
       this.directionsRequest.transitOptions = {};
       //時間指定しない場合、現在時刻に設定
       me.directionsRequest.transitOptions.departureTime = new Date(
