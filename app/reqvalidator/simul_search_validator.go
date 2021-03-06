@@ -16,6 +16,7 @@ func SimulSearchValidator(DoSimulSearch http.HandlerFunc) http.HandlerFunc {
 		if req.Header.Get("Content-Type") != "application/json" || req.Method != "POST" {
 			http.Error(w, "リクエスト方法が不正です。", http.StatusBadRequest)
 			log.Printf("Someone sended data not from simul_search page")
+			return
 		}
 		//requestのフィールドを保存する変数
 		var reqParams model.SimulParams
@@ -24,11 +25,13 @@ func SimulSearchValidator(DoSimulSearch http.HandlerFunc) http.HandlerFunc {
 		if err != nil {
 			http.Error(w, "リクエストデータに不備があります。", http.StatusBadRequest)
 			log.Printf("Error while json marshaling simulSearch request: %v", err)
+			return
 		}
 
 		//出発地のバリデーション
 		if reqParams.Origin == "" {
 			http.Error(w, "出発地を入力してください。", http.StatusBadRequest)
+			return
 		}
 		//place_id:を追加
 		reqParams.Origin = "place_id:" + reqParams.Origin
