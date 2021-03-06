@@ -20,9 +20,14 @@
     <div class="ml-2">
         <input type="button" class="mt-3 mb-3 btn-warning" id="add-route" value="次のルートを追加"><br>
         <hr>
-        <span class="ml-2" style="color: black">まとめルートの保存:</span>
-        <input type="text" class="mt-3" id="route-name" style="width: 350px" placeholder="保存するタイトルを入力(.,$以外の文字)"><br>
-        <input type="button" class="mt-1 btn-success" id="save-route" value="ルートを保存">
+        {{if .isLoggedIn}}
+            <span class="ml-2" style="color: black">まとめルートの保存:</span>
+            <input type="text" class="mt-3" id="route-name" style="width: 350px" placeholder="保存するタイトルを入力(.,$以外の文字)"><br>
+            <input type="button" class="mt-1 btn-success" id="save-route" value="ルートを保存">
+        {{else}}
+            <span style="color:grey;">新規登録していただくとルートの保存ができます。</span><br>
+            <a href="/register_form">新規登録はこちらから</a>
+        {{end}}
     </div>
 </div>
 <div id="map"></div>
