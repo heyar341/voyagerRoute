@@ -25,7 +25,7 @@ $(function () {
       window.alert(".または$はルート名に使用できません。");
       return;
     }
-    if(multiSearchUpdateReq.title === ""){
+    if (multiSearchUpdateReq.title === "") {
       window.alert("ルート名は１文字以上入力してください。");
       return;
     }
@@ -154,7 +154,6 @@ function initMap() {
       }
     }
   });
-
 
   //ボタンが押されたら保存されたルートのインデックス以降のルート要素をHTMLに追加
   $("#add-route").on("click", function () {
@@ -581,13 +580,19 @@ class AutocompleteDirectionsHandler {
           document.getElementById(
             "one-result-panel" + me.routeNum
           ).style.display = "block";
-          document.getElementById("one-result-text" + me.routeNum).innerText =
-            "ルート: " +
+          document.getElementById("one-result-text" + me.routeNum).innerHTML =
+            "<span>" +
             response.routes[0].summary +
-            " ," +
+            "</span>" +
+            "<span class='ml-1'>" +
             response.routes[0].legs[0].distance.text +
-            " ," +
+            "</span>" +
+            "<span>" +
+            ".</span>" +
+            "<span class='ml-1'>約" +
+            "<span>" +
             response.routes[0].legs[0].duration.text;
+          +"</span>" + "</span>";
         } else {
           //ルートが２つ以上の場合、必要ないので、表示しない
           document.getElementById(
@@ -664,7 +669,18 @@ function genSearchBox(routeId, color) {
              <div id="route-detail-panel${routeId}" class="route-detail">
             </div>
             <div style="background-color: white; padding-bottom: 2px">
-             <div class="ml-2 mb-2" id="one-result-panel${routeId}"><span id="one-result-text${routeId}" style="color: black"></span></div>
+             <div class="ml-2 mb-2 border" id="one-result-panel${routeId}" style="color: black; display: none">
+                <table>
+                    <td>ルート:</td>
+                    <tbody>
+                    <tr>
+                        <td>
+                            <span id="one-result-text${routeId}" style="color: black"></span>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+             </div>
              <button class="btn-primary mx-auto" id="route-decide${routeId}" style="display: none">このルートで決定</button>
              </div>
         </div>`;
