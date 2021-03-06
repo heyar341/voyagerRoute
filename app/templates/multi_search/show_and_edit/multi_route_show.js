@@ -25,6 +25,10 @@ $(function () {
       window.alert(".または$はルート名に使用できません。");
       return;
     }
+    if(multiSearchUpdateReq.title === ""){
+      window.alert("ルート名は１文字以上入力してください。");
+      return;
+    }
     multiSearchUpdateReq["title"] = document.getElementById("route-name").value;
     // 多重送信を防ぐため通信完了までボタンをdisableにする
     var button = $(this);

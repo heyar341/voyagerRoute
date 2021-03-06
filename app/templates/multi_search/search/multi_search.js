@@ -26,6 +26,10 @@ $(function () {
       window.alert("ルートを１つ以上設定してください。");
       return;
     }
+    if(multiSearchReq.title === ""){
+      window.alert("ルート名は１文字以上入力してください。");
+      return;
+    }
     multiSearchReq["title"] = document.getElementById("route-name").value;
     if (/[\.\$]/.test(document.getElementById("route-name").value)) {
       window.alert(".または$はルート名に使用できません。");
