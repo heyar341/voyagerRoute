@@ -21,6 +21,15 @@ const multiSearchReq = {
 //Ajax通信
 $(function () {
   $("#save-route").click(function () {
+    var keys = Object.keys(multiSearchReq.routes);
+    if (keys.length == 0) {
+      window.alert("ルートを１つ以上設定してください。");
+      return;
+    }
+    if (multiSearchReq.title === "") {
+      window.alert("ルート名は１文字以上入力してください。");
+      return;
+    }
     multiSearchReq["title"] = document.getElementById("route-name").value;
     if (/[\.\$]/.test(document.getElementById("route-name").value)) {
       window.alert(".または$はルート名に使用できません。");
@@ -103,6 +112,7 @@ function initMap() {
     },
   });
 
+  $("#add-route").attr("disabled", true);
   //１番目のルート要素をHTMLに追加
   $("#search-box").append(genSearchBox(routeID, colorMap[routeID]));
   document.getElementById("date" + String(routeID)).value = ymd;
@@ -114,9 +124,27 @@ function initMap() {
     $(this).toggleClass("active");
     $(this).next().slideToggle();
   });
+  //ボタンが押されたら２番目以降のルート要素をHTMLに追加
+  $("#add-route").on("click", function () {
+
+  //ルートを決定するまで「次のルートを追加」ボタンが押せないメッセージを表示
+  $("#add-route-panel").on("mouseover", function () {
+    if (document.getElementById("add-route").disabled === true) {
+      if (!$("#add-route").nextAll("small.error-info").length) {
+        $("#add-route").after(
+          '<br><small class="text-danger error-info">現在のルートを決定するまで次のルートの追加は出来ません。</small>'
+        );
+      }
+    } else {
+      if ($("#add-route").nextAll("small.error-info").length) {
+        $("#add-route").nextAll("small.error-info").remove();
+      }
+    }
+  });
 
   //ボタンが押されたら２番目以降のルート要素をHTMLに追加
   $("#add-route").on("click", function () {
+    $("#add-route").attr("disabled", true);
     routeID++;
     if (routeID == 9) {
       document.getElementById("add-route").style.display = "none";
@@ -514,13 +542,19 @@ class AutocompleteDirectionsHandler {
           document.getElementById(
             "one-result-panel" + me.routeNum
           ).style.display = "block";
-          document.getElementById("one-result-text" + me.routeNum).innerText =
-            "ルート: " +
+          document.getElementById("one-result-text" + me.routeNum).innerHTML =
+            "<span>" +
             response.routes[0].summary +
-            " ," +
+            "</span>" +
+            "<span class='ml-1'>" +
             response.routes[0].legs[0].distance.text +
-            " ," +
+            "</span>" +
+            "<span>" +
+            ".</span>" +
+            "<span class='ml-1'>約" +
+            "<span>" +
             response.routes[0].legs[0].duration.text;
+          +"</span>" + "</span>";
         } else {
           //ルートが２つ以上の場合、必要ないので、表示しない
           document.getElementById(
@@ -598,7 +632,18 @@ function genSearchBox(routeId, color) {
              <div id="route-detail-panel${routeId}" class="route-detail">
             </div>
             <div style="background-color: white; padding-bottom: 2px">
-             <div class="ml-2 mb-2" id="one-result-panel${routeId}"><span id="one-result-text${routeId}" style="color: black"></span></div>
+             <div class="ml-2 mb-2 border" id="one-result-panel${routeId}" style="color: black; display: none">
+                <table>
+                    <td>ルート:</td>
+                    <tbody>
+                    <tr>
+                        <td>
+                            <span id="one-result-text${routeId}" style="color: black"></span>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+             </div>
              <button class="btn-primary mx-auto" id="route-decide${routeId}" style="display: none">このルートで決定</button>
              </div>
         </div>`;
