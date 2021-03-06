@@ -134,15 +134,6 @@ function initMap() {
       }
     } else {
       if ($("#add-route").nextAll("small.error-info").length) {
-  $("#add-route-panel").on("mouseover", function() {
-    if (document.getElementById("add-route").disabled === true){
-      if (!$("#add-route").nextAll("small.error-info").length){
-        $("#add-route").after(
-          '<br><small class="text-danger error-info">現在のルートを決定するまで次のルートの追加は出来ません。</small>'
-      );
-      }
-    } else {
-      if ($("#add-route").nextAll("small.error-info").length){
         $("#add-route").nextAll("small.error-info").remove();
       }
     }
