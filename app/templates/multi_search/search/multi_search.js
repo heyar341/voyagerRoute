@@ -21,15 +21,6 @@ const multiSearchReq = {
 //Ajax通信
 $(function () {
   $("#save-route").click(function () {
-    var keys = Object.keys(multiSearchReq.routes);
-    if (keys.length == 0) {
-      window.alert("ルートを１つ以上設定してください。");
-      return;
-    }
-    if(multiSearchReq.title === ""){
-      window.alert("ルート名は１文字以上入力してください。");
-      return;
-    }
     multiSearchReq["title"] = document.getElementById("route-name").value;
     if (/[\.\$]/.test(document.getElementById("route-name").value)) {
       window.alert(".または$はルート名に使用できません。");
@@ -111,7 +102,7 @@ function initMap() {
       gestureHandling: "greedy", //地図埋め込み時Ctrボタン要求の無効化
     },
   });
-  $("#add-route").attr("disabled",true);
+
   //１番目のルート要素をHTMLに追加
   $("#search-box").append(genSearchBox(routeID, colorMap[routeID]));
   document.getElementById("date" + String(routeID)).value = ymd;
@@ -124,24 +115,8 @@ function initMap() {
     $(this).next().slideToggle();
   });
 
-  //ルートを決定するまで「次のルートを追加」ボタンが押せないメッセージを表示
-  $("#add-route-panel").on("mouseover", function() {
-    if (document.getElementById("add-route").disabled === true){
-      if (!$("#add-route").nextAll("small.error-info").length){
-        $("#add-route").after(
-          '<br><small class="text-danger error-info">現在のルートを決定するまで次のルートの追加は出来ません。</small>'
-      );
-      }
-    } else {
-      if ($("#add-route").nextAll("small.error-info").length){
-        $("#add-route").nextAll("small.error-info").remove();
-      }
-    }
-  });
-
   //ボタンが押されたら２番目以降のルート要素をHTMLに追加
   $("#add-route").on("click", function () {
-    $("#add-route").attr("disabled",true);
     routeID++;
     if (routeID == 9) {
       document.getElementById("add-route").style.display = "none";
@@ -360,7 +335,6 @@ class AutocompleteDirectionsHandler {
     document
       .getElementById("route-decide" + obj.routeNum)
       .addEventListener("click", function () {
-        $("#add-route").attr("disabled", false);
         var target = directionsRenderer.getRouteIndex();
         //ルートを決定したら、toggleを閉じる
         $("#toggle-" + obj.routeNum)

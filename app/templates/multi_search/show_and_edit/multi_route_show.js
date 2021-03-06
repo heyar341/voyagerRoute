@@ -25,10 +25,6 @@ $(function () {
       window.alert(".または$はルート名に使用できません。");
       return;
     }
-    if(multiSearchUpdateReq.title === ""){
-      window.alert("ルート名は１文字以上入力してください。");
-      return;
-    }
     multiSearchUpdateReq["title"] = document.getElementById("route-name").value;
     // 多重送信を防ぐため通信完了までボタンをdisableにする
     var button = $(this);
@@ -140,25 +136,8 @@ function initMap() {
       .slideToggle();
   }
 
-  //ルートを決定するまで「新しいルートを追加」ボタンが押せないメッセージを表示
-  $("#add-route-panel").on("mouseover", function () {
-    if (document.getElementById("add-route").disabled === true) {
-      if (!$("#add-route").nextAll("small.error-info").length) {
-        $("#add-route").after(
-          '<br><small class="text-danger error-info">現在のルートを決定するまで次のルートの追加は出来ません。</small>'
-        );
-      }
-    } else {
-      if ($("#add-route").nextAll("small.error-info").length) {
-        $("#add-route").nextAll("small.error-info").remove();
-      }
-    }
-  });
-
-
   //ボタンが押されたら保存されたルートのインデックス以降のルート要素をHTMLに追加
   $("#add-route").on("click", function () {
-    $("#add-route").attr("disabled", true);
     routeID++;
     if (routeID === 9) {
       document.getElementById("add-route").style.display = "none";
@@ -397,7 +376,6 @@ class AutocompleteDirectionsHandler {
     document
       .getElementById("route-decide" + obj.routeNum)
       .addEventListener("click", function () {
-        $("#add-route").attr("disabled", true);
         var target = directionsRenderer.getRouteIndex();
         //ルートを決定したら、toggleを閉じる
         $("#toggle-" + obj.routeNum)
