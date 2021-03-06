@@ -158,6 +158,7 @@ function initMap() {
 
   //ボタンが押されたら保存されたルートのインデックス以降のルート要素をHTMLに追加
   $("#add-route").on("click", function () {
+    $("#add-route").attr("disabled", true);
     routeID++;
     if (routeID === 9) {
       document.getElementById("add-route").style.display = "none";
@@ -396,6 +397,7 @@ class AutocompleteDirectionsHandler {
     document
       .getElementById("route-decide" + obj.routeNum)
       .addEventListener("click", function () {
+        $("#add-route").attr("disabled", false);
         var target = directionsRenderer.getRouteIndex();
         //ルートを決定したら、toggleを閉じる
         $("#toggle-" + obj.routeNum)

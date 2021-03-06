@@ -26,7 +26,7 @@ $(function () {
       window.alert("ルートを１つ以上設定してください。");
       return;
     }
-    if (multiSearchReq.title === "") {
+    if ($("#route-name").val() === "") {
       window.alert("ルート名は１文字以上入力してください。");
       return;
     }
@@ -124,8 +124,6 @@ function initMap() {
     $(this).toggleClass("active");
     $(this).next().slideToggle();
   });
-  //ボタンが押されたら２番目以降のルート要素をHTMLに追加
-  $("#add-route").on("click", function () {
 
   //ルートを決定するまで「次のルートを追加」ボタンが押せないメッセージを表示
   $("#add-route-panel").on("mouseover", function () {
@@ -164,8 +162,6 @@ function initMap() {
     });
   });
 }
-
-var a = "";
 
 class AutocompleteDirectionsHandler {
   constructor(map, routeNum) {
@@ -363,6 +359,7 @@ class AutocompleteDirectionsHandler {
     document
       .getElementById("route-decide" + obj.routeNum)
       .addEventListener("click", function () {
+        $("#add-route").attr("disabled", false);
         var target = directionsRenderer.getRouteIndex();
         //ルートを決定したら、toggleを閉じる
         $("#toggle-" + obj.routeNum)
