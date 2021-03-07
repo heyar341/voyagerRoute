@@ -21,19 +21,19 @@ func Register(w http.ResponseWriter, req *http.Request) {
 	//Validation完了後のユーザー名を取得
 	userName, ok := req.Context().Value("username").(string)
 	if !ok {
-		http.Redirect(w, req, "/login_form/?msg="+msg+"&username="+userName, http.StatusSeeOther)
+		http.Redirect(w, req, "/register_form/?msg="+msg+"&username="+userName, http.StatusSeeOther)
 		return
 	}
 	//Validation完了後のメールアドレスを取得
 	email, ok := req.Context().Value("email").(string)
 	if !ok {
-		http.Redirect(w, req, "/login_form/?msg="+msg+"&email="+email, http.StatusSeeOther)
+		http.Redirect(w, req, "/register_form/?msg="+msg+"&email="+email, http.StatusSeeOther)
 		return
 	}
 	password, ok := req.Context().Value("password").(string)
 	//Validation完了後のパスワードを取得
 	if !ok {
-		http.Redirect(w, req, "/login_form/?msg="+msg+"&email="+email, http.StatusSeeOther)
+		http.Redirect(w, req, "/register_form/?msg="+msg+"&email="+email, http.StatusSeeOther)
 		return
 	}
 

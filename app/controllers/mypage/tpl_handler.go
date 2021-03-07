@@ -69,3 +69,22 @@ func ConfirmDelete(w http.ResponseWriter, req *http.Request) {
 	data["title"] = req.FormValue("title")
 	mypageTpl.ExecuteTemplate(w, "confirm_delete.html", data)
 }
+
+func ShowQuestionForm(w http.ResponseWriter, req *http.Request) {
+	msg = url.QueryEscape("エラ〜が発生しました。もう一度操作しなおしてください。")
+	data, ok := req.Context().Value("data").(map[string]interface{})
+	if !ok {
+		http.Redirect(w, req, "/?msg="+msg, http.StatusSeeOther)
+		log.Printf("Error while getting data from context: %v", ok)
+		return
+	}
+	user, ok := req.Context().Value("user").(model.UserData)
+	if !ok {
+		http.Redirect(w, req, "/?msg="+msg, http.StatusSeeOther)
+		log.Printf("Error while getting user from context: %v", ok)
+		return
+	}
+	data["userName"] = user.UserName
+	data["email"] = user.Email
+	mypageTpl.ExecuteTemplate(w, "question_form.html", data)
+}

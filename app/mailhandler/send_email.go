@@ -2,8 +2,10 @@ package mailhandler
 
 import (
 	"app/envhandler"
+	"app/model"
 	"fmt"
 	"log"
+	"net/http"
 	"net/smtp"
 )
 
@@ -39,4 +41,61 @@ func SendConfirmEmail(token, email, userName string) error {
 		return err
 	}
 	return nil
+}
+
+func SendQuestion(w http.ResponseWriter, req *http.Request) {
+	if req.Method != "POST" {
+		http.Error(w, "HTTPメソッドが不正です。", http.StatusBadRequest)
+		return
+	}
+
+	//envファイルからGmailのアプリパスワード取得
+	gmailPassword, err := envhandler.GetEnvVal("GMAIL_APP_PASS")
+	if err != nil {
+		msg := "送信中にエラーが発生しました。"
+		http.Redirect(w, req, "/question_form/?msg="+msg, http.StatusSeeOther)
+		log.Printf("Error while getting gmail app password form env file: %v", err)
+		return
+	}
+
+	user, ok := req.Context().Value("user").(model.UserData)
+	if !ok {
+		msg := "送信中にエラーが発生しました。"
+		http.Redirect(w, req, "/question_form/?msg="+msg, http.StatusSeeOther)
+		log.Printf("Error while getting userName from context: %v", err)
+		return
+	}
+
+	userName := user.UserName
+	email := user.Email
+
+	qText := req.FormValue("question")
+
+	mailAuth := smtp.PlainAuth(
+		"",
+		"app.goog.routes@gmail.com",
+		gmailPassword,
+		"smtp.gmail.com",
+	)
+
+	t := "問い合わせ\n" +
+		"ユーザー名：" + userName + "\n" +
+		"メールアドレス:" + email + "\n" +
+		"質問内容：" + qText + "\n"
+
+	err = smtp.SendMail(
+		"smtp.gmail.com:587",
+		mailAuth,
+		"app.goog.routes@gmail.com",
+		[]string{"app.goog.routes@gmail.com"},
+		[]byte(fmt.Sprintf("To:%s\r\nSubject:問い合わせ\r\n\r\n%s", "自分", t)),
+	)
+	if err != nil {
+		msg := "送信中にエラーが発生しました。"
+		http.Redirect(w, req, "/question_form/?msg="+msg, http.StatusSeeOther)
+		log.Printf("Error sending email for question: %v", err)
+		return
+	}
+
+	http.Redirect(w, req, "/mypage", http.StatusSeeOther)
 }
