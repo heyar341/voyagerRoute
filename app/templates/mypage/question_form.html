@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<head>
+    <meta charset="UTF-8">
+    {{ template "imports" }}
+    <title>お問い合わせ</title>
+</head>
+<body>
+{{ template "navbar" .}}
+
+<div class="container">
+    <br>
+    <br>
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <header class="card-header">
+                    <h4 class="card-title mt-2">お問い合わせ</h4>
+                </header>
+                <article class="card-body">
+                    <form action="/send_question" method="POST">
+                            <div class="form-row">
+                                <div class="col form-group">
+                                    <label>ユーザー名:</label><span>{{.userName}}</span>
+                                </div> <!-- form-group end.// -->
+                            </div> <!-- form-row end.// -->
+                            <div class="form-group">
+                                <label>メールアドレス:</label><span>{{.email}}</span>
+                            </div> <!-- form-group end.// -->
+                        <hr>
+
+                        <div class="form-group">
+                            <label>お問い合わせ内容:</label>
+                            <textarea class="form-control" name="question" rows="5" placeholder="お問合せ内容を入力"></textarea>
+                        </div> <!-- form-group// -->
+                        <button type="submit" id="question-btn" class="btn btn-primary btn-block">送信する</button>
+                    </form>
+                </article> <!-- card-body end .// -->
+            </div> <!-- card.// -->
+        </div> <!-- col.//-->
+    </div> <!-- row.//-->
+</div>
+<!--container end.//-->
+</body>
+</html>
