@@ -7,6 +7,7 @@ import (
 	"app/controllers/mypage"
 	"app/controllers/profile"
 	"app/controllers/simulsearch"
+	"app/mailhandler"
 	"app/middleware"
 	"app/reqvalidator"
 	"fmt"
@@ -54,6 +55,8 @@ func main() {
 	http.HandleFunc("/mypage", middleware.Auth(mypage.ShowMypage))                 //マイページ表示
 	http.HandleFunc("/mypage/show_routes/", middleware.Auth(mypage.ShowAllRoutes)) //保存したルート一覧
 	http.HandleFunc("/mypage/delete_route", middleware.Auth(mypage.ConfirmDelete)) //削除確認
+	http.HandleFunc("/question_form/", middleware.Auth(mypage.ShowQuestionForm))   //お問い合わせ入力ページ
+	http.HandleFunc("/send_question", middleware.Auth(mailhandler.SendQuestion))   //お問い合わせ送信用エンドポイント
 
 	//「プロフィール」
 	http.HandleFunc("/profile/username_edit_form/", middleware.Auth(profile.EditUserNameForm)) //プロフィール画面
