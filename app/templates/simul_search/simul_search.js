@@ -95,6 +95,21 @@ var hr = ("0" + today.getHours()).slice(-2);
 var minu = ("0" + today.getMinutes()).slice(-2);
 var clock = hr + ":" + minu + ":00";
 
+
+//Google Maps API実行ファイル読み込み
+window.onload = function () {
+  fetch("/get_apikey")
+      .then((resp) => {
+        return resp.text();
+      })
+      .then((MapJS) => {
+        window.Function(MapJS)(); //ファイル実行
+        initAutocomplete(); //APIリクエストのcallbackではなくここで実行
+      })
+      .catch(() => {
+        alert("エラーが発生しました。");
+      });
+};
 //出発地と目的地の自動入力を設定
 function initAutocomplete() {
   // 日付を設定
