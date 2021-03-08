@@ -112,7 +112,7 @@ function initMap() {
   document.getElementById("route-name").value = routeInfo.title;
   multiSearchUpdateReq.title = routeInfo.title;
   //保存されているルート要素をHTMLに追加
-  for (var i = 0; i < routeInfo.route_count; i++) {
+  for (var i = 0; i < Object.keys(routeInfo.routes).length; i++) {
     multiSearchUpdateReq.routes[String(i)] = routeInfo.routes[i];
     $("#search-box").append(genSearchBox(i, colorMap[i]));
     document.getElementById("origin-input" + String(i)).value =

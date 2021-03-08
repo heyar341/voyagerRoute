@@ -12,13 +12,7 @@ type UserData struct {
 	//MultiRouteTitles map[string]time.Time `json:"multi_route_titles" bson:"multi_route_titles"`
 }
 
-//ルート編集保存requestのフィールドを保存するstruct
-type RouteUpdateRequest struct {
-	ID            primitive.ObjectID     `json:"_id" bson:"_id"`
-	Title         string                 `json:"title" bson:"title"`
-	PreviousTitle string                 `json:"previous_title" bson:"previous_title"`
-	Routes        map[string]interface{} `json:"routes" bson:"routes"`
-}
+
 
 //同時検索のリクエストパラメータ
 type SimulParams struct {
