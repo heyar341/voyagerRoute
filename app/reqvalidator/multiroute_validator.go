@@ -2,6 +2,7 @@ package reqvalidator
 
 import (
 	"app/model"
+	"app/controllers/multiroute"
 	"context"
 	"encoding/json"
 	"io/ioutil"
@@ -44,7 +45,8 @@ func UpdateRouteValidator(UpdateRoute http.HandlerFunc) http.HandlerFunc {
 			http.Error(w, "HTTPメソッドが不正です。", http.StatusBadRequest)
 			return
 		}
-		var reqFields model.RouteUpdateRequest
+
+		var reqFields multiroute.RouteUpdateRequest
 		body, _ := ioutil.ReadAll(req.Body)
 		err := json.Unmarshal(body, &reqFields)
 		if err != nil {
