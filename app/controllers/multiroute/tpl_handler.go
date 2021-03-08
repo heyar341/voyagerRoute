@@ -1,8 +1,12 @@
 package multiroute
 
 import (
-	"app/envhandler"
+	"app/customerr"
 	"app/model"
+	"encoding/json"
+	"fmt"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"html/template"
 	"log"
@@ -18,57 +22,147 @@ func init() {
 
 func MultiSearchTpl(w http.ResponseWriter, req *http.Request) {
 	msg := "エラーが発生しました。もう一度操作を行ってください。"
-	//envファイルからAPIキー取得
-	apiKey, err := envhandler.GetEnvVal("MAP_API_KEY")
-	if err != nil {
-		http.Redirect(w, req, "/?msg="+msg, http.StatusInternalServerError)
-		return
-	}
-
 	data, ok := req.Context().Value("data").(map[string]interface{})
 	if !ok {
 		http.Redirect(w, req, "/mypage/show_routes/?msg="+msg, http.StatusSeeOther)
 		log.Printf("Error while getting data from context: %v", ok)
 		return
 	}
-	data["apiKey"] = apiKey
 	multiSearchTpl.ExecuteTemplate(w, "multi_search.html", data)
 }
 
-func ShowAndEditRoutesTpl(w http.ResponseWriter, req *http.Request) {
-	msg := "エラーが発生しました。もう一度操作を行ってください。"
-	routeTitle := req.URL.Query().Get("route_title")
+type editRoute struct {
+	userID     primitive.ObjectID
+	routeBSON  bson.M
+	routeModel model.MultiRoute
+	routeJSON  string
+	err        error
+}
+
+func (eR *editRoute) getUserID(req *http.Request) {
 	user, ok := req.Context().Value("user").(model.UserData)
 	if !ok {
-		http.Redirect(w, req, "/mypage/show_routes/?msg="+msg, http.StatusSeeOther)
-		log.Printf("Error while getting user from context: %v", ok)
+		eR.err = customerr.BaseErr{
+			Op:  "Finding route document",
+			Msg: "エラーが発生しました。",
+			Err: fmt.Errorf("error while getting user from context"),
+		}
 		return
 	}
-	routeInfo, err := getRoute(routeTitle, user.ID)
+	eR.userID = user.ID
+}
+
+func (eR *editRoute) getRouteObj(title string) {
+	if eR.err != nil {
+		return
+	}
+	rBSON, err := model.FindRoute(eR.userID, title)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			msg = "ご指定いただいたルートがありません。"
-			http.Redirect(w, req, "/mypage/show_routes/?msg="+msg, http.StatusSeeOther)
+			eR.err = customerr.BaseErr{
+				Op:  "Finding route document",
+				Msg: "ご指定いただいたルートがありません。",
+				Err: fmt.Errorf("error while finding route document from routes collection: %w", err),
+			}
 			return
 		} else {
+			eR.err = customerr.BaseErr{
+				Op:  "Finding route document",
+				Msg: "エラーが発生しました。",
+				Err: fmt.Errorf("error while finding route document from routes collection: %w", err),
+			}
+			return
 		}
-		http.Redirect(w, req, "/mypage/show_routes/?msg="+msg, http.StatusSeeOther)
+	}
+	eR.routeBSON = rBSON
+}
+
+func (eR *editRoute) getModel() {
+	if eR.err != nil {
+		return
+	}
+	//DBから取得した値をmarshal
+	bsonByte, err := bson.Marshal(eR.routeBSON)
+	if err != nil {
+		eR.err = customerr.BaseErr{
+			Op:  "bson marshaling routeBSON",
+			Msg: "エラーが発生しました。",
+			Err: fmt.Errorf("error while bson marshaling multi_route document: %w", err),
+		}
+		return
+	}
+	err = bson.Unmarshal(bsonByte, &eR.routeModel)
+	if err != nil {
+		eR.err = customerr.BaseErr{
+			Op:  "bson unmarshaling bson []byte",
+			Msg: "エラーが発生しました。",
+			Err: fmt.Errorf("error while bson unmarshaling multi_route document: %w", err),
+		}
+		return
+	}
+}
+
+func (eR *editRoute) getJSONObj() {
+	if eR.err != nil {
+		return
+	}
+	//レスポンス作成
+	jsonEnc, err := json.Marshal(eR.routeModel)
+	if err != nil {
+		eR.err = customerr.BaseErr{
+			Op:  "json marshaling multiRoute struct",
+			Msg: "エラーが発生しました。",
+			Err: fmt.Errorf("error while json marshaling: %w", err),
+		}
+		return
+	}
+	//JSONのバイナリ形式のままだとtemplateで読み込めないので、stringに変換
+	eR.routeJSON = string(jsonEnc)
+}
+
+func (eR *editRoute) getDataFromCtx(req *http.Request) map[string]interface{} {
+	if eR.err != nil {
+		return nil
+	}
+	d, ok := req.Context().Value("data").(map[string]interface{})
+	if !ok {
+		eR.err = customerr.BaseErr{
+			Op:  "Get data map from context",
+			Msg: "エラーが発生しました。",
+			Err: fmt.Errorf("error while getting data from context"),
+		}
+		return nil
+	}
+	return d
+}
+
+func ShowAndEditRoutesTpl(w http.ResponseWriter, req *http.Request) {
+	var eR editRoute
+	//useIDをcontextから取得
+	eR.getUserID(req)
+	routeTitle := req.URL.Query().Get("route_title")
+	eR.getRouteObj(routeTitle)
+	//marshalとunmarshalでMultiRoute Modelを取得
+	eR.getModel()
+	//json marshalでJSON Encodingし、string型に変換
+	eR.getJSONObj()
+	//contextからデータ取得
+	data := eR.getDataFromCtx(req)
+
+	if eR.err != nil {
+		e := eR.err.(customerr.BaseErr)
+		c := &http.Cookie{
+			Name:   "msg",
+			Value:  e.Msg,
+			Path: "/mypage/show_routes",
+			MaxAge: 5,
+		}
+		http.SetCookie(w, c)
+		http.Redirect(w, req, "/mypage/show_routes", http.StatusSeeOther)
+		log.Printf("operation: %s, error: %v", e.Op, e.Err)
 		return
 	}
 
-	//envファイルからAPIキー取得
-	apiKey, err := envhandler.GetEnvVal("MAP_API_KEY")
-	if err != nil {
-		http.Redirect(w, req, "/?msg="+msg, http.StatusInternalServerError)
-		return
-	}
-	data, ok := req.Context().Value("data").(map[string]interface{})
-	if !ok {
-		http.Redirect(w, req, "/mypage/show_routes/?msg="+msg, http.StatusSeeOther)
-		log.Printf("Error while getting data from context: %v", ok)
-		return
-	}
-	data["apiKey"] = apiKey
-	data["routeInfo"] = routeInfo
+	data["routeInfo"] = eR.routeJSON
 	showRouteTpl.ExecuteTemplate(w, "multi_route_show.html", data)
 }
