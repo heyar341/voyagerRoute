@@ -23,7 +23,7 @@ func (t TitileSlice) Swap(i, j int) { t[i], t[j] = t[j], t[i] }
 //TimestampのAfterメソッドで、ソート時に最新のタイトルが先頭に来るようにする
 func (t TitileSlice) Less(i, j int) bool { return t[i].TimeStamp.After(t[j].TimeStamp) }
 
-func RouteTitles(userID primitive.ObjectID) []string {
+func routeTitles(userID primitive.ObjectID) []string {
 	userDoc := bson.D{{"_id", userID}}
 	bsonDoc, err := dbhandler.Find("googroutes", "users", userDoc, nil)
 	if err != nil {
