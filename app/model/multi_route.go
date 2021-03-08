@@ -6,7 +6,11 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-type Route interface {
+type Route struct {
+	GeocodedWaypoints []map[string]interface{} `json:"geocoded_waypoints" bson:"geocoded_waypoints"`
+	Request map[string]interface{} `json:"request" bson:"request"`
+	Routes []map[string]interface{} `json:"routes" bson:"routes"`
+	Status string `json:"status" bson:"status"`
 }
 
 type MultiRoute struct {
@@ -34,4 +38,12 @@ func (m *MultiRoute) UpdateRoute() error{
 	}
 	err := dbhandler.UpdateOne("googroutes", "routes", "$set", routeDoc, updateDoc)
 	return err
+}
+
+
+func FindRoute(userID primitive.ObjectID, title string) (bson.M, error){
+	//routes collectionから取得
+	routeDoc := bson.D{{"user_id",userID}, {"title",title}}
+	r, err := dbhandler.Find("googroutes", "routes", routeDoc, nil)
+	return r, err
 }
