@@ -1,90 +1,141 @@
 package mypage
 
 import (
+	"app/cookiehandler"
+	"app/customerr"
 	"app/model"
+	"encoding/base64"
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
-	"net/url"
 )
 
 var mypageTpl *template.Template
-
-//エラーメッセージ
-var msg string
 
 func init() {
 	mypageTpl = template.Must(template.Must(template.ParseGlob("templates/mypage/*.html")).ParseGlob("templates/includes/*.html"))
 }
 
-func ShowMypage(w http.ResponseWriter, req *http.Request) {
-	msg = url.QueryEscape("エラ〜が発生しました。もう一度操作しなおしてください。")
-	data, ok := req.Context().Value("data").(map[string]interface{})
-	if !ok {
-		http.Redirect(w, req, "/?msg="+msg, http.StatusSeeOther)
-		log.Printf("Error while getting data from context: %v", ok)
-		return
-	}
-	user, ok := req.Context().Value("user").(model.UserData)
-	if !ok {
-		http.Redirect(w, req, "/?msg="+msg, http.StatusSeeOther)
-		log.Printf("Error while getting user from context: %v", ok)
-		return
-	}
-	data["userName"] = user.UserName
-	mypageTpl.ExecuteTemplate(w, "mypage.html", data)
+type mypageData struct {
+	data map[string]interface{}
+	user model.UserData
+	err  error
 }
 
-func ShowAllRoutes(w http.ResponseWriter, req *http.Request) {
-	msg = url.QueryEscape("エラ〜が発生しました。もう一度操作しなおしてください。")
+func getDataFromCtx(req *http.Request) *mypageData {
 	data, ok := req.Context().Value("data").(map[string]interface{})
 	if !ok {
-		http.Redirect(w, req, "/mypage/?msg="+msg, http.StatusSeeOther)
-		log.Printf("Error while getting data from context: %v", ok)
+		return &mypageData{
+			err: customerr.BaseErr{
+				Op:  "Getting data from context",
+				Msg: "エラーが発生しました。",
+				Err: fmt.Errorf("error while getting data from context"),
+			},
+		}
+	}
+	return &mypageData{
+		data: data,
+	}
+}
+
+func (m *mypageData) getUserFromCtx(req *http.Request) {
+	if m.err != nil {
 		return
 	}
 	user, ok := req.Context().Value("user").(model.UserData)
 	if !ok {
-		http.Redirect(w, req, "/mypage/?msg="+msg, http.StatusSeeOther)
-		log.Printf("Error while getting user from context: %v", ok)
+		m.err = customerr.BaseErr{
+			Op:  "Getting user from context",
+			Msg: "エラーが発生しました。",
+			Err: fmt.Errorf("error while getting user from context"),
+		}
 		return
 	}
-	titleNames := RouteTitles(user.ID)
-	data["userName"] = user.UserName
-	data["titles"] = titleNames
-	//ルートの確認画面に飛べないエラーが発生した場合用
-	data["msg"] = req.URL.Query().Get("msg")
-	data["success"] = req.URL.Query().Get("success")
+	m.user = user
+}
+
+func processCookie(w http.ResponseWriter, c *http.Cookie, data map[string]interface{}) {
+	b64Str, err := base64.StdEncoding.DecodeString(c.Value)
+	if err != nil {
+		mypageTpl.ExecuteTemplate(w, "show_routes.html", data)
+		return
+	}
+	data[c.Name] = string(b64Str)
 	mypageTpl.ExecuteTemplate(w, "show_routes.html", data)
 }
 
-func ConfirmDelete(w http.ResponseWriter, req *http.Request) {
-	data, ok := req.Context().Value("data").(map[string]interface{})
-	if !ok {
-		msg = url.QueryEscape("エラ〜が発生しました。もう一度操作しなおしてください。")
-		http.Redirect(w, req, "/mypage/show_routes/?msg="+msg, http.StatusSeeOther)
-		log.Printf("Error while getting data from context: %v", ok)
+func ShowMypage(w http.ResponseWriter, req *http.Request) {
+	m := getDataFromCtx(req)
+	m.getUserFromCtx(req)
+	if m.err != nil {
+		e := m.err.(customerr.BaseErr)
+		cookiehandler.MakeCookieAndRedirect(w, req, "msg", e.Msg, "/")
+		log.Printf("operation: %s, error: %v", e.Op, e.Err)
 		return
 	}
-	data["title"] = req.FormValue("title")
-	mypageTpl.ExecuteTemplate(w, "confirm_delete.html", data)
+
+	m.data["userName"] = m.user.UserName
+	c, err := req.Cookie("msg")
+	if err != nil {
+		mypageTpl.ExecuteTemplate(w, "mypage.html", m.data)
+		return
+	}
+	m.data["msg"] = c.Value
+	mypageTpl.ExecuteTemplate(w, "mypage.html", m.data)
+}
+
+func ShowAllRoutes(w http.ResponseWriter, req *http.Request) {
+	m := getDataFromCtx(req)
+	m.getUserFromCtx(req)
+	if m.err != nil {
+		e := m.err.(customerr.BaseErr)
+		cookiehandler.MakeCookieAndRedirect(w, req, "msg", e.Msg, "/mypage")
+		log.Printf("operation: %s, error: %v", e.Op, e.Err)
+		return
+	}
+	titleNames := routeTitles(m.user.ID)
+	m.data["userName"] = m.user.UserName
+	m.data["titles"] = titleNames
+
+	//successメッセージがある場合
+	c, err := req.Cookie("success")
+	if err == nil {
+		processCookie(w, c, m.data)
+		return
+	}
+	//エラーメッセージがある場合
+	c, err = req.Cookie("msg")
+	if err == nil {
+		processCookie(w, c, m.data)
+		return
+	}
+
+	mypageTpl.ExecuteTemplate(w, "show_routes.html", m.data)
+}
+
+func ConfirmDelete(w http.ResponseWriter, req *http.Request) {
+	m := getDataFromCtx(req)
+	if m.err != nil {
+		e := m.err.(customerr.BaseErr)
+		cookiehandler.MakeCookieAndRedirect(w, req, "msg", e.Msg, "/mypage/show_routes")
+		log.Printf("operation: %s, error: %v", e.Op, e.Err)
+		return
+	}
+	m.data["title"] = req.FormValue("title")
+	mypageTpl.ExecuteTemplate(w, "confirm_delete.html", m.data)
 }
 
 func ShowQuestionForm(w http.ResponseWriter, req *http.Request) {
-	msg = url.QueryEscape("エラ〜が発生しました。もう一度操作しなおしてください。")
-	data, ok := req.Context().Value("data").(map[string]interface{})
-	if !ok {
-		http.Redirect(w, req, "/?msg="+msg, http.StatusSeeOther)
-		log.Printf("Error while getting data from context: %v", ok)
+	m := getDataFromCtx(req)
+	m.getUserFromCtx(req)
+	if m.err != nil {
+		e := m.err.(customerr.BaseErr)
+		cookiehandler.MakeCookieAndRedirect(w, req, "msg", e.Msg, "/")
+		log.Printf("operation: %s, error: %v", e.Op, e.Err)
 		return
 	}
-	user, ok := req.Context().Value("user").(model.UserData)
-	if !ok {
-		http.Redirect(w, req, "/?msg="+msg, http.StatusSeeOther)
-		log.Printf("Error while getting user from context: %v", ok)
-		return
-	}
-	data["userName"] = user.UserName
-	data["email"] = user.Email
-	mypageTpl.ExecuteTemplate(w, "question_form.html", data)
+	m.data["userName"] = m.user.UserName
+	m.data["email"] = m.user.Email
+	mypageTpl.ExecuteTemplate(w, "question_form.html", m.data)
 }
