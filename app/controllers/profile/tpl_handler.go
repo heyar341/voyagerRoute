@@ -1,7 +1,10 @@
 package profile
 
 import (
-	"app/model"
+	"app/cookiehandler"
+	"app/customerr"
+	"app/tplutil"
+	"encoding/base64"
 	"html/template"
 	"log"
 	"net/http"
@@ -13,80 +16,86 @@ func init() {
 	profileTpl = template.Must(template.Must(template.ParseGlob("templates/profile/*.html")).ParseGlob("templates/includes/*.html"))
 }
 
+func processCookie(w http.ResponseWriter, c *http.Cookie, data map[string]interface{}, tplName string) {
+	b64Str, err := base64.StdEncoding.DecodeString(c.Value)
+	if err != nil {
+		profileTpl.ExecuteTemplate(w, tplName, data)
+		return
+	}
+	data[c.Name] = string(b64Str)
+	profileTpl.ExecuteTemplate(w, tplName, data)
+}
+
 func ShowProfile(w http.ResponseWriter, req *http.Request) {
-	msg := "エラ〜が発生しました。もう一度操作しなおしてください。"
-	data, ok := req.Context().Value("data").(map[string]interface{})
-	if !ok {
-		http.Redirect(w, req, "/?msg="+msg, http.StatusSeeOther)
-		log.Printf("Error while getting data from context: %v", ok)
+	t := tplutil.GetTplData(req)
+	if t.Err != nil {
+		e := t.Err.(customerr.BaseErr)
+		cookiehandler.MakeCookieAndRedirect(w, req, "msg", e.Msg, "/mypage")
+		log.Printf("operation: %s, error: %v", e.Op, e.Err)
 		return
 	}
-	user, ok := req.Context().Value("user").(model.UserData)
-	if !ok {
-		http.Redirect(w, req, "/?msg="+msg, http.StatusSeeOther)
-		log.Printf("Error while getting user from context: %v", ok)
-		return
+	t.Data["userName"] = t.User.UserName
+	t.Data["email"] = t.User.Email
+	c, err := req.Cookie("success")
+	if err == nil {
+		processCookie(w, c, t.Data, "profile.html")
 	}
-	data["userName"] = user.UserName
-	data["email"] = user.Email
-	msg = req.URL.Query().Get("msg")
-	data["msg"] = msg
-	success := req.URL.Query().Get("success")
-	data["success"] = success
-	profileTpl.ExecuteTemplate(w, "profile.html", data)
+	c, err = req.Cookie("msg")
+	if err == nil {
+		processCookie(w, c, t.Data, "profile.html")
+	}
+
+	profileTpl.ExecuteTemplate(w, "profile.html", t.Data)
 }
 
 func EditUserNameForm(w http.ResponseWriter, req *http.Request) {
-	msg := "エラーが発生しました。もう一度操作しなおしてください。"
-	data, ok := req.Context().Value("data").(map[string]interface{})
-	if !ok {
-		http.Redirect(w, req, "/mypage/?msg="+msg, http.StatusSeeOther)
-		log.Printf("Error while getting data from context: %v", ok)
+	t := tplutil.GetTplData(req)
+	if t.Err != nil {
+		e := t.Err.(customerr.BaseErr)
+		cookiehandler.MakeCookieAndRedirect(w, req, "msg", e.Msg, "/mypage")
+		log.Printf("operation: %s, error: %v", e.Op, e.Err)
 		return
 	}
-	user, ok := req.Context().Value("user").(model.UserData)
-	if !ok {
-		http.Redirect(w, req, "/mypage/?msg="+msg, http.StatusSeeOther)
-		log.Printf("Error while getting user from context: %v", ok)
-		return
+	t.Data["userName"] = t.User.UserName
+	c, err := req.Cookie("msg")
+	if err == nil {
+		processCookie(w, c, t.Data, "username_edit.html")
 	}
-	data["userName"] = user.UserName
-	msg = req.URL.Query().Get("msg")
-	data["msg"] = msg
 
-	profileTpl.ExecuteTemplate(w, "username_edit.html", data)
+	profileTpl.ExecuteTemplate(w, "username_edit.html", t.Data)
 }
 func EditEmailForm(w http.ResponseWriter, req *http.Request) {
-	msg := "エラーが発生しました。もう一度操作しなおしてください。"
-	data, ok := req.Context().Value("data").(map[string]interface{})
-	if !ok {
-		http.Redirect(w, req, "/mypage/?msg="+msg, http.StatusSeeOther)
-		log.Printf("Error while getting data from context: %v", ok)
+	t := tplutil.GetTplData(req)
+	if t.Err != nil {
+		e := t.Err.(customerr.BaseErr)
+		cookiehandler.MakeCookieAndRedirect(w, req, "msg", e.Msg, "/mypage")
+		log.Printf("operation: %s, error: %v", e.Op, e.Err)
 		return
 	}
-	user, ok := req.Context().Value("user").(model.UserData)
-	if !ok {
-		http.Redirect(w, req, "/mypage/?msg="+msg, http.StatusSeeOther)
-		log.Printf("Error while getting user from context: %v", ok)
-		return
-	}
-	data["email"] = user.Email
-	msg = req.URL.Query().Get("msg")
-	data["msg"] = msg
+	t.Data["email"] = t.User.Email
 	newEmail := req.URL.Query().Get("newEmail")
-	data["newEmail"] = newEmail
-	profileTpl.ExecuteTemplate(w, "email_edit.html", data)
+	t.Data["newEmail"] = newEmail
+
+	c, err := req.Cookie("msg")
+	if err == nil {
+		processCookie(w, c, t.Data, "email_edit.html")
+	}
+
+	profileTpl.ExecuteTemplate(w, "email_edit.html", t.Data)
 }
+
 func EditPasswordForm(w http.ResponseWriter, req *http.Request) {
-	msg := "エラーが発生しました。もう一度操作しなおしてください。"
-	data, ok := req.Context().Value("data").(map[string]interface{})
-	if !ok {
-		http.Redirect(w, req, "/mypage/?msg="+msg, http.StatusSeeOther)
-		log.Printf("Error while getting data from context: %v", ok)
+	t := tplutil.GetTplData(req)
+	if t.Err != nil {
+		e := t.Err.(customerr.BaseErr)
+		cookiehandler.MakeCookieAndRedirect(w, req, "msg", e.Msg, "/mypage")
+		log.Printf("operation: %s, error: %v", e.Op, e.Err)
 		return
 	}
 
-	msg = req.URL.Query().Get("msg")
-	data["msg"] = msg
-	profileTpl.ExecuteTemplate(w, "password_edit.html", data)
+	c, err := req.Cookie("msg")
+	if err == nil {
+		processCookie(w, c, t.Data, "password_edit.html")
+	}
+	profileTpl.ExecuteTemplate(w, "password_edit.html", t.Data)
 }
