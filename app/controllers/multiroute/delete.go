@@ -1,6 +1,7 @@
 package multiroute
 
 import (
+	"app/cookiehandler"
 	"app/customerr"
 	"app/model"
 	"fmt"
@@ -45,17 +46,6 @@ func (d *deleteRoute) deleteRoute() {
 	}
 }
 
-func makeCookieAndRedirect(w http.ResponseWriter, req *http.Request, cName, cVal string) {
-	c := &http.Cookie{
-		Name:   cName,
-		Value:  cVal,
-		Path:   "/mypage/show_routes",
-		MaxAge: 5,
-	}
-	http.SetCookie(w, c)
-	http.Redirect(w, req, "/mypage/show_routes", http.StatusSeeOther)
-}
-
 func DeleteRoute(w http.ResponseWriter, req *http.Request) {
 	var d = deleteRoute{}
 	if req.Method != "POST" {
@@ -74,12 +64,13 @@ func DeleteRoute(w http.ResponseWriter, req *http.Request) {
 	//レスポンス作成
 	if d.err != nil {
 		e := d.err.(customerr.BaseErr)
-		makeCookieAndRedirect(w, req, "msg", e.Msg)
+		cookiehandler.MakeCookieAndRedirect(w, req, "msg", e.Msg, "/mypage/show_routes")
 		log.Printf("Error while deleting route title: %v", e.Err)
 		return
 	}
 
-	makeCookieAndRedirect(w, req, "success", "ルート「"+d.routeTitle+"」を削除しました。")
+	successMsg := "ルート「" + d.routeTitle + "」を削除しました。"
+	cookiehandler.MakeCookieAndRedirect(w, req, "success", successMsg, "/mypage/show_routes")
 	log.Printf("User [%v] deleted route [%v]", d.user.UserName, d.routeTitle)
 }
 

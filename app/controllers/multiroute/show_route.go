@@ -1,6 +1,7 @@
 package multiroute
 
 import (
+	"app/cookiehandler"
 	"app/customerr"
 	"app/model"
 	"encoding/json"
@@ -151,14 +152,8 @@ func ShowAndEditRoutesTpl(w http.ResponseWriter, req *http.Request) {
 
 	if eR.err != nil {
 		e := eR.err.(customerr.BaseErr)
-		c := &http.Cookie{
-			Name:   "msg",
-			Value:  e.Msg,
-			Path: "/mypage/show_routes",
-			MaxAge: 5,
-		}
-		http.SetCookie(w, c)
-		http.Redirect(w, req, "/mypage/show_routes", http.StatusSeeOther)
+
+		cookiehandler.MakeCookieAndRedirect(w, req, "msg", e.Msg, "/mypage/show_routes")
 		log.Printf("operation: %s, error: %v", e.Op, e.Err)
 		return
 	}
