@@ -2,6 +2,7 @@ package multiroute
 
 import (
 	"app/model"
+	"app/customerr"
 	"encoding/json"
 	"fmt"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -17,21 +18,11 @@ type routesData struct {
 	err        error
 }
 
-type multiSearchErr struct {
-	Op  string
-	Msg string
-	Err error
-}
-
-func (s multiSearchErr) Error() string {
-	return s.Err.Error()
-}
-
 func getRoutesInfo(req *http.Request) *routesData {
 	reqFields, ok := req.Context().Value("reqFields").(model.MultiRoute)
 	if !ok {
 		return &routesData{
-			err: multiSearchErr{
+			err: customerr.BaseErr{
 				Op:  "Get req routes info from context",
 				Msg: "エラーが発生しました。",
 				Err: fmt.Errorf("error while getting request fields from reuest's context"),
@@ -50,7 +41,7 @@ func (r *routesData) getUserID(req *http.Request) {
 	}
 	user, ok := req.Context().Value("user").(model.UserData)
 	if !ok {
-		r.err = multiSearchErr{
+		r.err = customerr.BaseErr{
 			Op:  "Get user from context",
 			Msg: "エラーが発生しました。",
 			Err: fmt.Errorf("error while getting user from reuest's context"),
@@ -61,9 +52,9 @@ func (r *routesData) getUserID(req *http.Request) {
 }
 
 func (r *routesData) saveRoute() {
-	err := model.SaveRoute(r.userID, &r.routesInfo)
+	err := r.routesInfo.SaveRoute(r.userID)
 	if err != nil {
-		e := multiSearchErr{
+		e := customerr.BaseErr{
 			Op:  "Save new multi route",
 			Err: fmt.Errorf("error while saving multi route: %w", err),
 		}
@@ -79,14 +70,14 @@ func (r *routesData) saveRoute() {
 }
 
 //user documentのmult_route_titlesに新しいルート名とタイムスタンプを追加する関数
-func (r *routesData) updateRouteTitles() {
+func (r *routesData) addRouteTitle() {
 	if r.err != nil {
 		return
 	}
 	now := time.Now().UTC() //MongoDBでは、timeはUTC表記で扱われ、タイムゾーン情報は入れられない
 	err := model.UpdateMultiRouteTitles(r.userID, r.routesInfo.Title, "$set", now)
 	if err != nil {
-		r.err = multiSearchErr{
+		r.err = customerr.BaseErr{
 			Op:  "update user document's multi_route_titles field",
 			Msg: "エラーが発生しました。",
 			Err: fmt.Errorf("error while updating user's multi_route_titles %w", err),
@@ -96,7 +87,7 @@ func (r *routesData) updateRouteTitles() {
 }
 
 func SaveNewRoute(w http.ResponseWriter, req *http.Request) {
-	//バリデーション完了後のrequest Fieldsを取得
+	//バリデーション完了後のルート情報を取得
 	r := getRoutesInfo(req)
 	//Auth middlewareからuserIDを取得
 	r.getUserID(req)
@@ -104,10 +95,10 @@ func SaveNewRoute(w http.ResponseWriter, req *http.Request) {
 	r.saveRoute()
 	/*users collectionのmulti_route_titlesフィールドにルート名と作成時刻を追加($set)する。
 	  作成時刻はルート名取得時に作成時刻でソートするため*/
-	r.updateRouteTitles()
+	r.addRouteTitle()
 
 	if r.err != nil {
-		e := r.err.(multiSearchErr)
+		e := r.err.(customerr.BaseErr)
 		http.Error(w, e.Msg, http.StatusInternalServerError)
 		log.Printf("operation: %s, error: %v", e.Op, e.Err)
 	}
