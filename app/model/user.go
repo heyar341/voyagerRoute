@@ -4,6 +4,7 @@ import (
 	"app/dbhandler"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"time"
 )
 
 type User struct {
@@ -27,4 +28,15 @@ func FindUser(fieldName, fieldValue string) (bson.M, error) {
 	//DBから取得
 	d, err := dbhandler.Find("googroutes", "users", userDoc, nil)
 	return d, err
+}
+
+func SaveNewUser(userName, email string, password []byte) (primitive.ObjectID, error) {
+	userDoc := bson.D{{"username", userName},
+		{"email", email},
+		{"password", password},
+		{"multi_route_titles", map[string]time.Time{}},
+	}
+
+	userID, err := dbhandler.Insert("googroutes", "users", userDoc)
+	return userID, err
 }
