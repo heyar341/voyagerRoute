@@ -1,65 +1,149 @@
 package auth
 
 import (
-	"app/dbhandler"
+	"app/cookiehandler"
+	"app/customerr"
+	"app/model"
+	"fmt"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 	"golang.org/x/crypto/bcrypt"
+	"log"
 	"net/http"
-	"net/url"
 )
 
-func Login(w http.ResponseWriter, req *http.Request) {
-	//エラーメッセージを定義
-	msg := url.QueryEscape("エラーが発生しました。もう一度操作をしなおしてください。")
+type loginProcess struct {
+	email    string
+	password string
+	user     model.UserData
+	err      error
+}
+
+func getEmail(req *http.Request) *loginProcess {
 	//Validation完了後のメールアドレスを取得
 	email, ok := req.Context().Value("email").(string)
 	if !ok {
-		//入力されたメールアドレスを保持する
-		email = url.QueryEscape(email)
-		http.Redirect(w, req, "/login_form/?msg="+msg+"&email="+email, http.StatusSeeOther)
+		return &loginProcess{
+			err: customerr.BaseErr{
+				Op:  "get email from request context",
+				Msg: "エラーが発生しました。",
+				Err: fmt.Errorf("error while getting email from request context"),
+			},
+		}
+	}
+	return &loginProcess{
+		email: email,
+	}
+}
+
+func (l *loginProcess) getPassword(req *http.Request) {
+	if l.err != nil {
+		return
 	}
 	//Validation完了後のパスワードを取得
 	password, ok := req.Context().Value("password").(string)
 	if !ok {
-		//入力されたメールアドレスを保持する
-		email = url.QueryEscape(email)
-		http.Redirect(w, req, "/login_form/?msg="+msg+"&email="+email, http.StatusSeeOther)
+		l.err = customerr.BaseErr{
+			Op:  "get password from request context",
+			Msg: "エラーが発生しました。",
+			Err: fmt.Errorf("error while getting password from request context"),
+		}
 	}
 
-	//以下のコード内のエラーメッセージ
-	msg2 := url.QueryEscape("メールアドレスまたはパスワードが正しくありません。")
+	l.password = password
+}
 
-	//取得するドキュメントの条件
-	userDoc := bson.D{{"email", email}}
-	//DBから取得
-	respUDoc, err := dbhandler.Find("googroutes", "users", userDoc, nil)
-	//入力されたメールアドレスを保持する
-	email = url.QueryEscape(email)
+func (l *loginProcess) getUserFromDB() bson.M {
+	if l.err != nil {
+		return nil
+	}
+	d, err := model.FindUser("email", l.email)
 	if err != nil {
-		http.Redirect(w, req, "/login_form/?msg="+msg2+"&email="+email, http.StatusSeeOther)
+		switch err {
+		case mongo.ErrNoDocuments:
+			l.err = customerr.BaseErr{
+				Op:  "get user from DB",
+				Msg: "メールアドレスまたはパスワードが間違っています。",
+				Err: fmt.Errorf("error while getting user from DB: %w", err),
+			}
+		default:
+			l.err = customerr.BaseErr{
+				Op:  "get user from DB",
+				Msg: "エラーが発生しました。",
+				Err: fmt.Errorf("error while getting user from DB: %w", err),
+			}
+		}
+		return nil
+	}
+	return d
+}
+
+func (l *loginProcess) convertDocToStruct(d bson.M) {
+	if l.err != nil {
 		return
+	}
+	b, err := bson.Marshal(d)
+	if err != nil {
+		l.err = customerr.BaseErr{
+			Op:  "convert BSON document to struct",
+			Msg: "エラーが発生しました。",
+			Err: fmt.Errorf("error while bson marshaling user: %w", err),
+		}
+	}
+	err = bson.Unmarshal(b, &l.user)
+	if err != nil {
+		l.err = customerr.BaseErr{
+			Op:  "convert BSON document to struct",
+			Msg: "エラーが発生しました。",
+			Err: fmt.Errorf("error while bson unmarshaling user: %w", err),
+		}
 	}
 
-	storedPassB,ok := respUDoc["password"].(primitive.Binary)
-	if !ok {
-		http.Redirect(w, req, "/login_form/?msg="+msg2+"&email="+email, http.StatusSeeOther)
+}
+
+func (l *loginProcess) comparePasswords() {
+	if l.err != nil {
 		return
 	}
-	storedPass := storedPassB.Data
-	//DB内のハッシュ化されたパスワードと入力されたパスワードの一致を確認
-	err = bcrypt.CompareHashAndPassword(storedPass, []byte(password))
-	//一致しない場合
+	err := bcrypt.CompareHashAndPassword(l.user.Password, []byte(l.password))
 	if err != nil {
-		http.Redirect(w, req, "/login_form/?msg="+msg2+"&email="+email, http.StatusSeeOther)
+		l.err = customerr.BaseErr{
+			Op:  "compare passwords",
+			Msg: "メールアドレスまたはパスワードが間違っています。",
+			Err: fmt.Errorf("error while bson marshaling user: %w", err),
+		}
+	}
+}
+
+func (l *loginProcess) generateNewSession(w http.ResponseWriter) {
+	if l.err != nil {
 		return
 	}
-	//一致した場合
-	userID := respUDoc["_id"].(primitive.ObjectID)
-	err = genNewSession(userID, w)
+	err := genNewSession(l.user.ID, w)
+
 	if err != nil {
-		msg = url.QueryEscape("ログインに失敗しました。もう一度操作をしなおしてください。")
-		http.Redirect(w, req, "/login_form/?msg="+msg+"&email="+email, http.StatusSeeOther)
+		l.err = customerr.BaseErr{
+			Op:  "generate new session",
+			Msg: "エラーが発生しました。",
+			Err: fmt.Errorf("error while generating new session: %w", err),
+		}
+	}
+}
+
+func Login(w http.ResponseWriter, req *http.Request) {
+	l := getEmail(req)
+	l.getPassword(req)
+	//user documentを取得
+	d := l.getUserFromDB()
+	l.convertDocToStruct(d)
+	l.comparePasswords()
+	l.generateNewSession(w)
+
+	if l.err != nil {
+		e := l.err.(customerr.BaseErr)
+		cookiehandler.MakeCookieAndRedirect(w, req, "msg", e.Msg, "/")
+		log.Printf("operation: %s, error: %v", e.Op, e.Err)
+		return
 	}
 
 	http.Redirect(w, req, "/", http.StatusSeeOther)
