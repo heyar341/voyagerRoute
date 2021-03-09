@@ -2,7 +2,6 @@ package simulsearch
 
 import (
 	"app/envhandler"
-	"app/model"
 	"context"
 	"encoding/json"
 	"googlemaps.github.io/maps"
@@ -17,6 +16,22 @@ type Resp struct {
 	Field map[string][]string `json:"resp"`
 }
 
+//同時検索のリクエストパラメータ
+type SimulParams struct {
+	Origin        string            `json:"origin"`
+	Destinations  map[string]string `json:"destinations"`
+	Mode          string            `json:"mode"`
+	DepartureTime string            `json:"departure_time"`
+	LatLng        LatLng            `json:"latlng"`
+	Avoid         []string          `json:"avoid"`
+}
+
+//SimulParamの緯度と経度
+type LatLng struct {
+	Lat string `json:"lat"`
+	Lng string `json:"lng"`
+}
+
 type TimeZoneResp struct {
 	SummerTimeOffset int    `json:"dstOffset"` //サマータイム時のオフセット
 	RawOffset        int    `json:"rawOffset"` //通常時のオフセット
@@ -27,7 +42,7 @@ type TimeZoneResp struct {
 
 func DoSimulSearch(w http.ResponseWriter, req *http.Request) {
 	//Validation後の炉クエストパラメータを取得
-	reqParams, ok := req.Context().Value("reqParams").(model.SimulParams)
+	reqParams, ok := req.Context().Value("reqParams").(SimulParams)
 	if !ok {
 		http.Error(w, "リクエストパラメータに不備があります。", http.StatusInternalServerError)
 		log.Printf("Error while getting reqParams from context: %v", ok)
@@ -89,14 +104,14 @@ func DoSimulSearch(w http.ResponseWriter, req *http.Request) {
 }
 
 //google maps Directions APIを使用して、距離と所要時間お取得する関数
-func simulSearch(client *maps.Client, destination string, reqParam *model.SimulParams) (string, int) {
+func simulSearch(client *maps.Client, destination string, reqParam *SimulParams) (string, int) {
 	//requestの変数宣言
 	SearchReq := &maps.DirectionsRequest{
 		Language:    "ja",
 		Region:      "JP",
 		Origin:      reqParam.Origin,
 		Destination: destination,
-		Mode: maps.TravelModeWalking,
+		Mode:        maps.TravelModeWalking,
 		//出発時間はデフォルトで現在時刻に設定
 		DepartureTime: strconv.Itoa(int(time.Now().Unix())),
 		//過去のデータから予想される最適な所要時間を返すよう設定
@@ -109,7 +124,7 @@ func simulSearch(client *maps.Client, destination string, reqParam *model.SimulP
 		if reqParam.DepartureTime != "" {
 			lat := reqParam.LatLng.Lat
 			lng := reqParam.LatLng.Lng
-			offset,err := getTimeZoneOffset(lat, lng)
+			offset, err := getTimeZoneOffset(lat, lng)
 			//オフセットを追加して、出発地のタイムゾーンの時間に合わせる
 			if err != nil {
 				return "", 0
@@ -163,7 +178,7 @@ func getTimeZoneOffset(lat, lng string) (string, error) {
 		return "", err
 	}
 	err = resp.Body.Close()
-	offset := tZResp.RawOffset //seconds
+	offset := tZResp.RawOffset       //seconds
 	offsetHour := int(offset / 3600) //hours
 	if offsetHour == 0 {
 		return "Z", nil //UTC
