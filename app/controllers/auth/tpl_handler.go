@@ -55,5 +55,10 @@ func LoginForm(w http.ResponseWriter, req *http.Request) {
 		processCookie(w, c, data, "login.html")
 		return
 	}
+	c, err = req.Cookie("success")
+	if err == nil {
+		processCookie(w, c, data, "login.html")
+		return
+	}
 	authTpl.ExecuteTemplate(w, "login.html", data)
 }
