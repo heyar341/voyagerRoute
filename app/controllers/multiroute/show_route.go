@@ -41,7 +41,7 @@ type editRoute struct {
 }
 
 func (eR *editRoute) getUserID(req *http.Request) {
-	user, ok := req.Context().Value("user").(model.UserData)
+	user, ok := req.Context().Value("user").(model.User)
 	if !ok {
 		eR.err = customerr.BaseErr{
 			Op:  "Finding route document",

@@ -19,7 +19,7 @@ func UpdateEmail(w http.ResponseWriter, req *http.Request) {
 		http.Redirect(w, req, "/profile/username_edit_form/?msg="+msg, http.StatusInternalServerError)
 	}
 	//Auth middlewareからuserIDを取得
-	user, ok := req.Context().Value("user").(model.UserData)
+	user, ok := req.Context().Value("user").(model.User)
 	if !ok {
 		http.Redirect(w, req, "/profile/email_edit_form/?msg="+msg, http.StatusSeeOther)
 		log.Printf("Error while getting userID from reuest's context: %v", ok)
@@ -64,7 +64,7 @@ func UpdateEmail(w http.ResponseWriter, req *http.Request) {
 func ConfirmUpdateEmail(w http.ResponseWriter, req *http.Request) {
 	msg := url.QueryEscape("エラーが発生しました。もう一度操作を行ってください。")
 	//Auth middlewareからuserIDを取得
-	user, ok := req.Context().Value("user").(model.UserData)
+	user, ok := req.Context().Value("user").(model.User)
 	if !ok {
 		http.Redirect(w, req, "/profile/email_edit_form/?msg="+msg, http.StatusSeeOther)
 		log.Printf("Error while getting userID from reuest's context: %v", ok)

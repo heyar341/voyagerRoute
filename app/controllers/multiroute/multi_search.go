@@ -39,7 +39,7 @@ func (r *routesData) getUserID(req *http.Request) {
 	if r.err != nil {
 		return
 	}
-	user, ok := req.Context().Value("user").(model.UserData)
+	user, ok := req.Context().Value("user").(model.User)
 	if !ok {
 		r.err = customerr.BaseErr{
 			Op:  "Get user from context",

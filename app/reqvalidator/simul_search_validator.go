@@ -1,7 +1,7 @@
 package reqvalidator
 
 import (
-	"app/model"
+	"app/controllers/simulsearch"
 	"context"
 	"encoding/json"
 	"io/ioutil"
@@ -19,7 +19,7 @@ func SimulSearchValidator(DoSimulSearch http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 		//requestのフィールドを保存する変数
-		var reqParams model.SimulParams
+		var reqParams simulsearch.SimulParams
 		body, _ := ioutil.ReadAll(req.Body)
 		err := json.Unmarshal(body, &reqParams)
 		if err != nil {

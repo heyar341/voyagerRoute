@@ -58,7 +58,7 @@ func SendQuestion(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	user, ok := req.Context().Value("user").(model.UserData)
+	user, ok := req.Context().Value("user").(model.User)
 	if !ok {
 		msg := "送信中にエラーが発生しました。"
 		http.Redirect(w, req, "/question_form/?msg="+msg, http.StatusSeeOther)

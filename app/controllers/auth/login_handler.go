@@ -15,7 +15,7 @@ import (
 type loginProcess struct {
 	email    string
 	password string
-	user     model.UserData
+	user     model.User
 	err      error
 }
 

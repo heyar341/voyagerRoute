@@ -15,7 +15,7 @@ func UpdateUserName(w http.ResponseWriter, req *http.Request) {
 		http.Redirect(w, req, "/profile/username_edit_form/?msg="+msg, http.StatusInternalServerError)
 	}
 	//Auth middlewareからuserIDを取得
-	user, ok := req.Context().Value("user").(model.UserData)
+	user, ok := req.Context().Value("user").(model.User)
 	if !ok {
 		msg := url.QueryEscape("エラーが発生しました。もう一度操作を行ってください。")
 		http.Redirect(w, req, "/profile/username_edit_form/?msg="+msg, http.StatusInternalServerError)
