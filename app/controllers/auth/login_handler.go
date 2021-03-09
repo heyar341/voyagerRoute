@@ -109,7 +109,7 @@ func (l *loginProcess) comparePasswords() {
 		l.err = customerr.BaseErr{
 			Op:  "compare passwords",
 			Msg: "メールアドレスまたはパスワードが間違っています。",
-			Err: fmt.Errorf("error while bson marshaling user: %w", err),
+			Err: fmt.Errorf("error while comparing passwords: %w", err),
 		}
 		return
 	}
