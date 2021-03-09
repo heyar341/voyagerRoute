@@ -37,7 +37,11 @@ func RegisterForm(w http.ResponseWriter, req *http.Request) {
 		log.Printf("Error whle gettibg data from context")
 		data = map[string]interface{}{"isLoggedIn": false}
 	}
-	data["qParams"] = req.URL.Query()
+	c, err := req.Cookie("msg")
+	if err == nil {
+		processCookie(w, c, data, "register.html")
+		return
+	}
 	authTpl.ExecuteTemplate(w, "register.html", data)
 }
 func LoginForm(w http.ResponseWriter, req *http.Request) {

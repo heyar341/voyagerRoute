@@ -10,16 +10,17 @@ import (
 	"app/mailhandler"
 	"app/middleware"
 	"app/reqvalidator"
+	"encoding/base64"
 	"fmt"
 	"html/template"
 	"log"
 	"net/http"
 )
 
-var home_tpl *template.Template
+var homeTpl *template.Template
 
 func init() {
-	home_tpl = template.Must(template.Must(template.ParseGlob("templates/home/home.html")).ParseGlob("templates/includes/*.html"))
+	homeTpl = template.Must(template.Must(template.ParseGlob("templates/home/home.html")).ParseGlob("templates/includes/*.html"))
 }
 
 func main() {
@@ -29,8 +30,8 @@ func main() {
 	http.Handle("/templates/", http.StripPrefix("/templates", http.FileServer(http.Dir("./templates"))))
 
 	//「認証」
-	http.HandleFunc("/register_form/", middleware.Auth(auth.RegisterForm))      //新規登録画面
-	http.HandleFunc("/check_email", mailhandler.EmailIsAvailable)                      //メールアドレスの可用確認APIのエドポイント
+	http.HandleFunc("/register_form", middleware.Auth(auth.RegisterForm))       //新規登録画面
+	http.HandleFunc("/check_email", mailhandler.EmailIsAvailable)               //メールアドレスの可用確認APIのエドポイント
 	http.HandleFunc("/register", reqvalidator.RegisterValidator(auth.Register)) //仮登録実行用エンドポイント
 	http.HandleFunc("/ask_confirm", middleware.Auth(auth.AskConfirmEmail))      //メールアドレス確認依頼画面
 	http.HandleFunc("/login_form", middleware.Auth(auth.LoginForm))             //ログイン画面
@@ -43,7 +44,7 @@ func main() {
 	http.HandleFunc("/get_apikey", apikey.GetApiKey)                                                             //Google Maps API Javascriptの実行に必要なJavascriptファイルを取得するためのエンドポイント
 	http.HandleFunc("/get_timezone", middleware.Auth(multiroute.GetTimezone))                                    //タイムゾーン取得用エンドポイント
 	http.HandleFunc("/routes_save", middleware.Auth(reqvalidator.SaveRoutesValidator(multiroute.SaveNewRoute)))  //保存用エンドポイント
-	http.HandleFunc("/show_route/", middleware.Auth(multiroute.ShowAndEditRoutesTpl))                            //確認編集画面
+	http.HandleFunc("/show_route", middleware.Auth(multiroute.ShowAndEditRoutesTpl))                             //確認編集画面
 	http.HandleFunc("/update_route", middleware.Auth(reqvalidator.UpdateRouteValidator(multiroute.UpdateRoute))) //編集用エンドポイント
 	http.HandleFunc("/delete_route", middleware.Auth(multiroute.DeleteRoute))                                    //削除用エンドポイント
 
@@ -80,7 +81,27 @@ func home(w http.ResponseWriter, req *http.Request) {
 		log.Printf("Error whle gettibg data from context")
 		data = map[string]interface{}{"isLoggedIn": false}
 	}
-	data["msg"] = req.URL.Query().Get("msg")
-	data["success"] = req.URL.Query().Get("success")
-	home_tpl.ExecuteTemplate(w, "home.html", data)
+	//successメッセージがある場合
+	c, err := req.Cookie("success")
+	if err == nil {
+		processCookie(w, c, data)
+		return
+	}
+	//エラーメッセージがある場合
+	c, err = req.Cookie("msg")
+	if err == nil {
+		processCookie(w, c, data)
+		return
+	}
+	homeTpl.ExecuteTemplate(w, "home.html", data)
+}
+
+func processCookie(w http.ResponseWriter, c *http.Cookie, data map[string]interface{}) {
+	b64Str, err := base64.StdEncoding.DecodeString(c.Value)
+	if err != nil {
+		homeTpl.ExecuteTemplate(w, "home.html", data)
+		return
+	}
+	data[c.Name] = string(b64Str)
+	homeTpl.ExecuteTemplate(w, "home.html", data)
 }
