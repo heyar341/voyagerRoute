@@ -19,21 +19,17 @@ type loginProcess struct {
 	err      error
 }
 
-func getEmail(req *http.Request) *loginProcess {
+func (l *loginProcess) getEmail(req *http.Request) {
 	//Validation完了後のメールアドレスを取得
 	email, ok := req.Context().Value("email").(string)
 	if !ok {
-		return &loginProcess{
-			err: customerr.BaseErr{
-				Op:  "get email from request context",
-				Msg: "エラーが発生しました。",
-				Err: fmt.Errorf("error while getting email from request context"),
-			},
+		l.err = customerr.BaseErr{
+			Op:  "get email from request context",
+			Msg: "エラーが発生しました。",
+			Err: fmt.Errorf("error while getting email from request context"),
 		}
 	}
-	return &loginProcess{
-		email: email,
-	}
+	l.email = email
 }
 
 func (l *loginProcess) getPassword(req *http.Request) {
@@ -131,9 +127,9 @@ func (l *loginProcess) generateNewSession(w http.ResponseWriter) {
 }
 
 func Login(w http.ResponseWriter, req *http.Request) {
-	l := getEmail(req)
+	var l loginProcess
+	l.getEmail(req)
 	l.getPassword(req)
-	//user documentを取得
 	d := l.getUserFromDB()
 	l.convertDocToStruct(d)
 	l.comparePasswords()
@@ -141,7 +137,7 @@ func Login(w http.ResponseWriter, req *http.Request) {
 
 	if l.err != nil {
 		e := l.err.(customerr.BaseErr)
-		cookiehandler.MakeCookieAndRedirect(w, req, "msg", e.Msg, "/")
+		cookiehandler.MakeCookieAndRedirect(w, req, "msg", e.Msg, "/login_form")
 		log.Printf("operation: %s, error: %v", e.Op, e.Err)
 		return
 	}
