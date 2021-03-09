@@ -14,7 +14,7 @@ func UpdatePassword(w http.ResponseWriter, req *http.Request) {
 	//エラーメッセージを定義
 	msg := url.QueryEscape("エラ〜が発生しました。もう一度操作をしなおしてください。")
 	//Auth middlewareからuserIDを取得
-	user, ok := req.Context().Value("user").(model.UserData)
+	user, ok := req.Context().Value("user").(model.User)
 	if !ok {
 		http.Redirect(w, req, "/profile/email_edit_form/?msg="+msg, http.StatusSeeOther)
 		log.Printf("Error while getting userID from reuest's context: %v", ok)
@@ -50,7 +50,7 @@ func UpdatePassword(w http.ResponseWriter, req *http.Request) {
 		log.Printf("Error while bson marshaling user document: %v", err)
 		return
 	}
-	var u model.UserData
+	var u model.User
 	//marshalした値をUnmarshalして、userに代入
 	err = bson.Unmarshal(bsonByte, &u)
 	if err != nil {

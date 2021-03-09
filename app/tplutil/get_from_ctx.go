@@ -9,7 +9,7 @@ import (
 
 type TplData struct {
 	Data map[string]interface{}
-	User model.UserData
+	User model.User
 	Err error
 }
 
@@ -33,7 +33,7 @@ func (t *TplData) getUserFromCtx(req *http.Request) {
 	if t.Err != nil {
 		return
 	}
-	user, ok := req.Context().Value("user").(model.UserData)
+	user, ok := req.Context().Value("user").(model.User)
 	if !ok {
 		t.Err = customerr.BaseErr{
 			Op:  "Getting user from context",

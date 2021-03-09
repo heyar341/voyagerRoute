@@ -1,8 +1,8 @@
 package reqvalidator
 
 import (
+	"app/controllers/simulsearch"
 	"app/customerr"
-	"app/model"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -13,7 +13,7 @@ import (
 )
 
 type simulSearchValidator struct {
-	reqParams model.SimulParams
+	reqParams simulsearch.SimulParams
 	err       error
 }
 

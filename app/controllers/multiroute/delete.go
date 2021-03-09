@@ -10,7 +10,7 @@ import (
 )
 
 type deleteRoute struct {
-	user       model.UserData
+	user       model.User
 	routeTitle string
 	err        error
 }
@@ -19,7 +19,7 @@ func (d *deleteRoute) getUserFromCtx(req *http.Request) {
 	if d.err != nil {
 		return
 	}
-	user, ok := req.Context().Value("user").(model.UserData)
+	user, ok := req.Context().Value("user").(model.User)
 	if !ok {
 		d.err = customerr.BaseErr{
 			Op:  "Getting user from context",

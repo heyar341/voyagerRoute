@@ -66,27 +66,27 @@ func getUserIDFromSession(req *http.Request) (primitive.ObjectID, error) {
 	return userID, nil
 }
 
-func getLoginUser(userID primitive.ObjectID) (model.UserData, error) {
+func getLoginUser(userID primitive.ObjectID) (model.User, error) {
 	userDoc := bson.D{{"_id", userID}}
 	//DBから読み込み
 	resp, err := dbhandler.Find("googroutes", "users", userDoc, nil)
 	if err != nil {
 		log.Printf("Error while finding user data: %v", err)
-		return model.UserData{}, err
+		return model.User{}, err
 	}
 	//DBから取得した値をmarshal
 	bsonByte, err := bson.Marshal(resp)
 	if err != nil {
 		log.Printf("Error while bson marshaling user data: %v", err)
-		return model.UserData{}, err
+		return model.User{}, err
 	}
 
-	var user model.UserData
+	var user model.User
 	//marshalした値をUnmarshalして、userに代入
 	err = bson.Unmarshal(bsonByte, &user)
 	if err != nil {
 		log.Printf("Error while bson unmarshaling user data: %v", err)
-		return model.UserData{}, err
+		return model.User{}, err
 	}
 	return user, nil
 }
