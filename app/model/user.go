@@ -30,7 +30,7 @@ func FindUser(fieldName, fieldValue string) (bson.M, error) {
 	return d, err
 }
 
-func UpdateUser(userID primitive.ObjectID, fieldName, fieldValue string) error {
+func UpdateUser(userID primitive.ObjectID, fieldName string, fieldValue interface{}) error {
 	//user documentを更新
 	userDoc := bson.M{"_id": userID}
 	updateDoc := bson.D{{fieldName, fieldValue}}
