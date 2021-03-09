@@ -1,52 +1,98 @@
 package reqvalidator
 
 import (
+	"app/customerr"
 	"app/model"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"strconv"
 )
 
+type simulSearchValidator struct {
+	reqParams model.SimulParams
+	err       error
+}
+
+func (s *simulSearchValidator) checkHTTPMethod(req *http.Request) {
+	if req.Header.Get("Content-Type") != "application/json" || req.Method != "POST" {
+		s.err = customerr.BaseErr{
+			Op:  "check HTTP method",
+			Msg: "HTTPメソッドが不正です。",
+			Err: fmt.Errorf("invalid HTTP method access"),
+		}
+		return
+	}
+}
+
+func (s *simulSearchValidator) convertJSONToStruct(req *http.Request) {
+	if s.err != nil {
+		return
+	}
+	body, _ := ioutil.ReadAll(req.Body)
+	err := json.Unmarshal(body, &s.reqParams)
+	if err != nil {
+		s.err = customerr.BaseErr{
+			Op:  "json unmarshal multi route request",
+			Msg: "入力に不正があります。",
+			Err: fmt.Errorf("error while json unmarshaling multiroute request: %w", err),
+		}
+		return
+	}
+}
+
+//出発地のバリデーションとprefixを追加
+func (s *simulSearchValidator) checkAndModifyOrigin() {
+	if s.err != nil {
+		return
+	}
+	if s.reqParams.Origin == "" {
+		s.err = customerr.BaseErr{
+			Op:  "checking origin input of simul search",
+			Msg: "出発地を入力してください。",
+			Err: fmt.Errorf("origin was empty at simul search"),
+		}
+		return
+	}
+	//place_id:を追加
+	s.reqParams.Origin = "place_id:" + s.reqParams.Origin
+}
+
+//目的地にprefixを追加
+func (s *simulSearchValidator) modifyDestinations() {
+	if s.err != nil {
+		return
+	}
+	for i := 1; i < 10; i++ {
+		if s.reqParams.Destinations[strconv.Itoa(i)] == "" {
+			continue
+		}
+		s.reqParams.Destinations[strconv.Itoa(i)] = "place_id:" + s.reqParams.Destinations[strconv.Itoa(i)]
+	}
+
+}
+
 func SimulSearchValidator(DoSimulSearch http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-		//リクエストメソッドについて確認
-		if req.Header.Get("Content-Type") != "application/json" || req.Method != "POST" {
-			http.Error(w, "リクエスト方法が不正です。", http.StatusBadRequest)
-			log.Printf("Someone sended data not from simul_search page")
-			return
-		}
-		//requestのフィールドを保存する変数
-		var reqParams model.SimulParams
-		body, _ := ioutil.ReadAll(req.Body)
-		err := json.Unmarshal(body, &reqParams)
-		if err != nil {
-			http.Error(w, "リクエストデータに不備があります。", http.StatusBadRequest)
-			log.Printf("Error while json marshaling simulSearch request: %v", err)
-			return
-		}
+		var s simulSearchValidator
+		s.checkHTTPMethod(req)
+		s.convertJSONToStruct(req)
+		s.checkAndModifyOrigin()
+		s.modifyDestinations()
 
-		//出発地のバリデーション
-		if reqParams.Origin == "" {
-			http.Error(w, "出発地を入力してください。", http.StatusBadRequest)
+		if s.err != nil {
+			e := s.err.(customerr.BaseErr)
+			http.Error(w, e.Msg, http.StatusBadRequest)
+			log.Printf("operation: %s, error: %v", e.Op, e.Err)
 			return
-		}
-		//place_id:を追加
-		reqParams.Origin = "place_id:" + reqParams.Origin
-
-		//目的地のバリデーション
-		for i := 1; i < 10; i++ {
-			if reqParams.Destinations[strconv.Itoa(i)] == "" {
-				continue
-			}
-			reqParams.Destinations[strconv.Itoa(i)] = "place_id:" + reqParams.Destinations[strconv.Itoa(i)]
 		}
 
 		//contextに各フィールドの値を追加
 		ctx := req.Context()
-		ctx = context.WithValue(ctx, "reqParams", reqParams)
+		ctx = context.WithValue(ctx, "reqParams", s.reqParams)
 		DoSimulSearch.ServeHTTP(w, req.WithContext(ctx))
 	}
 }
