@@ -44,7 +44,7 @@ func main() {
 	http.HandleFunc("/get_apikey", apikey.GetApiKey)                                                             //Google Maps API Javascriptの実行に必要なJavascriptファイルを取得するためのエンドポイント
 	http.HandleFunc("/get_timezone", middleware.Auth(multiroute.GetTimezone))                                    //タイムゾーン取得用エンドポイント
 	http.HandleFunc("/routes_save", middleware.Auth(reqvalidator.SaveRoutesValidator(multiroute.SaveNewRoute)))  //保存用エンドポイント
-	http.HandleFunc("/show_route", middleware.Auth(multiroute.ShowAndEditRoutesTpl))                             //確認編集画面
+	http.HandleFunc("/show_route/", middleware.Auth(multiroute.ShowAndEditRoutesTpl))                            //確認編集画面
 	http.HandleFunc("/update_route", middleware.Auth(reqvalidator.UpdateRouteValidator(multiroute.UpdateRoute))) //編集用エンドポイント
 	http.HandleFunc("/delete_route", middleware.Auth(multiroute.DeleteRoute))                                    //削除用エンドポイント
 
