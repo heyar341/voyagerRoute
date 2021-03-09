@@ -1,8 +1,7 @@
 package auth
 
 import (
-	"app/dbhandler"
-	"go.mongodb.org/mongo-driver/bson"
+	"app/model"
 	"log"
 	"net/http"
 	"net/url"
@@ -28,12 +27,9 @@ func Logout(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	//DBから読み込み
-	sesDoc := bson.D{{"session_id", sessionID}}
-	err = dbhandler.Delete("googroutes", "sessions", sesDoc)
+	err = model.DeleteSession(sessionID)
 	if err != nil {
-		msg = url.QueryEscape("ログアウト中エラーが発生しました。")
-		http.Redirect(w, req, "/?msg="+msg, http.StatusSeeOther)
+		log.Println(err)
 		return
 	}
 
