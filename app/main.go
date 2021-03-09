@@ -30,7 +30,7 @@ func main() {
 
 	//「認証」
 	http.HandleFunc("/register_form/", middleware.Auth(auth.RegisterForm))      //新規登録画面
-	http.HandleFunc("/check_email", auth.EmailIsAvailable)                      //メールアドレスの可用確認APIのエドポイント
+	http.HandleFunc("/check_email", mailhandler.EmailIsAvailable)                      //メールアドレスの可用確認APIのエドポイント
 	http.HandleFunc("/register", reqvalidator.RegisterValidator(auth.Register)) //仮登録実行用エンドポイント
 	http.HandleFunc("/ask_confirm", middleware.Auth(auth.AskConfirmEmail))      //メールアドレス確認依頼画面
 	http.HandleFunc("/login_form", middleware.Auth(auth.LoginForm))             //ログイン画面
