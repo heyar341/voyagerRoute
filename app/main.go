@@ -33,7 +33,7 @@ func main() {
 	http.HandleFunc("/check_email", auth.EmailIsAvailable)                      //メールアドレスの可用確認APIのエドポイント
 	http.HandleFunc("/register", reqvalidator.RegisterValidator(auth.Register)) //仮登録実行用エンドポイント
 	http.HandleFunc("/ask_confirm", middleware.Auth(auth.AskConfirmEmail))      //メールアドレス確認依頼画面
-	http.HandleFunc("/login_form/", middleware.Auth(auth.LoginForm))            //ログイン画面
+	http.HandleFunc("/login_form", middleware.Auth(auth.LoginForm))             //ログイン画面
 	http.HandleFunc("/login", reqvalidator.LoginValidator(auth.Login))          //ログイン実行用エンドポイント
 	http.HandleFunc("/confirm_register/", auth.ConfirmRegister)                 //本登録実行用エンドポイント
 	http.HandleFunc("/logout", auth.Logout)                                     //ログアウト用エンドポイント
@@ -53,9 +53,9 @@ func main() {
 
 	//「マイページ」
 	http.HandleFunc("/mypage", middleware.Auth(mypage.ShowMypage))                 //マイページ表示
-	http.HandleFunc("/mypage/show_routes", middleware.Auth(mypage.ShowAllRoutes)) //保存したルート一覧
+	http.HandleFunc("/mypage/show_routes", middleware.Auth(mypage.ShowAllRoutes))  //保存したルート一覧
 	http.HandleFunc("/mypage/delete_route", middleware.Auth(mypage.ConfirmDelete)) //削除確認
-	http.HandleFunc("/question_form", middleware.Auth(mypage.ShowQuestionForm))   //お問い合わせ入力ページ
+	http.HandleFunc("/question_form", middleware.Auth(mypage.ShowQuestionForm))    //お問い合わせ入力ページ
 	http.HandleFunc("/send_question", middleware.Auth(mailhandler.SendQuestion))   //お問い合わせ送信用エンドポイント
 
 	//「プロフィール」
