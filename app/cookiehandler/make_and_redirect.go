@@ -11,7 +11,7 @@ func MakeCookieAndRedirect(w http.ResponseWriter, req *http.Request, cName, cVal
 		Name:   cName,
 		Value:  b64CVal,
 		Path:   path,
-		MaxAge: 5,
+		MaxAge: 1,
 	}
 	http.SetCookie(w, c)
 	http.Redirect(w, req, path, http.StatusSeeOther)
