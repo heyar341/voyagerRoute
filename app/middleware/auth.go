@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"app/controllers/auth"
-	"app/dbhandler"
 	"app/model"
 	"context"
 	"go.mongodb.org/mongo-driver/bson"
@@ -53,36 +52,33 @@ func getUserIDFromSession(req *http.Request) (primitive.ObjectID, error) {
 
 	//tokenからsessionID取得
 	sessionID, _ := auth.ParseToken(c.Value)
-	sessionDoc := bson.D{{"session_id", sessionID}}
-	//DBから読み込み
-	sBSON, err := dbhandler.Find("googroutes", "sessions", sessionDoc, nil)
+
+	d, err := model.FindSession(sessionID)
 	if err != nil {
 		log.Printf("Error while finding session data: %v", err)
 		return primitive.NilObjectID, err
 	}
 
-	userID := sBSON["user_id"].(primitive.ObjectID)
+	userID := d["user_id"].(primitive.ObjectID)
 
 	return userID, nil
 }
 
 func getLoginUser(userID primitive.ObjectID) (model.User, error) {
-	userDoc := bson.D{{"_id", userID}}
 	//DBから読み込み
-	resp, err := dbhandler.Find("googroutes", "users", userDoc, nil)
+	d, err := model.FindUser("_id", userID)
 	if err != nil {
 		log.Printf("Error while finding user data: %v", err)
 		return model.User{}, err
 	}
 	//DBから取得した値をmarshal
-	bsonByte, err := bson.Marshal(resp)
+	bsonByte, err := bson.Marshal(d)
 	if err != nil {
 		log.Printf("Error while bson marshaling user data: %v", err)
 		return model.User{}, err
 	}
 
 	var user model.User
-	//marshalした値をUnmarshalして、userに代入
 	err = bson.Unmarshal(bsonByte, &user)
 	if err != nil {
 		log.Printf("Error while bson unmarshaling user data: %v", err)
