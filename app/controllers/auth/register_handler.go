@@ -230,7 +230,7 @@ func Register(w http.ResponseWriter, req *http.Request) {
 	http.Redirect(w, req, "/ask_confirm", http.StatusSeeOther)
 
 	//「メールでトークン付きのURLを送る」
-	err := mailhandler.SendConfirmEmail(token, r.email, r.userName)
+	err := mailhandler.SendConfirmEmail(token, r.email, r.userName, "confirm_register")
 	if err != nil {
 		log.Printf("Error while sending email at registering: %v", err)
 	}

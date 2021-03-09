@@ -39,10 +39,12 @@ func ShowProfile(w http.ResponseWriter, req *http.Request) {
 	c, err := req.Cookie("success")
 	if err == nil {
 		processCookie(w, c, t.Data, "profile.html")
+		return
 	}
 	c, err = req.Cookie("msg")
 	if err == nil {
 		processCookie(w, c, t.Data, "profile.html")
+		return
 	}
 
 	profileTpl.ExecuteTemplate(w, "profile.html", t.Data)
@@ -60,6 +62,7 @@ func EditUserNameForm(w http.ResponseWriter, req *http.Request) {
 	c, err := req.Cookie("msg")
 	if err == nil {
 		processCookie(w, c, t.Data, "username_edit.html")
+		return
 	}
 
 	profileTpl.ExecuteTemplate(w, "username_edit.html", t.Data)
@@ -79,6 +82,7 @@ func EditEmailForm(w http.ResponseWriter, req *http.Request) {
 	c, err := req.Cookie("msg")
 	if err == nil {
 		processCookie(w, c, t.Data, "email_edit.html")
+		return
 	}
 
 	profileTpl.ExecuteTemplate(w, "email_edit.html", t.Data)
@@ -96,6 +100,7 @@ func EditPasswordForm(w http.ResponseWriter, req *http.Request) {
 	c, err := req.Cookie("msg")
 	if err == nil {
 		processCookie(w, c, t.Data, "password_edit.html")
+		return
 	}
 	profileTpl.ExecuteTemplate(w, "password_edit.html", t.Data)
 }
