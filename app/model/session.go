@@ -12,6 +12,12 @@ type Session struct {
 	UserID    primitive.ObjectID `bson:"user_id"`
 }
 
+func FindSession(sessionID string) (bson.M, error) {
+	s := bson.M{"session_id": sessionID}
+	d, err := dbhandler.Find("googroutes", "sessions", s, nil)
+	return d, err
+}
+
 func DeleteSession(sessionID string) error {
 	d := bson.M{"session_id": sessionID}
 	err := dbhandler.Delete("googroutes", "sessions", d)

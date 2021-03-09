@@ -22,7 +22,7 @@ func UpdateMultiRouteTitles(userID primitive.ObjectID, routeTitle, operator stri
 	return err
 }
 
-func FindUser(fieldName, fieldValue string) (bson.M, error) {
+func FindUser(fieldName string, fieldValue interface{}) (bson.M, error) {
 	//取得するドキュメントの条件
 	userDoc := bson.M{fieldName: fieldValue}
 	//DBから取得
