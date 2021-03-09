@@ -28,6 +28,7 @@ func (l *loginProcess) getEmail(req *http.Request) {
 			Msg: "エラーが発生しました。",
 			Err: fmt.Errorf("error while getting email from request context"),
 		}
+		return
 	}
 	l.email = email
 }
@@ -44,6 +45,7 @@ func (l *loginProcess) getPassword(req *http.Request) {
 			Msg: "エラーが発生しました。",
 			Err: fmt.Errorf("error while getting password from request context"),
 		}
+		return
 	}
 
 	l.password = password
@@ -85,6 +87,7 @@ func (l *loginProcess) convertDocToStruct(d bson.M) {
 			Msg: "エラーが発生しました。",
 			Err: fmt.Errorf("error while bson marshaling user: %w", err),
 		}
+		return
 	}
 	err = bson.Unmarshal(b, &l.user)
 	if err != nil {
@@ -93,8 +96,8 @@ func (l *loginProcess) convertDocToStruct(d bson.M) {
 			Msg: "エラーが発生しました。",
 			Err: fmt.Errorf("error while bson unmarshaling user: %w", err),
 		}
+		return
 	}
-
 }
 
 func (l *loginProcess) comparePasswords() {
@@ -108,6 +111,7 @@ func (l *loginProcess) comparePasswords() {
 			Msg: "メールアドレスまたはパスワードが間違っています。",
 			Err: fmt.Errorf("error while bson marshaling user: %w", err),
 		}
+		return
 	}
 }
 
@@ -123,6 +127,7 @@ func (l *loginProcess) generateNewSession(w http.ResponseWriter) {
 			Msg: "エラーが発生しました。",
 			Err: fmt.Errorf("error while generating new session: %w", err),
 		}
+		return
 	}
 }
 
