@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"app/controllers"
 	"app/cookiehandler"
 	"app/customerr"
 	"app/model"
@@ -17,40 +18,6 @@ type loginProcess struct {
 	password string
 	user     model.User
 	err      error
-}
-
-//getEmail gets email from request form
-func (l *loginProcess) getEmail(req *http.Request) {
-	//Validation完了後のメールアドレスを取得
-	email, ok := req.Context().Value("email").(string)
-	if !ok {
-		l.err = customerr.BaseErr{
-			Op:  "get email from request context",
-			Msg: "エラーが発生しました。",
-			Err: fmt.Errorf("error while getting email from request context"),
-		}
-		return
-	}
-	l.email = email
-}
-
-//getPassword gets password from request form
-func (l *loginProcess) getPassword(req *http.Request) {
-	if l.err != nil {
-		return
-	}
-	//Validation完了後のパスワードを取得
-	password, ok := req.Context().Value("password").(string)
-	if !ok {
-		l.err = customerr.BaseErr{
-			Op:  "get password from request context",
-			Msg: "エラーが発生しました。",
-			Err: fmt.Errorf("error while getting password from request context"),
-		}
-		return
-	}
-
-	l.password = password
 }
 
 //getUserFromDB fetches user document from DB
@@ -77,31 +44,6 @@ func (l *loginProcess) getUserFromDB() bson.M {
 		return nil
 	}
 	return d
-}
-
-//convertDocToStruct converts user document to User struct
-func (l *loginProcess) convertDocToStruct(d bson.M) {
-	if l.err != nil {
-		return
-	}
-	b, err := bson.Marshal(d)
-	if err != nil {
-		l.err = customerr.BaseErr{
-			Op:  "convert BSON document to struct",
-			Msg: "エラーが発生しました。",
-			Err: fmt.Errorf("error while bson marshaling user: %w", err),
-		}
-		return
-	}
-	err = bson.Unmarshal(b, &l.user)
-	if err != nil {
-		l.err = customerr.BaseErr{
-			Op:  "convert BSON document to struct",
-			Msg: "エラーが発生しました。",
-			Err: fmt.Errorf("error while bson unmarshaling user: %w", err),
-		}
-		return
-	}
 }
 
 //comparePassword compares hashed password and password user inputted
@@ -139,10 +81,10 @@ func (l *loginProcess) generateNewSession(w http.ResponseWriter) {
 
 func Login(w http.ResponseWriter, req *http.Request) {
 	var l loginProcess
-	l.getEmail(req)
-	l.getPassword(req)
+	l.email, l.err = controllers.GetStrValueFromCtx(req, "email")
+	l.password, l.err = controllers.GetStrValueFromCtx(req, "password")
 	d := l.getUserFromDB()
-	l.convertDocToStruct(d)
+	l.err = controllers.ConvertDucToStruct(d, &l.user, "login user")
 	l.comparePasswords()
 	l.generateNewSession(w)
 

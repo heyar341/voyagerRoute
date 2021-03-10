@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"app/controllers"
 	"app/cookiehandler"
 	"app/customerr"
 	"app/model"
@@ -9,71 +10,71 @@ import (
 	"net/http"
 )
 
-type logoutErr customerr.BaseErr
-
-//checkHTTPMethod checks HTTP method
-func (l *logoutErr) checkHTTPMethod(req *http.Request) {
-	if req.Method != "POST" {
-		l.Op = "check HTTP method"
-		l.Msg = "HTTPメソッドが不正です。"
-		l.Err = fmt.Errorf("invalid HTTP method at logout")
-	}
+type logoutProcess struct {
+	err error
 }
 
 //getCookie gets Cookie contains sessionID from request
-func (l *logoutErr) getCookie(req *http.Request) *http.Cookie {
-	if l.Err != nil {
+func (l *logoutProcess) getCookie(req *http.Request) *http.Cookie {
+	if l.err != nil {
 		return nil
 	}
 	c, err := req.Cookie("session_id")
 	if err != nil {
-		l.Op = "get cookie contains sessionID form request"
-		l.Msg = "ログイン情報が取得できません。"
-		l.Err = fmt.Errorf("err while getting cookie from request")
+		l.err = customerr.BaseErr{
+			Op:  "get cookie contains sessionID form request",
+			Msg: "ログイン情報が取得できません。",
+			Err: fmt.Errorf("err while getting cookie from request"),
+		}
 		return nil
 	}
 	return c
 }
 
 //parseCookieToken parse token of sessionID in Cookie
-func (l *logoutErr) parseCookieToken(c *http.Cookie) string {
-	if l.Err != nil {
+func (l *logoutProcess) parseCookieToken(c *http.Cookie) string {
+	if l.err != nil {
 		return ""
 	}
 	sessionID, err := ParseToken(c.Value)
 	if err != nil {
-		l.Op = "get sessionID from Cookie"
-		l.Msg = "ログイン情報が取得できません。"
-		l.Err = fmt.Errorf("err while getting sessinID from Cookie")
+		l.err = customerr.BaseErr{
+			Op:  "get sessionID from Cookie",
+			Msg: "ログイン情報が取得できません。",
+			Err: fmt.Errorf("err while getting sessinID from Cookie"),
+		}
 		return ""
 	}
 	return sessionID
 }
 
 //deleteSession deletes session document from sessions collection
-func (l *logoutErr) deleteSession(sessionID string) {
-	if l.Err != nil {
+func (l *logoutProcess) deleteSession(sessionID string) {
+	if l.err != nil {
 		return
 	}
 	err := model.DeleteSession(sessionID)
 	if err != nil {
-		l.Op = "delete session document from sessions collection"
-		l.Msg = "ログアウトできませんでした。"
-		l.Err = fmt.Errorf("err while deleting session document from sessions collection: %w", err)
+		l.err = customerr.BaseErr{
+			Op:  "delete session document from sessions collection",
+			Msg: "ログアウトできませんでした。",
+			Err: fmt.Errorf("err while deleting session document from sessions collection: %w", err),
+		}
 		return
 	}
 }
 
 func Logout(w http.ResponseWriter, req *http.Request) {
-	var l logoutErr
-	l.checkHTTPMethod(req)
+	var l logoutProcess
+	l.err = controllers.CheckHTTPMethod(req)
 	c := l.getCookie(req)
 	sessionID := l.parseCookieToken(c)
 	l.deleteSession(sessionID)
 
-	if l.Err != nil {
-		cookiehandler.MakeCookieAndRedirect(w, req, "msg", l.Msg, "/mypage")
-		log.Printf("operation: %s, error: %v", l.Op, l.Err)
+	if l.err != nil {
+		e := l.err.(customerr.BaseErr)
+		cookiehandler.MakeCookieAndRedirect(w, req, "msg", e.Msg, "/mypage")
+		log.Printf("operation: %s, error: %v", e.Op, e.Err)
 		return
 	}
 

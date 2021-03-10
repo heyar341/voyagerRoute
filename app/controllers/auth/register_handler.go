@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"app/controllers"
 	"app/cookiehandler"
 	"app/customerr"
 	"app/mailhandler"
@@ -21,55 +22,6 @@ type registerProcess struct {
 	password        string
 	securedPassword []byte
 	err             error
-}
-
-//getUserName gets user from request form
-func (r *registerProcess) getUserName(req *http.Request) {
-	//Validation完了後のメールアドレスを取得
-	username, ok := req.Context().Value("username").(string)
-	if !ok {
-		r.err = customerr.BaseErr{
-			Op:  "get username from request context",
-			Msg: "エラーが発生しました。",
-			Err: fmt.Errorf("error while getting username from request context"),
-		}
-		return
-	}
-	r.userName = username
-}
-
-//getEmail gets email from request form
-func (r *registerProcess) getEmail(req *http.Request) {
-	//Validation完了後のメールアドレスを取得
-	email, ok := req.Context().Value("email").(string)
-	if !ok {
-		r.err = customerr.BaseErr{
-			Op:  "get email from request context",
-			Msg: "エラーが発生しました。",
-			Err: fmt.Errorf("error while getting email from request context"),
-		}
-		return
-	}
-	r.email = email
-}
-
-//getPassword gets password from request form
-func (r *registerProcess) getPassword(req *http.Request) {
-	if r.err != nil {
-		return
-	}
-	//Validation完了後のパスワードを取得
-	password, ok := req.Context().Value("password").(string)
-	if !ok {
-		r.err = customerr.BaseErr{
-			Op:  "get password from request context",
-			Msg: "エラーが発生しました。",
-			Err: fmt.Errorf("error while getting password from request context"),
-		}
-		return
-	}
-
-	r.password = password
 }
 
 //generateSecuredPassword generates a hashed password
@@ -145,31 +97,6 @@ func (cR *confirmRegister) findUserByToken() bson.M {
 	return d
 }
 
-//convertDucToStruct converts registeringUser document to RegisteringUser struct
-func (cR *confirmRegister) convertDucToStruct(d bson.M) {
-	if cR.err != nil {
-		return
-	}
-	b, err := bson.Marshal(d)
-	if err != nil {
-		cR.err = customerr.BaseErr{
-			Op:  "convert BSON document to struct",
-			Msg: "エラーが発生しました。",
-			Err: fmt.Errorf("error while bson marshaling registeringUser: %w", err),
-		}
-		return
-	}
-	err = bson.Unmarshal(b, &cR.registeringUser)
-	if err != nil {
-		cR.err = customerr.BaseErr{
-			Op:  "convert BSON document to struct",
-			Msg: "エラーが発生しました。",
-			Err: fmt.Errorf("error while bson unmarshaling registeringUser: %w", err),
-		}
-		return
-	}
-}
-
 //checkTokenExpire checks if token expires or not
 func (cR *confirmRegister) checkTokenExpire() {
 	if cR.err != nil {
@@ -222,9 +149,9 @@ func (cR *confirmRegister) generateNewSession(w http.ResponseWriter) {
 
 func Register(w http.ResponseWriter, req *http.Request) {
 	var r registerProcess
-	r.getUserName(req)
-	r.getEmail(req)
-	r.getPassword(req)
+	r.userName, r.err = controllers.GetStrValueFromCtx(req, "username")
+	r.email, r.err = controllers.GetStrValueFromCtx(req, "email")
+	r.password, r.err = controllers.GetStrValueFromCtx(req, "password")
 	r.generateSecuredPassword()
 	//メールアドレス認証用のトークンを作成
 	token := uuid.New().String()
@@ -250,7 +177,7 @@ func ConfirmRegister(w http.ResponseWriter, req *http.Request) {
 	var cR confirmRegister
 	cR.getToken(req)
 	d := cR.findUserByToken()
-	cR.convertDucToStruct(d)
+	cR.err = controllers.ConvertDucToStruct(d, &cR.registeringUser, "registeringUser")
 	cR.checkTokenExpire()
 	cR.saveNewUserToDB()
 	cR.generateNewSession(w)

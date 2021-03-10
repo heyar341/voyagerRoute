@@ -3,6 +3,7 @@ package profile
 import (
 	"app/cookiehandler"
 	"app/customerr"
+	"app/controllers"
 	"app/model"
 	"fmt"
 	"log"
@@ -16,17 +17,6 @@ type updateUserName struct {
 }
 
 const REDIRECT_URI_TO_UPDATE_USERNAME_FORM = "/profile/username_edit_form"
-
-//checkHTTPMethod checks if HTTP method is POST or not.
-func (uU *updateUserName) checkHTTPMethod(req *http.Request) {
-	if req.Method != "POST" {
-		uU.err = customerr.BaseErr{
-			Op:  "check HTTP method",
-			Msg: "HTTPメソッドが不正です。",
-			Err: fmt.Errorf("invalid HTTP access method"),
-		}
-	}
-}
 
 //getUserFromCtx gets user from Auth middleware.
 func (uU *updateUserName) getUserFromCtx(req *http.Request) {
@@ -81,7 +71,7 @@ func (uU *updateUserName) updateUserName() {
 
 func UpdateUserName(w http.ResponseWriter, req *http.Request) {
 	var uU updateUserName
-	uU.checkHTTPMethod(req)
+	uU.err = controllers.CheckHTTPMethod(req)
 	uU.getUserFromCtx(req)
 	uU.getUserNameFromForm(req)
 	uU.updateUserName()
