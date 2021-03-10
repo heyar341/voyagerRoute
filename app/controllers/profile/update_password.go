@@ -3,6 +3,7 @@ package profile
 import (
 	"app/cookiehandler"
 	"app/customerr"
+	"app/controllers"
 	"app/model"
 	"fmt"
 	"golang.org/x/crypto/bcrypt"
@@ -16,34 +17,6 @@ type updatePassword struct {
 	user            model.User
 	securedPassword []byte
 	err             error
-}
-
-//checkHTTPMethod checks if HTTP method is POST or not.
-func (uP *updatePassword) checkHTTPMethod(req *http.Request) {
-	if req.Method != "POST" {
-		uP.err = customerr.BaseErr{
-			Op:  "check HTTP method",
-			Msg: "HTTPメソッドが不正です。",
-			Err: fmt.Errorf("invalid HTTP access method"),
-		}
-	}
-}
-
-//getUserFromCtx gets user from Auth middleware.
-func (uP *updatePassword) getUserFromCtx(req *http.Request) {
-	if uP.err != nil {
-		return
-	}
-	user, ok := req.Context().Value("user").(model.User)
-	if !ok {
-		uP.err = customerr.BaseErr{
-			Op:  "get user from request's context",
-			Msg: "エラーが発生しました。",
-			Err: fmt.Errorf("error while getting user from reuest's context"),
-		}
-		return
-	}
-	uP.user = user
 }
 
 //getPasswordFromForm gets password from request form.
@@ -114,8 +87,8 @@ func (uP *updatePassword) updatePassword() {
 
 func UpdatePassword(w http.ResponseWriter, req *http.Request) {
 	var uP updatePassword
-	uP.checkHTTPMethod(req)
-	uP.getUserFromCtx(req)
+	uP.err = controllers.CheckHTTPMethod(req)
+	uP.user, uP.err = controllers.GetUserFromCtx(req)
 	currPassword := uP.getPasswordFromForm(req, "current-password")
 	newPassword := uP.getPasswordFromForm(req, "password")
 	uP.comparePasswords(currPassword)

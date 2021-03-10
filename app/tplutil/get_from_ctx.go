@@ -1,16 +1,17 @@
 package tplutil
 
 import (
-	"fmt"
-	"app/model"
+	"app/controllers"
 	"app/customerr"
+	"app/model"
+	"fmt"
 	"net/http"
 )
 
 type TplData struct {
 	Data map[string]interface{}
 	User model.User
-	Err error
+	Err  error
 }
 
 func getDataFromCtx(req *http.Request) *TplData {
@@ -29,24 +30,8 @@ func getDataFromCtx(req *http.Request) *TplData {
 	}
 }
 
-func (t *TplData) getUserFromCtx(req *http.Request) {
-	if t.Err != nil {
-		return
-	}
-	user, ok := req.Context().Value("user").(model.User)
-	if !ok {
-		t.Err = customerr.BaseErr{
-			Op:  "Getting user from context",
-			Msg: "エラーが発生しました。",
-			Err: fmt.Errorf("error while getting user from context"),
-		}
-		return
-	}
-	t.User = user
-}
-
 func GetTplData(req *http.Request) *TplData {
 	tData := getDataFromCtx(req)
-	tData.getUserFromCtx(req)
+	tData.User, tData.Err = controllers.GetUserFromCtx(req)
 	return tData
 }

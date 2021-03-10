@@ -1,9 +1,9 @@
 package profile
 
 import (
+	"app/controllers"
 	"app/cookiehandler"
 	"app/customerr"
-	"app/controllers"
 	"app/model"
 	"fmt"
 	"log"
@@ -17,23 +17,6 @@ type updateUserName struct {
 }
 
 const REDIRECT_URI_TO_UPDATE_USERNAME_FORM = "/profile/username_edit_form"
-
-//getUserFromCtx gets user from Auth middleware.
-func (uU *updateUserName) getUserFromCtx(req *http.Request) {
-	if uU.err != nil {
-		return
-	}
-	user, ok := req.Context().Value("user").(model.User)
-	if !ok {
-		uU.err = customerr.BaseErr{
-			Op:  "get user from request's context",
-			Msg: "エラーが発生しました。",
-			Err: fmt.Errorf("error while getting user from reuest's context"),
-		}
-		return
-	}
-	uU.user = user
-}
 
 //getUserNameFromForm gets username from request form.
 func (uU *updateUserName) getUserNameFromForm(req *http.Request) {
@@ -72,7 +55,7 @@ func (uU *updateUserName) updateUserName() {
 func UpdateUserName(w http.ResponseWriter, req *http.Request) {
 	var uU updateUserName
 	uU.err = controllers.CheckHTTPMethod(req)
-	uU.getUserFromCtx(req)
+	uU.user, uU.err = controllers.GetUserFromCtx(req)
 	uU.getUserNameFromForm(req)
 	uU.updateUserName()
 

@@ -2,6 +2,7 @@ package multiroute
 
 import (
 	"app/customerr"
+	"app/controllers"
 	"app/model"
 	"encoding/json"
 	"fmt"
@@ -74,7 +75,7 @@ func (r *routesData) updateRouteTitles(pTitle string) {
 		//「元のルート名をuser documentから削除」
 		//documentではなく、document内のフィールドを削除する場合、Deleteではなく、Update operatorの$unsetを使って削除する
 		//公式ドキュメントURL: https://docs.mongodb.com/manual/reference/operator/update/unset/
-		err := model.UpdateMultiRouteTitles(r.userID, pTitle, "$unset", "")
+		err := model.UpdateMultiRouteTitles(r.user.ID, pTitle, "$unset", "")
 		if err != nil {
 			r.err = customerr.BaseErr{
 				Op:  "Remove previous multi route title",
@@ -85,7 +86,7 @@ func (r *routesData) updateRouteTitles(pTitle string) {
 		}
 	}
 	//「タイムスタンプを更新または追加」
-	err := model.UpdateMultiRouteTitles(r.userID, r.routesInfo.Title, "$set", now)
+	err := model.UpdateMultiRouteTitles(r.user.ID, r.routesInfo.Title, "$set", now)
 	if err != nil {
 		r.err = customerr.BaseErr{
 			Op:  "Set new multi route title and timestamp",
@@ -98,13 +99,9 @@ func (r *routesData) updateRouteTitles(pTitle string) {
 
 //ルートを更新保存するための関数
 func UpdateRoute(w http.ResponseWriter, req *http.Request) {
-	//バリデーション完了後のルート情報と変更前のタイトルを取得
 	r, pTitle := getUpdateRoutesInfo(req)
-	//Auth middlewareからuserIDを取得
-	r.getUserID(req)
-	//ルートの更新
+	r.user, r.err = controllers.GetUserFromCtx(req)
 	r.updateRoute()
-	//ルート名とタイムスタンプの更新
 	r.updateRouteTitles(pTitle)
 
 	if r.err != nil {

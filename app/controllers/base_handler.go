@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"app/customerr"
+	"app/model"
 	"fmt"
 	"go.mongodb.org/mongo-driver/bson"
 	"net/http"
@@ -31,6 +32,19 @@ func GetStrValueFromCtx(req *http.Request, valueName string) (string, error) {
 		}
 	}
 	return v, nil
+}
+
+//GetUserFromCtx gets user from Auth middleware
+func GetUserFromCtx(req *http.Request) (model.User, error) {
+	user, ok := req.Context().Value("user").(model.User)
+	if !ok {
+		return model.User{}, customerr.BaseErr{
+			Op:  "get user from request's context",
+			Msg: "エラーが発生しました。",
+			Err: fmt.Errorf("error while getting user from reuest's context"),
+		}
+	}
+	return user, nil
 }
 
 //ConvertDucToStruct converts a bson document to a struct

@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"log"
 	"net/http"
@@ -22,23 +21,6 @@ type updateEmailProcess struct {
 	user     model.User
 	newEmail string
 	err      error
-}
-
-//getUserFromCtx gets user from request's context
-func (u *updateEmailProcess) getUserFromCtx(req *http.Request) {
-	if u.err != nil {
-		return
-	}
-	user, ok := req.Context().Value("user").(model.User)
-	if !ok {
-		u.err = customerr.BaseErr{
-			Op:  "get user from request's context",
-			Msg: "エラーが発生しました。",
-			Err: fmt.Errorf("error while getting user from reuest's context"),
-		}
-		return
-	}
-	u.user = user
 }
 
 //getEmailFromForm gets email from request's form
@@ -77,7 +59,7 @@ func (u *updateEmailProcess) saveEditingEmail(token string) {
 func UpdateEmail(w http.ResponseWriter, req *http.Request) {
 	var u updateEmailProcess
 	u.err = controllers.CheckHTTPMethod(req)
-	u.getUserFromCtx(req)
+	u.user, u.err = controllers.GetUserFromCtx(req)
 	u.getEmailFromForm(req)
 	//メールアドレス認証用のトークンを作成
 	token := uuid.New().String()
@@ -102,24 +84,10 @@ func UpdateEmail(w http.ResponseWriter, req *http.Request) {
 }
 
 type confirmUpdateEmail struct {
-	userID       primitive.ObjectID
+	user         model.User
 	editingEmail model.EditingEmail
 	token        string
 	err          error
-}
-
-//getUserFromCtx gets user from request's context
-func (c *confirmUpdateEmail) getUserFromCtx(req *http.Request) {
-	user, ok := req.Context().Value("user").(model.User)
-	if !ok {
-		log.Printf(": %v", ok)
-		c.err = customerr.BaseErr{
-			Op:  "get user from request's context",
-			Msg: "エラーが発生しました。",
-			Err: fmt.Errorf("error while getting user from reuest's context"),
-		}
-	}
-	c.userID = user.ID
 }
 
 //getTokenFromURL gets token from URL parameter
@@ -185,7 +153,7 @@ func (c *confirmUpdateEmail) updateUserEmail() {
 	if c.err != nil {
 		return
 	}
-	err := model.UpdateUser(c.userID, "email", c.editingEmail.Email)
+	err := model.UpdateUser(c.user.ID, "email", c.editingEmail.Email)
 	if err != nil {
 		c.err = customerr.BaseErr{
 			Op:  "update use document's email field",
@@ -199,7 +167,7 @@ func (c *confirmUpdateEmail) updateUserEmail() {
 func ConfirmUpdateEmail(w http.ResponseWriter, req *http.Request) {
 	var c confirmUpdateEmail
 	c.err = controllers.CheckHTTPMethod(req)
-	c.getUserFromCtx(req)
+	c.user, c.err = controllers.GetUserFromCtx(req)
 	c.getTokenFromURL(req)
 	d := c.getEditingEmailDocFromDB()
 	c.err = controllers.ConvertDucToStruct(d, &c.editingEmail, "editing email")

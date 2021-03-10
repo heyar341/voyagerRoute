@@ -1,13 +1,13 @@
 package multiroute
 
 import (
+	"app/controllers"
 	"app/cookiehandler"
 	"app/customerr"
 	"app/model"
 	"encoding/json"
 	"fmt"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"html/template"
 	"log"
@@ -33,25 +33,11 @@ func MultiSearchTpl(w http.ResponseWriter, req *http.Request) {
 }
 
 type editRoute struct {
-	userID     primitive.ObjectID
+	user       model.User
 	routeBSON  bson.M
 	routeModel model.MultiRoute
 	routeJSON  string
 	err        error
-}
-
-//getUserID gets userID from request's context
-func (eR *editRoute) getUserID(req *http.Request) {
-	user, ok := req.Context().Value("user").(model.User)
-	if !ok {
-		eR.err = customerr.BaseErr{
-			Op:  "Finding route document",
-			Msg: "エラーが発生しました。",
-			Err: fmt.Errorf("error while getting user from context"),
-		}
-		return
-	}
-	eR.userID = user.ID
 }
 
 //getRouteObj gets route document from DB
@@ -59,7 +45,7 @@ func (eR *editRoute) getRouteObj(title string) {
 	if eR.err != nil {
 		return
 	}
-	b, err := model.FindRoute(eR.userID, title)
+	b, err := model.FindRoute(eR.user.ID, title)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			eR.err = customerr.BaseErr{
@@ -144,8 +130,7 @@ func (eR *editRoute) getDataFromCtx(req *http.Request) map[string]interface{} {
 
 func ShowAndEditRoutesTpl(w http.ResponseWriter, req *http.Request) {
 	var eR editRoute
-	//useIDをcontextから取得
-	eR.getUserID(req)
+	eR.user, eR.err = controllers.GetUserFromCtx(req)
 	routeTitle := req.URL.Query().Get("route_title")
 	eR.getRouteObj(routeTitle)
 	//marshalとunmarshalでMultiRoute Modelを取得
