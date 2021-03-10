@@ -34,18 +34,17 @@ func MultiSearchTpl(w http.ResponseWriter, req *http.Request) {
 
 type editRoute struct {
 	user       model.User
-	routeBSON  bson.M
 	routeModel model.MultiRoute
 	routeJSON  string
 	err        error
 }
 
-//getRouteObj gets route document from DB
-func (eR *editRoute) getRouteObj(title string) {
+//getRouteFromDB gets route document from DB
+func (eR *editRoute) getRouteFromDB(title string) bson.M{
 	if eR.err != nil {
-		return
+		return nil
 	}
-	b, err := model.FindRoute(eR.user.ID, title)
+	d, err := model.FindRoute(eR.user.ID, title)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			eR.err = customerr.BaseErr{
@@ -53,47 +52,21 @@ func (eR *editRoute) getRouteObj(title string) {
 				Msg: "ご指定いただいたルートがありません。",
 				Err: fmt.Errorf("error while finding route document from routes collection: %w", err),
 			}
-			return
+			return nil
 		} else {
 			eR.err = customerr.BaseErr{
 				Op:  "Finding route document",
 				Msg: "エラーが発生しました。",
 				Err: fmt.Errorf("error while finding route document from routes collection: %w", err),
 			}
-			return
+			return nil
 		}
 	}
-	eR.routeBSON = b
+	return d
 }
 
-//convertDocToStruct converts route document to multiRoute struct
-func (eR *editRoute) convertDocToStruct() {
-	if eR.err != nil {
-		return
-	}
-	//DBから取得した値をmarshal
-	bsonByte, err := bson.Marshal(eR.routeBSON)
-	if err != nil {
-		eR.err = customerr.BaseErr{
-			Op:  "bson marshaling routeBSON",
-			Msg: "エラーが発生しました。",
-			Err: fmt.Errorf("error while bson marshaling multi_route document: %w", err),
-		}
-		return
-	}
-	err = bson.Unmarshal(bsonByte, &eR.routeModel)
-	if err != nil {
-		eR.err = customerr.BaseErr{
-			Op:  "bson unmarshaling bson []byte",
-			Msg: "エラーが発生しました。",
-			Err: fmt.Errorf("error while bson unmarshaling multi_route document: %w", err),
-		}
-		return
-	}
-}
-
-//getJSONObj makes JSON object from multiRoute struct
-func (eR *editRoute) getJSONObj() {
+//convertStructToJSON makes JSON object from multiRoute struct
+func (eR *editRoute) convertStructToJSON() {
 	if eR.err != nil {
 		return
 	}
@@ -132,11 +105,9 @@ func ShowAndEditRoutesTpl(w http.ResponseWriter, req *http.Request) {
 	var eR editRoute
 	eR.user, eR.err = controllers.GetUserFromCtx(req)
 	routeTitle := req.URL.Query().Get("route_title")
-	eR.getRouteObj(routeTitle)
-	//marshalとunmarshalでMultiRoute Modelを取得
-	eR.convertDocToStruct()
-	//json marshalでJSON Encodingし、string型に変換
-	eR.getJSONObj()
+	d := eR.getRouteFromDB(routeTitle)
+	eR.err = controllers.ConvertDucToStruct(d , &eR.routeModel, "multi route")
+	eR.convertStructToJSON()
 	//contextからデータ取得
 	data := eR.getDataFromCtx(req)
 
