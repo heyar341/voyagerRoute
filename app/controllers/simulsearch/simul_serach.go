@@ -4,12 +4,13 @@ import (
 	"app/envhandler"
 	"context"
 	"encoding/json"
-	"googlemaps.github.io/maps"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"strconv"
 	"time"
+
+	"googlemaps.github.io/maps"
 )
 
 type Resp struct {

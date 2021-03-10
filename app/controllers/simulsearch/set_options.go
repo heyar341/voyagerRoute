@@ -1,9 +1,10 @@
 package simulsearch
 
 import (
-	"googlemaps.github.io/maps"
 	"log"
 	"strings"
+
+	"googlemaps.github.io/maps"
 )
 
 //徒歩、運転、乗り換えのモード選択

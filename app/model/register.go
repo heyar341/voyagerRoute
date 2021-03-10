@@ -2,15 +2,16 @@ package model
 
 import (
 	"app/dbhandler"
-	"go.mongodb.org/mongo-driver/bson"
 	"time"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 type Registering struct {
 	UserName  string `bson:"username"`
 	Email     string `bson:"email"`
 	Password  []byte `bson:"password"`
-	ExpiresAt int64 `bson:"expires_at"`
+	ExpiresAt int64  `bson:"expires_at"`
 	Token     string `bson:"token"`
 }
 

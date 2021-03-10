@@ -1,6 +1,7 @@
 package reqvalidator
 
 import (
+	"app/controllers"
 	"app/cookiehandler"
 	"app/customerr"
 	"app/mailhandler"
@@ -17,17 +18,8 @@ type authValidator struct {
 	err      error
 }
 
-func (a *authValidator) checkHTTPMethod(req *http.Request) {
-	if req.Method != "POST" {
-		a.err = customerr.BaseErr{
-			Op:  "checking HTTP method",
-			Msg: "HTTPメソッドが不正です。",
-			Err: fmt.Errorf("invalid HTTP method access"),
-		}
-	}
-}
-
-func (a *authValidator) getUserName(req *http.Request) {
+//getUserNameFromForm gets string value from request's form
+func (a *authValidator) getUserNameFromForm(req *http.Request) {
 	if a.err != nil {
 		return
 	}
@@ -42,7 +34,8 @@ func (a *authValidator) getUserName(req *http.Request) {
 	a.username = userName
 }
 
-func (a *authValidator) getEmail(req *http.Request) {
+//getEmailFromForm gets string value from request's form
+func (a *authValidator) getEmailFromForm(req *http.Request) {
 	if a.err != nil {
 		return
 	}
@@ -57,7 +50,8 @@ func (a *authValidator) getEmail(req *http.Request) {
 	a.email = email
 }
 
-func (a *authValidator) getPassword(req *http.Request) {
+//getPasswordFromForm gets string value from request's form
+func (a *authValidator) getPasswordFromForm(req *http.Request) {
 	if a.err != nil {
 		return
 	}
@@ -78,7 +72,7 @@ func (a *authValidator) getPassword(req *http.Request) {
 	a.password = password
 }
 
-//正規表現によるメールアドレスの形式チェック、およびアドレスドメインの有効性チェックを行う
+//checkEmail checks email's format using regex and a validity of emil's domain
 func (a *authValidator) checkEmail(email string) {
 	if a.err != nil {
 		return
@@ -95,11 +89,11 @@ func (a *authValidator) checkEmail(email string) {
 func RegisterValidator(Register http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		var a authValidator
-		a.checkHTTPMethod(req)
-		a.getUserName(req)
-		a.getEmail(req)
+		controllers.CheckHTTPMethod(req, &a.err)
+		a.getUserNameFromForm(req)
+		a.getEmailFromForm(req)
 		a.checkEmail(a.email)
-		a.getPassword(req)
+		a.getPasswordFromForm(req)
 
 		if a.err != nil {
 			e := a.err.(customerr.BaseErr)
@@ -121,9 +115,9 @@ func RegisterValidator(Register http.HandlerFunc) http.HandlerFunc {
 func LoginValidator(Login http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		var a authValidator
-		a.checkHTTPMethod(req)
-		a.getEmail(req)
-		a.getPassword(req)
+		controllers.CheckHTTPMethod(req, &a.err)
+		a.getEmailFromForm(req)
+		a.getPasswordFromForm(req)
 
 		if a.err != nil {
 			e := a.err.(customerr.BaseErr)

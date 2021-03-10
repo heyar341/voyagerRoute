@@ -3,10 +3,11 @@ package mailhandler
 import (
 	"app/model"
 	"encoding/json"
-	"go.mongodb.org/mongo-driver/mongo"
 	"io/ioutil"
 	"log"
 	"net/http"
+
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 //メールアドレスが使用可能かのリクエスト

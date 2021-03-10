@@ -1,6 +1,7 @@
 package reqvalidator
 
 import (
+	"app/controllers"
 	"app/controllers/multiroute"
 	"app/customerr"
 	"app/model"
@@ -17,6 +18,7 @@ type multiRouteValidator struct {
 	err error
 }
 
+//checkHTTPMethod checks request's Content-Type and HTTP methods
 func (m *multiRouteValidator) checkHTTPMethod(req *http.Request) {
 	if req.Header.Get("Content-Type") != "application/json" || req.Method != "POST" {
 		m.err = customerr.BaseErr{
@@ -28,6 +30,22 @@ func (m *multiRouteValidator) checkHTTPMethod(req *http.Request) {
 	}
 }
 
+//checkContainedChar checks if routeTitle contains . or $
+func (m *multiRouteValidator) checkContainedChar(title string) {
+	if m.err != nil {
+		return
+	}
+	if strings.ContainsAny(title, ".$") {
+		m.err = customerr.BaseErr{
+			Op:  "check contained character in route's title",
+			Msg: "ルート名にご使用いただけない文字が含まれています。",
+			Err: fmt.Errorf(". or $ was contained in route title"),
+		}
+		return
+	}
+}
+
+//convertJSONToStruct converts request's JSON data to multiRoute struct
 func (m *multiRouteValidator) convertJSONToStruct(req *http.Request, reqFields interface{}) {
 	if m.err != nil {
 		return
@@ -44,28 +62,14 @@ func (m *multiRouteValidator) convertJSONToStruct(req *http.Request, reqFields i
 	}
 }
 
-func (m *multiRouteValidator) checkContainedChar(title string) {
-	if m.err != nil {
-		return
-	}
-	if strings.ContainsAny(title, ".$") {
-		m.err = customerr.BaseErr{
-			Op:  "check contained character in route's title",
-			Msg: "ルート名にご使用いただけない文字が含まれています。",
-			Err: fmt.Errorf(". or $ was contained in route title"),
-		}
-		return
-	}
-}
-
 func SaveRoutesValidator(SaveRoutes http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		var m multiRouteValidator
 		m.checkHTTPMethod(req)
 		//convertJSONToStructの第２引数はinterfaceなので、変数を宣言してポインタを渡す必要がある
 		var reqFields model.MultiRoute
-		m.convertJSONToStruct(req, &reqFields)
 		m.checkContainedChar(reqFields.Title)
+		m.convertJSONToStruct(req, &reqFields)
 
 		if m.err != nil {
 			e := m.err.(customerr.BaseErr)
@@ -84,7 +88,7 @@ func SaveRoutesValidator(SaveRoutes http.HandlerFunc) http.HandlerFunc {
 func UpdateRouteValidator(UpdateRoute http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		var m multiRouteValidator
-		m.checkHTTPMethod(req)
+		controllers.CheckHTTPMethod(req, &m.err)
 		//convertJSONToStructの第２引数はinterfaceなので、変数を宣言してポインタを渡す必要がある
 		var reqFields multiroute.RouteUpdateRequest
 		m.convertJSONToStruct(req, &reqFields)

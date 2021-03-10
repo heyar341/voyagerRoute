@@ -1,9 +1,10 @@
 package dbhandler
 
 import (
+	"log"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
-	"log"
 )
 
 func Delete(dbName, collectionName string, document interface{}) error {
