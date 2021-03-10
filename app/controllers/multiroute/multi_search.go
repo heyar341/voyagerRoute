@@ -74,7 +74,7 @@ func (r *routesData) addRouteTitle() {
 
 func SaveNewRoute(w http.ResponseWriter, req *http.Request) {
 	r := getRoutesInfo(req)
-	r.user, r.err = controllers.GetUserFromCtx(req)
+	controllers.GetUserFromCtx(req, &r.user, &r.err)
 	r.saveRoute()
 	/*users collectionのmulti_route_titlesフィールドにルート名と作成時刻を追加($set)する。
 	  作成時刻はルート名取得時に作成時刻でソートするため*/

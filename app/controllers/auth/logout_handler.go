@@ -66,7 +66,7 @@ func (l *logoutProcess) deleteSession(sessionID string) {
 
 func Logout(w http.ResponseWriter, req *http.Request) {
 	var l logoutProcess
-	l.err = controllers.CheckHTTPMethod(req)
+	controllers.CheckHTTPMethod(req, &l.err)
 	c := l.getCookie(req)
 	sessionID := l.parseCookieToken(c)
 	l.deleteSession(sessionID)

@@ -82,10 +82,10 @@ func (l *loginProcess) generateNewSession(w http.ResponseWriter) {
 
 func Login(w http.ResponseWriter, req *http.Request) {
 	var l loginProcess
-	l.email, l.err = controllers.GetStrValueFromCtx(req, "email")
-	l.password, l.err = controllers.GetStrValueFromCtx(req, "password")
+	controllers.GetStrValueFromCtx(req, &l.email, &l.err, "email")
+	controllers.GetStrValueFromCtx(req, &l.password, &l.err, "password")
 	d := l.getUserFromDB()
-	l.err = controllers.ConvertDucToStruct(d, &l.user, "login user")
+	controllers.ConvertDucToStruct(d, &l.user, &l.err, "login user")
 	l.comparePasswords()
 	l.generateNewSession(w)
 

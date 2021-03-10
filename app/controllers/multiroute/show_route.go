@@ -104,10 +104,10 @@ func (eR *editRoute) getDataFromCtx(req *http.Request) map[string]interface{} {
 
 func ShowAndEditRoutesTpl(w http.ResponseWriter, req *http.Request) {
 	var eR editRoute
-	eR.user, eR.err = controllers.GetUserFromCtx(req)
+	controllers.GetUserFromCtx(req, &eR.user, &eR.err)
 	routeTitle := req.URL.Query().Get("route_title")
 	d := eR.getRouteFromDB(routeTitle)
-	eR.err = controllers.ConvertDucToStruct(d, &eR.routeModel, "multi route")
+	controllers.ConvertDucToStruct(d, &eR.routeModel, &eR.err, "multi route")
 	eR.convertStructToJSON()
 	//contextからデータ取得
 	data := eR.getDataFromCtx(req)

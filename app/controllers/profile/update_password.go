@@ -88,8 +88,8 @@ func (uP *updatePassword) updatePassword() {
 
 func UpdatePassword(w http.ResponseWriter, req *http.Request) {
 	var uP updatePassword
-	uP.err = controllers.CheckHTTPMethod(req)
-	uP.user, uP.err = controllers.GetUserFromCtx(req)
+	controllers.CheckHTTPMethod(req, &uP.err)
+	controllers.GetUserFromCtx(req, &uP.user, &uP.err)
 	currPassword := uP.getPasswordFromForm(req, "current-password")
 	newPassword := uP.getPasswordFromForm(req, "password")
 	uP.comparePasswords(currPassword)

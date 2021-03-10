@@ -34,8 +34,8 @@ func (d *deleteRoute) deleteRoute() {
 
 func DeleteRoute(w http.ResponseWriter, req *http.Request) {
 	var d deleteRoute
-	d.err = controllers.CheckHTTPMethod(req)
-	d.user, d.err = controllers.GetUserFromCtx(req)
+	controllers.CheckHTTPMethod(req, &d.err)
+	controllers.GetUserFromCtx(req, &d.user, &d.err)
 	d.routeTitle = req.FormValue("title")
 	d.deleteRoute()
 

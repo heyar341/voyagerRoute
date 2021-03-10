@@ -59,8 +59,8 @@ func (u *updateEmailProcess) saveEditingEmail(token string) {
 
 func UpdateEmail(w http.ResponseWriter, req *http.Request) {
 	var u updateEmailProcess
-	u.err = controllers.CheckHTTPMethod(req)
-	u.user, u.err = controllers.GetUserFromCtx(req)
+	controllers.CheckHTTPMethod(req, &u.err)
+	controllers.GetUserFromCtx(req, &u.user, &u.err)
 	u.getEmailFromForm(req)
 	//メールアドレス認証用のトークンを作成
 	token := uuid.New().String()
@@ -167,11 +167,11 @@ func (c *confirmUpdateEmail) updateUserEmail() {
 
 func ConfirmUpdateEmail(w http.ResponseWriter, req *http.Request) {
 	var c confirmUpdateEmail
-	c.err = controllers.CheckHTTPMethod(req)
-	c.user, c.err = controllers.GetUserFromCtx(req)
+	controllers.CheckHTTPMethod(req, &c.err)
+	controllers.GetUserFromCtx(req, &c.user, &c.err)
 	c.getTokenFromURL(req)
 	d := c.getEditingEmailDocFromDB()
-	c.err = controllers.ConvertDucToStruct(d, &c.editingEmail, "editing email")
+	controllers.ConvertDucToStruct(d, &c.editingEmail, &c.err, "editing email")
 	c.checkTokenExpire()
 	c.updateUserEmail()
 

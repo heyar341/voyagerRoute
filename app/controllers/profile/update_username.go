@@ -54,8 +54,8 @@ func (uU *updateUserName) updateUserName() {
 
 func UpdateUserName(w http.ResponseWriter, req *http.Request) {
 	var uU updateUserName
-	uU.err = controllers.CheckHTTPMethod(req)
-	uU.user, uU.err = controllers.GetUserFromCtx(req)
+	controllers.CheckHTTPMethod(req, &uU.err)
+	controllers.GetUserFromCtx(req, &uU.user, &uU.err)
 	uU.getUserNameFromForm(req)
 	uU.updateUserName()
 

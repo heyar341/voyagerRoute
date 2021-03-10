@@ -150,9 +150,9 @@ func (cR *confirmRegister) generateNewSession(w http.ResponseWriter) {
 
 func Register(w http.ResponseWriter, req *http.Request) {
 	var r registerProcess
-	r.userName, r.err = controllers.GetStrValueFromCtx(req, "username")
-	r.email, r.err = controllers.GetStrValueFromCtx(req, "email")
-	r.password, r.err = controllers.GetStrValueFromCtx(req, "password")
+	controllers.GetStrValueFromCtx(req, &r.userName, &r.err, "username")
+	controllers.GetStrValueFromCtx(req, &r.email, &r.err, "email")
+	controllers.GetStrValueFromCtx(req, &r.password, &r.err, "password")
 	r.generateSecuredPassword()
 	//メールアドレス認証用のトークンを作成
 	token := uuid.New().String()
@@ -178,7 +178,7 @@ func ConfirmRegister(w http.ResponseWriter, req *http.Request) {
 	var cR confirmRegister
 	cR.getToken(req)
 	d := cR.findUserByToken()
-	cR.err = controllers.ConvertDucToStruct(d, &cR.registeringUser, "registeringUser")
+	controllers.ConvertDucToStruct(d, &cR.registeringUser, &cR.err, "registeringUser")
 	cR.checkTokenExpire()
 	cR.saveNewUserToDB()
 	cR.generateNewSession(w)

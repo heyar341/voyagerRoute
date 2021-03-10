@@ -86,7 +86,7 @@ func (a *authValidator) checkEmail(email string) {
 func RegisterValidator(Register http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		var a authValidator
-		a.err = controllers.CheckHTTPMethod(req)
+		controllers.CheckHTTPMethod(req, &a.err)
 		a.getUserName(req)
 		a.getEmail(req)
 		a.checkEmail(a.email)
@@ -112,7 +112,7 @@ func RegisterValidator(Register http.HandlerFunc) http.HandlerFunc {
 func LoginValidator(Login http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		var a authValidator
-		a.err = controllers.CheckHTTPMethod(req)
+		controllers.CheckHTTPMethod(req, &a.err)
 		a.getEmail(req)
 		a.getPassword(req)
 

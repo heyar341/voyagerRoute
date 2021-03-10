@@ -101,7 +101,7 @@ func (r *routesData) updateRouteTitles(pTitle string) {
 //ルートを更新保存するための関数
 func UpdateRoute(w http.ResponseWriter, req *http.Request) {
 	r, pTitle := getUpdateRoutesInfo(req)
-	r.user, r.err = controllers.GetUserFromCtx(req)
+	controllers.GetUserFromCtx(req, &r.user, &r.err)
 	r.updateRoute()
 	r.updateRouteTitles(pTitle)
 
