@@ -7,11 +7,12 @@ import (
 	"app/model"
 	"encoding/json"
 	"fmt"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
 	"html/template"
 	"log"
 	"net/http"
+
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 var multiSearchTpl, showRouteTpl *template.Template
@@ -40,7 +41,7 @@ type editRoute struct {
 }
 
 //getRouteFromDB gets route document from DB
-func (eR *editRoute) getRouteFromDB(title string) bson.M{
+func (eR *editRoute) getRouteFromDB(title string) bson.M {
 	if eR.err != nil {
 		return nil
 	}
@@ -106,7 +107,7 @@ func ShowAndEditRoutesTpl(w http.ResponseWriter, req *http.Request) {
 	eR.user, eR.err = controllers.GetUserFromCtx(req)
 	routeTitle := req.URL.Query().Get("route_title")
 	d := eR.getRouteFromDB(routeTitle)
-	eR.err = controllers.ConvertDucToStruct(d , &eR.routeModel, "multi route")
+	eR.err = controllers.ConvertDucToStruct(d, &eR.routeModel, "multi route")
 	eR.convertStructToJSON()
 	//contextからデータ取得
 	data := eR.getDataFromCtx(req)

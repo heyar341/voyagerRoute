@@ -2,9 +2,10 @@ package model
 
 import (
 	"app/dbhandler"
+	"time"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"time"
 )
 
 type User struct {

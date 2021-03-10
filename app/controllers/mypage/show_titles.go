@@ -2,10 +2,11 @@ package mypage
 
 import (
 	"app/model"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"log"
 	"sort"
 	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 //user documentのmulti_route_titlesフィールドの値を入れるstruct

@@ -1,16 +1,17 @@
 package multiroute
 
 import (
-	"app/customerr"
 	"app/controllers"
+	"app/customerr"
 	"app/model"
 	"encoding/json"
 	"fmt"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"log"
 	"net/http"
 	"strings"
 	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 //ルート編集保存requestのフィールドを保存するstruct

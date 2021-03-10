@@ -7,13 +7,14 @@ import (
 	"app/mailhandler"
 	"app/model"
 	"fmt"
+	"log"
+	"net/http"
+	"time"
+
 	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"golang.org/x/crypto/bcrypt"
-	"log"
-	"net/http"
-	"time"
 )
 
 type registerProcess struct {

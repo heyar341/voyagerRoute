@@ -1,14 +1,15 @@
 package profile
 
 import (
+	"app/controllers"
 	"app/cookiehandler"
 	"app/customerr"
-	"app/controllers"
 	"app/model"
 	"fmt"
-	"golang.org/x/crypto/bcrypt"
 	"log"
 	"net/http"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 const REDIRECT_URI_TO_UPDATE_PASSWORD_FORM = "/profile/password_edit_form"

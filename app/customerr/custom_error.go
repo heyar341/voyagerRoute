@@ -1,6 +1,5 @@
 package customerr
 
-
 type BaseErr struct {
 	Op  string
 	Msg string

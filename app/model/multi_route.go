@@ -2,15 +2,16 @@ package model
 
 import (
 	"app/dbhandler"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type Route struct {
 	GeocodedWaypoints []map[string]interface{} `json:"geocoded_waypoints" bson:"geocoded_waypoints"`
-	Request map[string]interface{} `json:"request" bson:"request"`
-	Routes []map[string]interface{} `json:"routes" bson:"routes"`
-	Status string `json:"status" bson:"status"`
+	Request           map[string]interface{}   `json:"request" bson:"request"`
+	Routes            []map[string]interface{} `json:"routes" bson:"routes"`
+	Status            string                   `json:"status" bson:"status"`
 }
 
 type MultiRoute struct {
@@ -29,7 +30,7 @@ func (m *MultiRoute) SaveRoute(userID primitive.ObjectID) error {
 	return err
 }
 
-func (m *MultiRoute) UpdateRoute() error{
+func (m *MultiRoute) UpdateRoute() error {
 	//routes collectionに保存
 	routeDoc := bson.M{"_id": m.ID}
 	updateDoc := bson.D{
@@ -40,10 +41,9 @@ func (m *MultiRoute) UpdateRoute() error{
 	return err
 }
 
-
-func FindRoute(userID primitive.ObjectID, title string) (bson.M, error){
+func FindRoute(userID primitive.ObjectID, title string) (bson.M, error) {
 	//routes collectionから取得
-	routeDoc := bson.D{{"user_id",userID}, {"title",title}}
+	routeDoc := bson.D{{"user_id", userID}, {"title", title}}
 	r, err := dbhandler.Find("googroutes", "routes", routeDoc, nil)
 	return r, err
 }

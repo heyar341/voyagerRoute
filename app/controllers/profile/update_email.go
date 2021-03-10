@@ -7,12 +7,13 @@ import (
 	"app/mailhandler"
 	"app/model"
 	"fmt"
-	"github.com/google/uuid"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/google/uuid"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 const REDIRECT_URI_TO_UPDATE_EMAIL_FORM = "/profile/email_edit_form"

@@ -4,10 +4,11 @@ import (
 	"app/controllers/auth"
 	"app/model"
 	"context"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"log"
 	"net/http"
+
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func Auth(next http.HandlerFunc) http.HandlerFunc {
