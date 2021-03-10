@@ -1,6 +1,7 @@
 package reqvalidator
 
 import (
+	"app/controllers"
 	"app/controllers/multiroute"
 	"app/customerr"
 	"app/model"
@@ -15,17 +16,6 @@ import (
 
 type multiRouteValidator struct {
 	err error
-}
-
-func (m *multiRouteValidator) checkHTTPMethod(req *http.Request) {
-	if req.Header.Get("Content-Type") != "application/json" || req.Method != "POST" {
-		m.err = customerr.BaseErr{
-			Op:  "check HTTP method",
-			Msg: "HTTPメソッドが不正です。",
-			Err: fmt.Errorf("invalid HTTP method access"),
-		}
-		return
-	}
 }
 
 func (m *multiRouteValidator) convertJSONToStruct(req *http.Request, reqFields interface{}) {
@@ -61,7 +51,7 @@ func (m *multiRouteValidator) checkContainedChar(title string) {
 func SaveRoutesValidator(SaveRoutes http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		var m multiRouteValidator
-		m.checkHTTPMethod(req)
+		m.err = controllers.CheckHTTPMethod(req)
 		//convertJSONToStructの第２引数はinterfaceなので、変数を宣言してポインタを渡す必要がある
 		var reqFields model.MultiRoute
 		m.convertJSONToStruct(req, &reqFields)
