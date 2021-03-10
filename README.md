@@ -38,9 +38,13 @@
 * Docker, docker-compose
 
 ### インフラ
-
-* GAE(Google Cloud App Engine)
-* MongoDB Atlas
+* ### GCP
+    * App Engine
+    * Cloud Build
+    * Cloud Storage
+    
+* ### DB
+    * MongoDB Atlas
 
 ### 使用API
 
@@ -53,7 +57,6 @@
 
 ### 導入検討中技術
 * Kubernetes
-* CircleCI
 
 ## 今後の追加予定機能
 
