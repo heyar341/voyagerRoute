@@ -1,125 +1,250 @@
 package profile
 
 import (
-	"app/dbhandler"
+	"app/cookiehandler"
+	"app/customerr"
 	"app/mailhandler"
 	"app/model"
+	"fmt"
 	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 	"log"
 	"net/http"
-	"net/url"
 	"time"
 )
 
-func UpdateEmail(w http.ResponseWriter, req *http.Request) {
-	msg := "エラーが発生しました。もう一度操作を行ってください。"
+const REDIRECT_URI_TO_UPDATE_EMAIL_FORM = "/profile/email_edit_form"
+
+type updateEmailProcess struct {
+	user     model.User
+	newEmail string
+	err      error
+}
+
+//checkHTTPMethod checks HTTP method
+func (u *updateEmailProcess) checkHTTPMethod(req *http.Request) {
 	if req.Method != "POST" {
-		msg = "リクエストメソッドが不正です。"
-		http.Redirect(w, req, "/profile/username_edit_form/?msg="+msg, http.StatusInternalServerError)
+		u.err = customerr.BaseErr{
+			Op:  "check HTTP method",
+			Msg: "HTTPメソッドが不正です。",
+			Err: fmt.Errorf("invalid HTTP access method"),
+		}
 	}
-	//Auth middlewareからuserIDを取得
-	user, ok := req.Context().Value("user").(model.UserData)
-	if !ok {
-		http.Redirect(w, req, "/profile/email_edit_form/?msg="+msg, http.StatusSeeOther)
-		log.Printf("Error while getting userID from reuest's context: %v", ok)
+}
+
+//getUserFromCtx gets user from request's context
+func (u *updateEmailProcess) getUserFromCtx(req *http.Request) {
+	if u.err != nil {
 		return
 	}
+	user, ok := req.Context().Value("user").(model.User)
+	if !ok {
+		u.err = customerr.BaseErr{
+			Op:  "get user from request's context",
+			Msg: "エラーが発生しました。",
+			Err: fmt.Errorf("error while getting user from reuest's context"),
+		}
+		return
+	}
+	u.user = user
+}
 
+//getEmailFromForm gets email from request's form
+func (u *updateEmailProcess) getEmailFromForm(req *http.Request) {
+	if u.err != nil {
+		return
+	}
 	newEmail := req.FormValue("email")
 	if !mailhandler.IsEmailValid(newEmail) {
-		msg = url.QueryEscape("メールアドレスに不備があります。")
-		http.Redirect(w, req, "/profile/email_edit_form/?msg="+msg+"&newEmail="+url.QueryEscape(newEmail), http.StatusSeeOther)
+		u.err = customerr.BaseErr{
+			Op:  "check email address's validity",
+			Msg: "メールアドレスに不備があります。",
+			Err: fmt.Errorf("request email was invalid %v", newEmail),
+		}
 		return
 	}
+	u.newEmail = newEmail
+}
 
+//saveEditingEmail saves editing email to DB
+func (u *updateEmailProcess) saveEditingEmail(token string) {
+	if u.err != nil {
+		return
+	}
+	err := model.SaveEditingEmail(u.newEmail, token)
+	if err != nil {
+		u.err = customerr.BaseErr{
+			Op:  "Saving editing email to DB",
+			Msg: "エラーが発生しました。",
+			Err: fmt.Errorf("error while inserting editing email to editing_email collection %w", err),
+		}
+		return
+	}
+}
+
+func UpdateEmail(w http.ResponseWriter, req *http.Request) {
+	var u updateEmailProcess
+	u.checkHTTPMethod(req)
+	u.getUserFromCtx(req)
+	u.getEmailFromForm(req)
 	//メールアドレス認証用のトークンを作成
 	token := uuid.New().String()
+	u.saveEditingEmail(token)
 
-	//emailを仮変更としてDBに保存
-	//保存するドキュメント
-	editingDoc := bson.D{
-		{"email", newEmail},
-		{"expires_at", time.Now().Add(1 * time.Hour).Unix()},
-		{"token", token},
-	}
-	//editing_email collectionに保存
-	_, err := dbhandler.Insert("googroutes", "editing_email", editingDoc)
-	if err != nil {
-		http.Redirect(w, req, "/profile/email_edit_form/?msg="+msg+"&email="+url.QueryEscape(newEmail), http.StatusSeeOther)
-		log.Println(err)
+	if u.err != nil {
+		e := u.err.(customerr.BaseErr)
+		cookiehandler.MakeCookieAndRedirect(w, req, "msg", e.Msg, REDIRECT_URI_TO_UPDATE_EMAIL_FORM)
+		log.Printf("operation: %s, error: %v", e.Op, e.Err)
 		return
 	}
-	//メール送信に少し時間がかかるので、認証依頼画面表示を先に処理
+	//認証依頼画面表示
 	http.Redirect(w, req, "/ask_confirm", http.StatusSeeOther)
 
-	//「メールでトークン付きのURLを送る」
-	mailhandler.SendConfirmEmail(token, newEmail, user.UserName)
+	//メールでトークン付きのURLを送る
+	err := mailhandler.SendConfirmEmail(token, u.newEmail, u.user.UserName, "confirm_email")
+	return
 	if err != nil {
 		log.Printf("Error while sending email at registering: %v", err)
 	}
 
 }
 
-func ConfirmUpdateEmail(w http.ResponseWriter, req *http.Request) {
-	msg := url.QueryEscape("エラーが発生しました。もう一度操作を行ってください。")
-	//Auth middlewareからuserIDを取得
-	user, ok := req.Context().Value("user").(model.UserData)
+type confirmUpdateEmail struct {
+	userID       primitive.ObjectID
+	editingEmail model.EditingEmail
+	token        string
+	err          error
+}
+
+//getUserFromCtx gets user from request's context
+func (c *confirmUpdateEmail) getUserFromCtx(req *http.Request) {
+	user, ok := req.Context().Value("user").(model.User)
 	if !ok {
-		http.Redirect(w, req, "/profile/email_edit_form/?msg="+msg, http.StatusSeeOther)
-		log.Printf("Error while getting userID from reuest's context: %v", ok)
+		log.Printf(": %v", ok)
+		c.err = customerr.BaseErr{
+			Op:  "get user from request's context",
+			Msg: "エラーが発生しました。",
+			Err: fmt.Errorf("error while getting user from reuest's context"),
+		}
+	}
+	c.userID = user.ID
+}
+
+//getTokenFromURL gets token from URL parameter
+func (c *confirmUpdateEmail) getTokenFromURL(req *http.Request) {
+	if c.err != nil {
 		return
 	}
-	userID := user.ID
-
-	//メール認証トークンをリクエストURLから取得
 	token := req.URL.Query()["token"][0]
 	if token == "" {
-		msg = "トークン情報が不正です。"
-		http.Redirect(w, req, "/?msg=", http.StatusSeeOther)
-		return
+		c.err = customerr.BaseErr{
+			Op:  "get token form URL",
+			Msg: "トークン情報が不正です。",
+			Err: fmt.Errorf("token was empty"),
+		}
 	}
+	c.token = token
+}
 
-	//このtokenはメール認証用でjwtを使ってないからParseTokenは呼び出さなくていい
-
-	//取得するドキュメントの条件
-	tokenDoc := bson.D{{"token", token}}
-	//DBから取得
-	em, err := dbhandler.Find("googroutes", "editing_email", tokenDoc, nil)
+//getEditingEmailDocFromDB fetch editing email from DB
+func (c *confirmUpdateEmail) getEditingEmailDocFromDB() bson.M {
+	if c.err != nil {
+		return nil
+	}
+	d, err := model.GetEditingEmailDoc(c.token)
 	if err != nil {
-		msg = url.QueryEscape("認証トークンが一致しません。")
-		http.Redirect(w, req, "/?msg="+msg, http.StatusSeeOther)
-		return
+		switch err {
+		case mongo.ErrNoDocuments:
+			c.err = customerr.BaseErr{
+				Op:  "get editing email document form DB",
+				Msg: "認証トークンが一致しません。",
+				Err: fmt.Errorf("token was invalid: %w", err),
+			}
+		default:
+			c.err = customerr.BaseErr{
+				Op:  "get editing email document form DB",
+				Msg: "エラーが発生しました。",
+				Err: fmt.Errorf("error while finding editing email document from editing_email collection %w", err),
+			}
+		}
+		return nil
 	}
+	return d
+}
 
-	newEmail := em["email"]
-	expiresUnix, ok := em["expires_at"].(int64)
-	if !ok {
-		msg = url.QueryEscape("データの処理中にエラーが発生しました。申し訳ありませんが、もう一度メールアドレス変更のお手続きをしてください。")
-		http.Redirect(w, req, "/profile/email_edit_form/?msg="+msg, http.StatusSeeOther)
-		log.Printf("Error while type asserting token's expires time")
+//convertBSONToStruct converts editing email document to struct
+func (c *confirmUpdateEmail) convertBSONToStruct(d bson.M) {
+	if c.err != nil {
 		return
 	}
-	expires := time.Unix(expiresUnix, 0) //time.Time
-
-	//トークンの有効期限を確認
-	if expires.After(time.Now()) {
-		msg = url.QueryEscape("トークンの有効期限が切れています。もう一度メールアドレス変更のお手続きをしてください。")
-		http.Redirect(w, req, "/profile/email_edit_form/?msg="+msg, http.StatusSeeOther)
-		log.Printf("Editing_email token of %v is expired", newEmail)
-		return
-	}
-	//user documentを更新
-	userDoc := bson.M{"_id": userID}
-	updateDoc := bson.D{{"email", newEmail}}
-	err = dbhandler.UpdateOne("googroutes", "users", "$set", userDoc, updateDoc)
+	b, err := bson.Marshal(d)
 	if err != nil {
-		msg = url.QueryEscape("データの処理中にエラーが発生しました。申し訳ありませんが、もう一度メールアドレス変更のお手続きをしてください。")
-		http.Redirect(w, req, "/profile/email_edit_form/?msg="+msg, http.StatusSeeOther)
-		log.Printf("Error while updating email: %v", err)
+		c.err = customerr.BaseErr{
+			Op:  "bson marshal editing_email document",
+			Msg: "エラーが発生しました。",
+			Err: fmt.Errorf("error while bson marshaling editing_email document: %w", err),
+		}
 		return
 	}
+	err = bson.Unmarshal(b, &c.editingEmail)
+	if err != nil {
+		c.err = customerr.BaseErr{
+			Op:  "bson unmarshal editing_email []byte document",
+			Msg: "エラーが発生しました。",
+			Err: fmt.Errorf("error while bson unmarshaling []byte editing_email document: %w", err),
+		}
+		return
+	}
+}
 
-	success := url.QueryEscape("メールアドレスの変更が完了しました。")
-	http.Redirect(w, req, "/profile/?success="+success, http.StatusSeeOther)
+//checkTokenExpire checks if token expires or not
+func (c *confirmUpdateEmail) checkTokenExpire() {
+	if c.err != nil {
+		return
+	}
+	t := time.Unix(c.editingEmail.ExpiresAt, 0)
+	if !t.After(time.Now()) {
+		c.err = customerr.BaseErr{
+			Op:  "check if token expires or not",
+			Msg: "トークンの有効期限が切れています。もう一度メールアドレス変更のお手続きをしてください。",
+			Err: fmt.Errorf("token expired"),
+		}
+		return
+	}
+}
+
+//updateUserEmail updates email field in user document
+func (c *confirmUpdateEmail) updateUserEmail() {
+	if c.err != nil {
+		return
+	}
+	err := model.UpdateUser(c.userID, "email", c.editingEmail.Email)
+	if err != nil {
+		c.err = customerr.BaseErr{
+			Op:  "update use document's email field",
+			Msg: "メールアドレスの更新に失敗しました。",
+			Err: fmt.Errorf("err while updating email field in user document: %w", err),
+		}
+		return
+	}
+}
+
+func ConfirmUpdateEmail(w http.ResponseWriter, req *http.Request) {
+	var c confirmUpdateEmail
+	c.getUserFromCtx(req)
+	c.getTokenFromURL(req)
+	d := c.getEditingEmailDocFromDB()
+	c.convertBSONToStruct(d)
+	c.checkTokenExpire()
+	c.updateUserEmail()
+
+	if c.err != nil {
+		e := c.err.(customerr.BaseErr)
+		cookiehandler.MakeCookieAndRedirect(w, req, "msg", e.Msg, REDIRECT_URI_TO_UPDATE_EMAIL_FORM)
+		log.Printf("operation: %s, error: %v", e.Op, e.Err)
+		return
+	}
+	cookiehandler.MakeCookieAndRedirect(w, req, "success¬", "メールアドレスの変更が完了しました。", "/profile")
 }

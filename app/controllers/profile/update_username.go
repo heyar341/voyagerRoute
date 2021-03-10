@@ -1,48 +1,97 @@
 package profile
 
 import (
-	"app/dbhandler"
+	"app/cookiehandler"
+	"app/customerr"
 	"app/model"
-	"go.mongodb.org/mongo-driver/bson"
+	"fmt"
 	"log"
 	"net/http"
-	"net/url"
 )
 
-func UpdateUserName(w http.ResponseWriter, req *http.Request) {
+type updateUserName struct {
+	user        model.User
+	newUserName string
+	err         error
+}
+
+const REDIRECT_URI_TO_UPDATE_USERNAME_FORM = "/profile/username_edit_form"
+
+//checkHTTPMethod checks if HTTP method is POST or not.
+func (uU *updateUserName) checkHTTPMethod(req *http.Request) {
 	if req.Method != "POST" {
-		msg := url.QueryEscape("リクエストメソッドが不正です。")
-		http.Redirect(w, req, "/profile/username_edit_form/?msg="+msg, http.StatusInternalServerError)
+		uU.err = customerr.BaseErr{
+			Op:  "check HTTP method",
+			Msg: "HTTPメソッドが不正です。",
+			Err: fmt.Errorf("invalid HTTP access method"),
+		}
 	}
-	//Auth middlewareからuserIDを取得
-	user, ok := req.Context().Value("user").(model.UserData)
+}
+
+//getUserFromCtx gets user from Auth middleware.
+func (uU *updateUserName) getUserFromCtx(req *http.Request) {
+	if uU.err != nil {
+		return
+	}
+	user, ok := req.Context().Value("user").(model.User)
 	if !ok {
-		msg := url.QueryEscape("エラーが発生しました。もう一度操作を行ってください。")
-		http.Redirect(w, req, "/profile/username_edit_form/?msg="+msg, http.StatusInternalServerError)
-		log.Printf("Error while getting userID from reuest's context: %v", ok)
+		uU.err = customerr.BaseErr{
+			Op:  "get user from request's context",
+			Msg: "エラーが発生しました。",
+			Err: fmt.Errorf("error while getting user from reuest's context"),
+		}
 		return
 	}
-	userID := user.ID
+	uU.user = user
+}
 
+//getUserNameFromForm gets username from request form.
+func (uU *updateUserName) getUserNameFromForm(req *http.Request) {
+	if uU.err != nil {
+		return
+	}
 	newUserName := req.FormValue("username")
+
 	if newUserName == "" {
-		msg := url.QueryEscape("ユーザー名は１文字以上入力してください。")
-		http.Redirect(w, req, "/profile/username_edit_form/?msg="+msg, http.StatusInternalServerError)
-		log.Printf("Error while getting userID from reuest's context: %v", ok)
+		uU.err = customerr.BaseErr{
+			Op:  "get username from request form",
+			Msg: "ユーザー名は１文字以上入力してください。",
+			Err: fmt.Errorf("request's username was empty"),
+		}
 		return
 	}
+	uU.newUserName = newUserName
+}
 
-	//user documentを更新
-	userDoc := bson.M{"_id": userID}
-	updateDoc := bson.D{{"username", newUserName}}
-	err := dbhandler.UpdateOne("googroutes", "users", "$set", userDoc, updateDoc)
+//updateUserName updates user document's username field.
+func (uU *updateUserName) updateUserName() {
+	if uU.err != nil {
+		return
+	}
+	err := model.UpdateUser(uU.user.ID, "username", uU.newUserName)
 	if err != nil {
-		msg := url.QueryEscape("エラーが発生しました。もう一度操作を行ってください。")
-		http.Redirect(w, req, "/profile/username_edit_form/?msg="+msg, http.StatusInternalServerError)
-		log.Printf("Error while saving multi route: %v", err)
+		uU.err = customerr.BaseErr{
+			Op:  "Saving editing email to DB",
+			Msg: "エラーが発生しました。",
+			Err: fmt.Errorf("error while inserting editing email to editing_email collection %w", err),
+		}
+		return
+	}
+}
+
+func UpdateUserName(w http.ResponseWriter, req *http.Request) {
+	var uU updateUserName
+	uU.checkHTTPMethod(req)
+	uU.getUserFromCtx(req)
+	uU.getUserNameFromForm(req)
+	uU.updateUserName()
+
+	if uU.err != nil {
+		e := uU.err.(customerr.BaseErr)
+		cookiehandler.MakeCookieAndRedirect(w, req, "msg", e.Msg, REDIRECT_URI_TO_UPDATE_USERNAME_FORM)
+		log.Printf("operation: %s, error: %v", e.Op, e.Err)
 		return
 	}
 
-	success := url.QueryEscape("ユーザー名を変更しました。")
-	http.Redirect(w, req, "/profile/?success="+success, http.StatusSeeOther)
+	cookiehandler.MakeCookieAndRedirect(w, req, "success", "ユーザー名を変更しました。", "/profile")
 }

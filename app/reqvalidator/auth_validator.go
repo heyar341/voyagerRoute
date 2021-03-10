@@ -1,56 +1,118 @@
 package reqvalidator
 
 import (
+	"app/cookiehandler"
+	"app/customerr"
 	"app/mailhandler"
 	"context"
+	"fmt"
+	"log"
 	"net/http"
-	"net/url"
 )
+
+type authValidator struct {
+	username string
+	email    string
+	password string
+	err      error
+}
+
+func (a *authValidator) checkHTTPMethod(req *http.Request) {
+	if req.Method != "POST" {
+		a.err = customerr.BaseErr{
+			Op:  "checking HTTP method",
+			Msg: "HTTPメソッドが不正です。",
+			Err: fmt.Errorf("invalid HTTP method access"),
+		}
+	}
+}
+
+func (a *authValidator) getUserName(req *http.Request) {
+	if a.err != nil {
+		return
+	}
+	userName := req.FormValue("username")
+	if userName == "" {
+		a.err = customerr.BaseErr{
+			Op:  "get username from request form",
+			Msg: "ユーザー名を入力してください。",
+			Err: fmt.Errorf("username was empty"),
+		}
+	}
+	a.username = userName
+}
+
+func (a *authValidator) getEmail(req *http.Request) {
+	if a.err != nil {
+		return
+	}
+	email := req.FormValue("email")
+	if email == "" {
+		a.err = customerr.BaseErr{
+			Op:  "get email from request form",
+			Msg: "メールアドレスを入力してください。",
+			Err: fmt.Errorf("email was empty"),
+		}
+	}
+	a.email = email
+}
+
+func (a *authValidator) getPassword(req *http.Request) {
+	if a.err != nil {
+		return
+	}
+	password := req.FormValue("password")
+	if password == "" {
+		a.err = customerr.BaseErr{
+			Op:  "get password from request form",
+			Msg: "パスワードを入力してください。",
+			Err: fmt.Errorf("password was empty"),
+		}
+	} else if len(password) < 8 {
+		a.err = customerr.BaseErr{
+			Op:  "get password from request form",
+			Msg: "パスワードは８文字以上入力してください。",
+			Err: fmt.Errorf("password was empty"),
+		}
+	}
+	a.password = password
+}
+
+//正規表現によるメールアドレスの形式チェック、およびアドレスドメインの有効性チェックを行う
+func (a *authValidator) checkEmail(email string) {
+	if a.err != nil {
+		return
+	}
+	if !mailhandler.IsEmailValid(email) {
+		a.err = customerr.BaseErr{
+			Op:  "check validity email syntax and domain",
+			Msg: "メールアドレスに不備があります。",
+			Err: fmt.Errorf("invalid email"),
+		}
+	}
+}
 
 func RegisterValidator(Register http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-		if req.Method != "POST" {
-			msg := url.QueryEscape("HTTPメソッドが不正です。")
-			http.Redirect(w, req, "/register_form/?msg="+msg, http.StatusSeeOther)
-			return
-		}
-		//ユーザー名をリクエストから取得
-		userName := req.FormValue("username")
-		//メールアドレスをリクエストから取得
-		email := req.FormValue("email")
-		u := url.QueryEscape(userName)
-		m := url.QueryEscape(email)
-		if userName == "" {
-			msg := url.QueryEscape("ユーザー名を入力してください。")
-			http.Redirect(w, req, "/register_form/?msg="+msg+"&username="+u+"&email="+m, http.StatusSeeOther)
-			return
-		}
-		if email == "" {
-			msg := url.QueryEscape("メールアドレスを入力してください。")
-			http.Redirect(w, req, "/register_form/?msg="+msg+"&username="+u+"&email="+m, http.StatusSeeOther)
-			return
-		} else if !mailhandler.IsEmailValid(email) {
-			msg := url.QueryEscape("メールアドレスに不備があります。")
-			http.Redirect(w, req, "/register_form/?msg="+msg+"&username="+u+"&email="+m, http.StatusSeeOther)
-			return
-		}
-		//パスワードをリクエストから取得
-		password := req.FormValue("password")
-		if password == "" {
-			msg := url.QueryEscape("パスワードを入力してください。")
-			http.Redirect(w, req, "/register_form/?msg="+msg+"&username="+u+"&email="+m, http.StatusSeeOther)
-			return
-		} else if len(password) < 8 {
-			msg := url.QueryEscape("パスワードは8文字以上で入力してください。")
-			http.Redirect(w, req, "/register_form/?msg="+msg+"&username="+u+"&email="+m, http.StatusSeeOther)
+		var a authValidator
+		a.checkHTTPMethod(req)
+		a.getUserName(req)
+		a.getEmail(req)
+		a.checkEmail(a.email)
+		a.getPassword(req)
+
+		if a.err != nil {
+			e := a.err.(customerr.BaseErr)
+			cookiehandler.MakeCookieAndRedirect(w, req, "msg", e.Msg, "/register_form")
+			log.Printf("operation: %s, error: %v", e.Op, e.Err)
 			return
 		}
 
 		//contextに各フィールドの値を追加
 		ctx := req.Context()
-		ctx = context.WithValue(ctx, "username", userName)
-		ctx = context.WithValue(ctx, "email", email)
-		ctx = context.WithValue(ctx, "password", password)
+		ctx = context.WithValue(ctx, "username", a.username)
+		ctx = context.WithValue(ctx, "email", a.email)
+		ctx = context.WithValue(ctx, "password", a.password)
 
 		Register.ServeHTTP(w, req.WithContext(ctx))
 	}
@@ -58,32 +120,22 @@ func RegisterValidator(Register http.HandlerFunc) http.HandlerFunc {
 
 func LoginValidator(Login http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-		if req.Method != "POST" {
-			msg := url.QueryEscape("HTTPメソッドが不正です。")
-			http.Redirect(w, req, "/login_form/?msg="+msg, http.StatusFound)
-			return
-		}
-		//メールアドレスをリクエストから取得
-		email := req.FormValue("email")
-		if email == "" {
-			msg := url.QueryEscape("メールアドレスを入力してください。")
-			http.Redirect(w, req, "/login_form/?msg="+msg, http.StatusSeeOther)
-			return
-		}
-		//パスワードをリクエストから取得
-		password := req.FormValue("password")
-		if password == "" {
-			msg := url.QueryEscape("パスワードを入力してください。")
-			//入力されたメールアドレスを保持する
-			email = url.QueryEscape(email)
-			http.Redirect(w, req, "/login_form/?msg="+msg+"&email="+email, http.StatusSeeOther)
+		var a authValidator
+		a.checkHTTPMethod(req)
+		a.getEmail(req)
+		a.getPassword(req)
+
+		if a.err != nil {
+			e := a.err.(customerr.BaseErr)
+			cookiehandler.MakeCookieAndRedirect(w, req, "msg", e.Msg, "/login_form")
+			log.Printf("operation: %s, error: %v", e.Op, e.Err)
 			return
 		}
 
 		//contextに各フィールドの値を追加
 		ctx := req.Context()
-		ctx = context.WithValue(ctx, "email", email)
-		ctx = context.WithValue(ctx, "password", password)
+		ctx = context.WithValue(ctx, "email", a.email)
+		ctx = context.WithValue(ctx, "password", a.password)
 
 		Login.ServeHTTP(w, req.WithContext(ctx))
 	}

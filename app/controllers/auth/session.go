@@ -1,9 +1,8 @@
 package auth
 
 import (
-	"app/dbhandler"
+	"app/model"
 	"github.com/google/uuid"
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"log"
 	"net/http"
@@ -13,11 +12,7 @@ func genNewSession(userID primitive.ObjectID, w http.ResponseWriter) error {
 	//固有のセッションIDを作成
 	sessionID := uuid.New().String()
 	//sessionをDBに保存
-	sessionDoc := bson.D{
-		{"session_id", sessionID},
-		{"user_id", userID},
-	}
-	_, err := dbhandler.Insert("googroutes", "sessions", sessionDoc)
+	err := model.CreateNewSession(sessionID, userID)
 	if err != nil {
 		log.Printf("Error while inserting session data: %v", err)
 		return err

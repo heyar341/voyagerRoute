@@ -1,71 +1,99 @@
 package mypage
 
 import (
-	"app/model"
+	"app/cookiehandler"
+	"app/customerr"
+	"app/tplutil"
+	"encoding/base64"
 	"html/template"
 	"log"
 	"net/http"
-	"net/url"
 )
 
 var mypageTpl *template.Template
-
-//エラーメッセージ
-var msg string
 
 func init() {
 	mypageTpl = template.Must(template.Must(template.ParseGlob("templates/mypage/*.html")).ParseGlob("templates/includes/*.html"))
 }
 
-func ShowMypage(w http.ResponseWriter, req *http.Request) {
-	msg = url.QueryEscape("エラ〜が発生しました。もう一度操作しなおしてください。")
-	data, ok := req.Context().Value("data").(map[string]interface{})
-	if !ok {
-		http.Redirect(w, req, "/?msg="+msg, http.StatusSeeOther)
-		log.Printf("Error while getting data from context: %v", ok)
+func processCookie(w http.ResponseWriter, c *http.Cookie, data map[string]interface{}) {
+	b64Str, err := base64.StdEncoding.DecodeString(c.Value)
+	if err != nil {
+		mypageTpl.ExecuteTemplate(w, "show_routes.html", data)
 		return
 	}
-	user, ok := req.Context().Value("user").(model.UserData)
-	if !ok {
-		http.Redirect(w, req, "/?msg="+msg, http.StatusSeeOther)
-		log.Printf("Error while getting user from context: %v", ok)
-		return
-	}
-	data["userName"] = user.UserName
-	mypageTpl.ExecuteTemplate(w, "mypage.html", data)
-}
-
-func ShowAllRoutes(w http.ResponseWriter, req *http.Request) {
-	msg = url.QueryEscape("エラ〜が発生しました。もう一度操作しなおしてください。")
-	data, ok := req.Context().Value("data").(map[string]interface{})
-	if !ok {
-		http.Redirect(w, req, "/mypage/?msg="+msg, http.StatusSeeOther)
-		log.Printf("Error while getting data from context: %v", ok)
-		return
-	}
-	user, ok := req.Context().Value("user").(model.UserData)
-	if !ok {
-		http.Redirect(w, req, "/mypage/?msg="+msg, http.StatusSeeOther)
-		log.Printf("Error while getting user from context: %v", ok)
-		return
-	}
-	titleNames := RouteTitles(user.ID)
-	data["userName"] = user.UserName
-	data["titles"] = titleNames
-	//ルートの確認画面に飛べないエラーが発生した場合用
-	data["msg"] = req.URL.Query().Get("msg")
-	data["success"] = req.URL.Query().Get("success")
+	data[c.Name] = string(b64Str)
 	mypageTpl.ExecuteTemplate(w, "show_routes.html", data)
 }
 
-func ConfirmDelete(w http.ResponseWriter, req *http.Request) {
-	data, ok := req.Context().Value("data").(map[string]interface{})
-	if !ok {
-		msg = url.QueryEscape("エラ〜が発生しました。もう一度操作しなおしてください。")
-		http.Redirect(w, req, "/mypage/show_routes/?msg="+msg, http.StatusSeeOther)
-		log.Printf("Error while getting data from context: %v", ok)
+func ShowMypage(w http.ResponseWriter, req *http.Request) {
+	t := tplutil.GetTplData(req)
+	if t.Err != nil {
+		e := t.Err.(customerr.BaseErr)
+		cookiehandler.MakeCookieAndRedirect(w, req, "msg", e.Msg, "/")
+		log.Printf("operation: %s, error: %v", e.Op, e.Err)
 		return
 	}
-	data["title"] = req.FormValue("title")
-	mypageTpl.ExecuteTemplate(w, "confirm_delete.html", data)
+
+	t.Data["userName"] = t.User.UserName
+	c, err := req.Cookie("msg")
+	if err != nil {
+		mypageTpl.ExecuteTemplate(w, "mypage.html", t.Data)
+		return
+	}
+	t.Data["msg"] = c.Value
+	mypageTpl.ExecuteTemplate(w, "mypage.html", t.Data)
+}
+
+func ShowAllRoutes(w http.ResponseWriter, req *http.Request) {
+	t := tplutil.GetTplData(req)
+	if t.Err != nil {
+		e := t.Err.(customerr.BaseErr)
+		cookiehandler.MakeCookieAndRedirect(w, req, "msg", e.Msg, "/mypage")
+		log.Printf("operation: %s, error: %v", e.Op, e.Err)
+		return
+	}
+	titleNames := routeTitles(t.User.ID)
+	t.Data["userName"] = t.User.UserName
+	t.Data["titles"] = titleNames
+
+	//successメッセージがある場合
+	c, err := req.Cookie("success")
+	if err == nil {
+		processCookie(w, c, t.Data)
+		return
+	}
+	//エラーメッセージがある場合
+	c, err = req.Cookie("msg")
+	if err == nil {
+		processCookie(w, c, t.Data)
+		return
+	}
+
+	mypageTpl.ExecuteTemplate(w, "show_routes.html", t.Data)
+}
+
+func ConfirmDelete(w http.ResponseWriter, req *http.Request) {
+	t := tplutil.GetTplData(req)
+	if t.Err != nil {
+		e := t.Err.(customerr.BaseErr)
+		cookiehandler.MakeCookieAndRedirect(w, req, "msg", e.Msg, "/mypage/show_routes")
+		log.Printf("operation: %s, error: %v", e.Op, e.Err)
+		return
+	}
+	t.Data["title"] = req.FormValue("title")
+	mypageTpl.ExecuteTemplate(w, "confirm_delete.html", t.Data)
+}
+
+func ShowQuestionForm(w http.ResponseWriter, req *http.Request) {
+	t := tplutil.GetTplData(req)
+	if t.Err != nil {
+		e := t.Err.(customerr.BaseErr)
+		cookiehandler.MakeCookieAndRedirect(w, req, "msg", e.Msg, "/mypage")
+		log.Printf("operation: %s, error: %v", e.Op, e.Err)
+		return
+	}
+	t.Data["userName"] = t.User.UserName
+	t.Data["email"] = t.User.Email
+	mypageTpl.ExecuteTemplate(w, "question_form.html", t.Data)
 }

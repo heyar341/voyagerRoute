@@ -57,3 +57,7 @@ dbhandler.UpdateOne("googroutes", "users", "$unset", userDoc, deleteField)
 
   GAE(Google Cloud App Engine)は、サーバー側でTLS処理をしてくれるから、ListenAndServeTLS
 を使わないでListenAndServeを使えばいい
+
+　API KeyがHTML内に表示されないよう、Javascriptから、APIの実行ファイルを取得するよう変更したが、
+Developperツールでファイル取得時のレスポンスでAPI Keyが発見されたので、完全にAPI Keyを秘密にするのは
+不可能そう

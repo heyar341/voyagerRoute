@@ -1,8 +1,7 @@
 package mypage
 
 import (
-	"app/dbhandler"
-	"go.mongodb.org/mongo-driver/bson"
+	"app/model"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"log"
 	"sort"
@@ -23,23 +22,21 @@ func (t TitileSlice) Swap(i, j int) { t[i], t[j] = t[j], t[i] }
 //TimestampのAfterメソッドで、ソート時に最新のタイトルが先頭に来るようにする
 func (t TitileSlice) Less(i, j int) bool { return t[i].TimeStamp.After(t[j].TimeStamp) }
 
-func RouteTitles(userID primitive.ObjectID) []string {
-	userDoc := bson.D{{"_id", userID}}
-	bsonDoc, err := dbhandler.Find("googroutes", "users", userDoc, nil)
+func routeTitles(userID primitive.ObjectID) []string {
+	b, err := model.FindUser("_id", userID)
 	if err != nil {
 		return []string{}
 	}
-
-	titlesM := bsonDoc["multi_route_titles"].(primitive.M) //bson M型 (map[string]interface{})
+	titlesM := b["multi_route_titles"].(primitive.M) //bson M型 (map[string]interface{})
 
 	var titles = make(map[string]time.Time)
 	for title, tStamp := range titlesM {
-		mongoTS, ok := tStamp.(primitive.DateTime)
+		t, ok := tStamp.(primitive.DateTime)
 		if !ok {
 			log.Println("Assertion error at checking timestamp type")
 			return []string{}
 		}
-		timeStamp := mongoTS.Time() //time.Time型に変換
+		timeStamp := t.Time() //time.Time型に変換
 		titles[title] = timeStamp
 	}
 

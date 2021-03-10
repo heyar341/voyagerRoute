@@ -27,11 +27,7 @@
                     <form action="/login" method="POST">
                         <div class="form-group">
                             <label>メールアドレス:</label>
-                            <input type="email" name="email" class="form-control" placeholder="メールアドレスを入力"
-                            {{if .qParams.email}}
-                                value={{index .qParams.email 0}}
-                            {{end}}
-                                   required>
+                            <input type="email" name="email" class="form-control" placeholder="メールアドレスを入力" required>
                         </div> <!-- form-group end.// -->
 
                         <div class="form-group">
