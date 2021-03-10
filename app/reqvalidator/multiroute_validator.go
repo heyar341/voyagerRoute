@@ -74,7 +74,7 @@ func SaveRoutesValidator(SaveRoutes http.HandlerFunc) http.HandlerFunc {
 func UpdateRouteValidator(UpdateRoute http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		var m multiRouteValidator
-		m.checkHTTPMethod(req)
+		m.err = controllers.CheckHTTPMethod(req)
 		//convertJSONToStructの第２引数はinterfaceなので、変数を宣言してポインタを渡す必要がある
 		var reqFields multiroute.RouteUpdateRequest
 		m.convertJSONToStruct(req, &reqFields)
