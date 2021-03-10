@@ -4,8 +4,10 @@ import (
 	"app/customerr"
 	"app/model"
 	"fmt"
-	"go.mongodb.org/mongo-driver/bson"
+	"log"
 	"net/http"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 //CheckHTTPMethod checks HTTP method
@@ -66,4 +68,15 @@ func ConvertDucToStruct(d bson.M, s interface{}, modelName string) error {
 		}
 	}
 	return nil
+}
+
+func GetLoginDataFromCtx(req *http.Request) map[string]interface{} {
+	data, ok := req.Context().Value("data").(map[string]interface{})
+	if !ok {
+		op := "Getting data from context"
+		err := "error while getting data from context"
+		log.Printf("operation: %s, error: %v", op, err)
+		return map[string]interface{}{"isLoggedIn": false}
+	}
+	return data
 }
