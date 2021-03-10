@@ -40,6 +40,7 @@ type editRoute struct {
 	err        error
 }
 
+//getUserID gets userID from request's context
 func (eR *editRoute) getUserID(req *http.Request) {
 	user, ok := req.Context().Value("user").(model.User)
 	if !ok {
@@ -53,11 +54,12 @@ func (eR *editRoute) getUserID(req *http.Request) {
 	eR.userID = user.ID
 }
 
+//getRouteObj gets route document from DB
 func (eR *editRoute) getRouteObj(title string) {
 	if eR.err != nil {
 		return
 	}
-	rBSON, err := model.FindRoute(eR.userID, title)
+	b, err := model.FindRoute(eR.userID, title)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			eR.err = customerr.BaseErr{
@@ -75,10 +77,11 @@ func (eR *editRoute) getRouteObj(title string) {
 			return
 		}
 	}
-	eR.routeBSON = rBSON
+	eR.routeBSON = b
 }
 
-func (eR *editRoute) getModel() {
+//convertDocToStruct converts route document to multiRoute struct
+func (eR *editRoute) convertDocToStruct() {
 	if eR.err != nil {
 		return
 	}
@@ -103,6 +106,7 @@ func (eR *editRoute) getModel() {
 	}
 }
 
+//getJSONObj makes JSON object from multiRoute struct
 func (eR *editRoute) getJSONObj() {
 	if eR.err != nil {
 		return
@@ -121,6 +125,7 @@ func (eR *editRoute) getJSONObj() {
 	eR.routeJSON = string(jsonEnc)
 }
 
+//getDataFromCtx gets data for executing template from request's context
 func (eR *editRoute) getDataFromCtx(req *http.Request) map[string]interface{} {
 	if eR.err != nil {
 		return nil

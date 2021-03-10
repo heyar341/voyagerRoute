@@ -1,8 +1,8 @@
 package multiroute
 
 import (
-	"app/model"
 	"app/customerr"
+	"app/model"
 	"encoding/json"
 	"fmt"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -20,6 +20,7 @@ type RouteUpdateRequest struct {
 	Routes        map[string]model.Route `json:"routes" bson:"routes"`
 }
 
+//getUpdateRoutesInfo gets validated RouteUpdateRequest from context
 func getUpdateRoutesInfo(req *http.Request) (*routesData, string) {
 	reqFields, ok := req.Context().Value("reqFields").(RouteUpdateRequest)
 	if !ok {
@@ -41,6 +42,7 @@ func getUpdateRoutesInfo(req *http.Request) (*routesData, string) {
 	}, reqFields.PreviousTitle
 }
 
+//updateRoute updates route document in routes collection
 func (r *routesData) updateRoute() {
 	if r.err != nil {
 		return
@@ -62,6 +64,7 @@ func (r *routesData) updateRoute() {
 	}
 }
 
+//updateRouteTitles updates timestamp of multi_route_titles field in users collection, and delete previous title if title was changed.
 func (r *routesData) updateRouteTitles(pTitle string) {
 	if r.err != nil {
 		return
@@ -92,7 +95,6 @@ func (r *routesData) updateRouteTitles(pTitle string) {
 		return
 	}
 }
-
 
 //ルートを更新保存するための関数
 func UpdateRoute(w http.ResponseWriter, req *http.Request) {

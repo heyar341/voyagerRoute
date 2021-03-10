@@ -23,6 +23,7 @@ type registerProcess struct {
 	err             error
 }
 
+//getUserName gets user from request form
 func (r *registerProcess) getUserName(req *http.Request) {
 	//Validation完了後のメールアドレスを取得
 	username, ok := req.Context().Value("username").(string)
@@ -37,6 +38,7 @@ func (r *registerProcess) getUserName(req *http.Request) {
 	r.userName = username
 }
 
+//getEmail gets email from request form
 func (r *registerProcess) getEmail(req *http.Request) {
 	//Validation完了後のメールアドレスを取得
 	email, ok := req.Context().Value("email").(string)
@@ -51,6 +53,7 @@ func (r *registerProcess) getEmail(req *http.Request) {
 	r.email = email
 }
 
+//getPassword gets password from request form
 func (r *registerProcess) getPassword(req *http.Request) {
 	if r.err != nil {
 		return
@@ -69,6 +72,7 @@ func (r *registerProcess) getPassword(req *http.Request) {
 	r.password = password
 }
 
+//generateSecuredPassword generates a hashed password
 func (r *registerProcess) generateSecuredPassword() {
 	if r.err != nil {
 		return
@@ -86,6 +90,7 @@ func (r *registerProcess) generateSecuredPassword() {
 	r.securedPassword = securedPassword
 }
 
+//saveRegisteringUser inserts user document to DB
 func (r *registerProcess) saveRegisteringUser(token string) {
 	if r.err != nil {
 		return
@@ -109,7 +114,7 @@ type confirmRegister struct {
 	err             error
 }
 
-//メール認証トークンをリクエストURLから取得
+//getToken gets token from query parameter
 func (cR *confirmRegister) getToken(req *http.Request) {
 	token := req.URL.Query()["token"][0]
 	if token == "" {
@@ -123,6 +128,7 @@ func (cR *confirmRegister) getToken(req *http.Request) {
 	cR.token = token
 }
 
+//findUserByToken fetch user document from DB using token
 func (cR *confirmRegister) findUserByToken() bson.M {
 	if cR.err != nil {
 		return nil
@@ -139,6 +145,7 @@ func (cR *confirmRegister) findUserByToken() bson.M {
 	return d
 }
 
+//convertDucToStruct converts registeringUser document to RegisteringUser struct
 func (cR *confirmRegister) convertDucToStruct(d bson.M) {
 	if cR.err != nil {
 		return
@@ -163,6 +170,7 @@ func (cR *confirmRegister) convertDucToStruct(d bson.M) {
 	}
 }
 
+//checkTokenExpire checks if token expires or not
 func (cR *confirmRegister) checkTokenExpire() {
 	if cR.err != nil {
 		return
@@ -179,6 +187,7 @@ func (cR *confirmRegister) checkTokenExpire() {
 	}
 }
 
+//saveNewUserToDB saves user document to users collection
 func (cR *confirmRegister) saveNewUserToDB() {
 	if cR.err != nil {
 		return
@@ -195,6 +204,7 @@ func (cR *confirmRegister) saveNewUserToDB() {
 	cR.userID = userID
 }
 
+//generateNewSession generates new session
 func (cR *confirmRegister) generateNewSession(w http.ResponseWriter) {
 	if cR.err != nil {
 		return

@@ -18,6 +18,7 @@ type routesData struct {
 	err        error
 }
 
+//getRoutesInfo gets multiRoute from request's context
 func getRoutesInfo(req *http.Request) *routesData {
 	reqFields, ok := req.Context().Value("reqFields").(model.MultiRoute)
 	if !ok {
@@ -35,6 +36,7 @@ func getRoutesInfo(req *http.Request) *routesData {
 	}
 }
 
+//getUserID gets userID from request's context
 func (r *routesData) getUserID(req *http.Request) {
 	if r.err != nil {
 		return
@@ -51,6 +53,7 @@ func (r *routesData) getUserID(req *http.Request) {
 	r.userID = user.ID
 }
 
+//saveRoute saves route document to routes collection
 func (r *routesData) saveRoute() {
 	err := r.routesInfo.SaveRoute(r.userID)
 	if err != nil {
@@ -69,7 +72,7 @@ func (r *routesData) saveRoute() {
 	}
 }
 
-//user documentのmult_route_titlesに新しいルート名とタイムスタンプを追加する関数
+//addRouteTitle adds mult_route_titles field to user document
 func (r *routesData) addRouteTitle() {
 	if r.err != nil {
 		return

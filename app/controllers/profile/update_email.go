@@ -23,6 +23,7 @@ type updateEmailProcess struct {
 	err      error
 }
 
+//checkHTTPMethod checks HTTP method
 func (u *updateEmailProcess) checkHTTPMethod(req *http.Request) {
 	if req.Method != "POST" {
 		u.err = customerr.BaseErr{
@@ -33,7 +34,7 @@ func (u *updateEmailProcess) checkHTTPMethod(req *http.Request) {
 	}
 }
 
-//Auth middlewareからuserIDを取得
+//getUserFromCtx gets user from request's context
 func (u *updateEmailProcess) getUserFromCtx(req *http.Request) {
 	if u.err != nil {
 		return
@@ -50,7 +51,7 @@ func (u *updateEmailProcess) getUserFromCtx(req *http.Request) {
 	u.user = user
 }
 
-//リクエストフォームからメールアドレスを取得
+//getEmailFromForm gets email from request's form
 func (u *updateEmailProcess) getEmailFromForm(req *http.Request) {
 	if u.err != nil {
 		return
@@ -67,7 +68,7 @@ func (u *updateEmailProcess) getEmailFromForm(req *http.Request) {
 	u.newEmail = newEmail
 }
 
-//emailを仮変更としてDBに保存
+//saveEditingEmail saves editing email to DB
 func (u *updateEmailProcess) saveEditingEmail(token string) {
 	if u.err != nil {
 		return
@@ -117,7 +118,7 @@ type confirmUpdateEmail struct {
 	err          error
 }
 
-//Auth middlewareからuserIDを取得
+//getUserFromCtx gets user from request's context
 func (c *confirmUpdateEmail) getUserFromCtx(req *http.Request) {
 	user, ok := req.Context().Value("user").(model.User)
 	if !ok {
@@ -131,7 +132,7 @@ func (c *confirmUpdateEmail) getUserFromCtx(req *http.Request) {
 	c.userID = user.ID
 }
 
-//メール認証トークンをリクエストURLから取得
+//getTokenFromURL gets token from URL parameter
 func (c *confirmUpdateEmail) getTokenFromURL(req *http.Request) {
 	if c.err != nil {
 		return
@@ -147,6 +148,7 @@ func (c *confirmUpdateEmail) getTokenFromURL(req *http.Request) {
 	c.token = token
 }
 
+//getEditingEmailDocFromDB fetch editing email from DB
 func (c *confirmUpdateEmail) getEditingEmailDocFromDB() bson.M {
 	if c.err != nil {
 		return nil
@@ -172,6 +174,7 @@ func (c *confirmUpdateEmail) getEditingEmailDocFromDB() bson.M {
 	return d
 }
 
+//convertBSONToStruct converts editing email document to struct
 func (c *confirmUpdateEmail) convertBSONToStruct(d bson.M) {
 	if c.err != nil {
 		return
@@ -196,7 +199,7 @@ func (c *confirmUpdateEmail) convertBSONToStruct(d bson.M) {
 	}
 }
 
-//トークンの有効期限を確認
+//checkTokenExpire checks if token expires or not
 func (c *confirmUpdateEmail) checkTokenExpire() {
 	if c.err != nil {
 		return
@@ -212,6 +215,7 @@ func (c *confirmUpdateEmail) checkTokenExpire() {
 	}
 }
 
+//updateUserEmail updates email field in user document
 func (c *confirmUpdateEmail) updateUserEmail() {
 	if c.err != nil {
 		return

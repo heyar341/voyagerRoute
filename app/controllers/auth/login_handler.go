@@ -19,6 +19,7 @@ type loginProcess struct {
 	err      error
 }
 
+//getEmail gets email from request form
 func (l *loginProcess) getEmail(req *http.Request) {
 	//Validation完了後のメールアドレスを取得
 	email, ok := req.Context().Value("email").(string)
@@ -33,6 +34,7 @@ func (l *loginProcess) getEmail(req *http.Request) {
 	l.email = email
 }
 
+//getPassword gets password from request form
 func (l *loginProcess) getPassword(req *http.Request) {
 	if l.err != nil {
 		return
@@ -51,6 +53,7 @@ func (l *loginProcess) getPassword(req *http.Request) {
 	l.password = password
 }
 
+//getUserFromDB fetches user document from DB
 func (l *loginProcess) getUserFromDB() bson.M {
 	if l.err != nil {
 		return nil
@@ -76,6 +79,7 @@ func (l *loginProcess) getUserFromDB() bson.M {
 	return d
 }
 
+//convertDocToStruct converts user document to User struct
 func (l *loginProcess) convertDocToStruct(d bson.M) {
 	if l.err != nil {
 		return
@@ -100,6 +104,7 @@ func (l *loginProcess) convertDocToStruct(d bson.M) {
 	}
 }
 
+//comparePassword compares hashed password and password user inputted
 func (l *loginProcess) comparePasswords() {
 	if l.err != nil {
 		return
@@ -115,6 +120,7 @@ func (l *loginProcess) comparePasswords() {
 	}
 }
 
+//generateNewSession generates new sessionID and save it to DB
 func (l *loginProcess) generateNewSession(w http.ResponseWriter) {
 	if l.err != nil {
 		return

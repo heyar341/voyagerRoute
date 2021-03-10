@@ -15,6 +15,7 @@ type deleteRoute struct {
 	err        error
 }
 
+//getUserFromCtx gets user from request's context
 func (d *deleteRoute) getUserFromCtx(req *http.Request) {
 	if d.err != nil {
 		return
@@ -31,6 +32,7 @@ func (d *deleteRoute) getUserFromCtx(req *http.Request) {
 	d.user = user
 }
 
+//deleteRoute delete multi_route_title field from user document
 func (d *deleteRoute) deleteRoute() {
 	if d.err != nil {
 		return
