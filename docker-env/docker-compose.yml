@@ -1,21 +1,22 @@
 version: "3"
 
 services:
-#Goのアプリケーション
+  #Goのアプリケーション
   app:
     tty: true
     build: ./go
+    environment:
+      APP_ENV: dev
     volumes:
-    - ../app:/go/src/app
-    - gopkg:/go/pkg/mod
+      - ../app:/go/src/app
     ports:
-    - 8080:8080
-#mongoDB
+      - 8080:8080
+  #mongoDB
   db:
     image: mongo:4.4.2-bionic
     restart: always
     ports:
-    - 27017:27017
+      - 27017:27017
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: password
