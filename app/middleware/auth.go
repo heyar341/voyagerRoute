@@ -1,13 +1,13 @@
 package middleware
 
 import (
+	"app/controllers"
 	"app/controllers/auth"
 	"app/model"
 	"context"
 	"log"
 	"net/http"
 
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -72,18 +72,8 @@ func getLoginUser(userID primitive.ObjectID) (model.User, error) {
 		log.Printf("Error while finding user data: %v", err)
 		return model.User{}, err
 	}
-	//DBから取得した値をmarshal
-	bsonByte, err := bson.Marshal(d)
-	if err != nil {
-		log.Printf("Error while bson marshaling user data: %v", err)
-		return model.User{}, err
-	}
-
 	var user model.User
-	err = bson.Unmarshal(bsonByte, &user)
-	if err != nil {
-		log.Printf("Error while bson unmarshaling user data: %v", err)
-		return model.User{}, err
-	}
+	var e error
+	controllers.ConvertDucToStruct(d, &user, &e, "user")
 	return user, nil
 }

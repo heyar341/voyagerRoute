@@ -1,6 +1,7 @@
 package main
 
 import (
+	"app/controllers"
 	"app/controllers/apikey"
 	"app/controllers/auth"
 	"app/controllers/multiroute"
@@ -13,7 +14,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"html/template"
-	"log"
 	"net/http"
 )
 
@@ -76,11 +76,7 @@ func main() {
 }
 
 func home(w http.ResponseWriter, req *http.Request) {
-	data, ok := req.Context().Value("data").(map[string]interface{})
-	if !ok {
-		log.Printf("Error whle gettibg data from context")
-		data = map[string]interface{}{"isLoggedIn": false}
-	}
+	data := controllers.GetLoginDataFromCtx(req)
 	//successメッセージがある場合
 	c, err := req.Cookie("success")
 	if err == nil {

@@ -85,23 +85,6 @@ func (eR *editRoute) convertStructToJSON() {
 	eR.routeJSON = string(jsonEnc)
 }
 
-//getDataFromCtx gets data for executing template from request's context
-func (eR *editRoute) getDataFromCtx(req *http.Request) map[string]interface{} {
-	if eR.err != nil {
-		return nil
-	}
-	d, ok := req.Context().Value("data").(map[string]interface{})
-	if !ok {
-		eR.err = customerr.BaseErr{
-			Op:  "Get data map from context",
-			Msg: "エラーが発生しました。",
-			Err: fmt.Errorf("error while getting data from context"),
-		}
-		return nil
-	}
-	return d
-}
-
 func ShowAndEditRoutesTpl(w http.ResponseWriter, req *http.Request) {
 	var eR editRoute
 	controllers.GetUserFromCtx(req, &eR.user, &eR.err)
@@ -109,17 +92,13 @@ func ShowAndEditRoutesTpl(w http.ResponseWriter, req *http.Request) {
 	d := eR.getRouteFromDB(routeTitle)
 	controllers.ConvertDucToStruct(d, &eR.routeModel, &eR.err, "multi route")
 	eR.convertStructToJSON()
-	//contextからデータ取得
-	data := eR.getDataFromCtx(req)
-
 	if eR.err != nil {
 		e := eR.err.(customerr.BaseErr)
-
 		cookiehandler.MakeCookieAndRedirect(w, req, "msg", e.Msg, "/mypage/show_routes")
 		log.Printf("operation: %s, error: %v", e.Op, e.Err)
 		return
 	}
-
+	data := controllers.GetLoginDataFromCtx(req)
 	data["routeInfo"] = eR.routeJSON
 	showRouteTpl.ExecuteTemplate(w, "multi_route_show.html", data)
 }
