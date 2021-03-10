@@ -16,14 +16,14 @@ func init() {
 	mypageTpl = template.Must(template.Must(template.ParseGlob("templates/mypage/*.html")).ParseGlob("templates/includes/*.html"))
 }
 
-func processCookie(w http.ResponseWriter, c *http.Cookie, data map[string]interface{}) {
+func processCookie(w http.ResponseWriter, c *http.Cookie, data map[string]interface{}, tName string) {
 	b64Str, err := base64.StdEncoding.DecodeString(c.Value)
 	if err != nil {
-		mypageTpl.ExecuteTemplate(w, "show_routes.html", data)
+		mypageTpl.ExecuteTemplate(w, tName, data)
 		return
 	}
 	data[c.Name] = string(b64Str)
-	mypageTpl.ExecuteTemplate(w, "show_routes.html", data)
+	mypageTpl.ExecuteTemplate(w, tName, data)
 }
 
 func ShowMypage(w http.ResponseWriter, req *http.Request) {
@@ -36,12 +36,18 @@ func ShowMypage(w http.ResponseWriter, req *http.Request) {
 	}
 
 	t.Data["userName"] = t.User.UserName
-	c, err := req.Cookie("msg")
-	if err != nil {
-		mypageTpl.ExecuteTemplate(w, "mypage.html", t.Data)
+	//successメッセージがある場合
+	c, err := req.Cookie("success")
+	if err == nil {
+		processCookie(w, c, t.Data,"mypage.html")
 		return
 	}
-	t.Data["msg"] = c.Value
+	//エラーメッセージがある場合
+	c, err = req.Cookie("msg")
+	if err == nil {
+		processCookie(w, c, t.Data,"mypage.html")
+		return
+	}
 	mypageTpl.ExecuteTemplate(w, "mypage.html", t.Data)
 }
 
@@ -60,13 +66,13 @@ func ShowAllRoutes(w http.ResponseWriter, req *http.Request) {
 	//successメッセージがある場合
 	c, err := req.Cookie("success")
 	if err == nil {
-		processCookie(w, c, t.Data)
+		processCookie(w, c, t.Data,"show_routes.html")
 		return
 	}
 	//エラーメッセージがある場合
 	c, err = req.Cookie("msg")
 	if err == nil {
-		processCookie(w, c, t.Data)
+		processCookie(w, c, t.Data,"show_routes.html")
 		return
 	}
 
