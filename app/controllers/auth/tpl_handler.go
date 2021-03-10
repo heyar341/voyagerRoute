@@ -31,6 +31,7 @@ func AskConfirmEmail(w http.ResponseWriter, req *http.Request) {
 	}
 	authTpl.ExecuteTemplate(w, "ask_confirm_email.html", data)
 }
+
 func RegisterForm(w http.ResponseWriter, req *http.Request) {
 	data, ok := req.Context().Value("data").(map[string]interface{})
 	if !ok {
@@ -44,6 +45,7 @@ func RegisterForm(w http.ResponseWriter, req *http.Request) {
 	}
 	authTpl.ExecuteTemplate(w, "register.html", data)
 }
+
 func LoginForm(w http.ResponseWriter, req *http.Request) {
 	data, ok := req.Context().Value("data").(map[string]interface{})
 	if !ok {
