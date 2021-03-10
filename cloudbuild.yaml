@@ -1,5 +1,9 @@
 steps:
+  - name: 'gcr.io/cloud-builders/gsutil'
+    entrypoint: 'bash'
+    args: ['-c','cd app && mkdir env && gsutil cp gs://ggrt/.env env/prod.env' ]
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: 'bash'
-    args: ['-c', 'cd app && gcloud config set app/cloud_build_timeout 1600 && gcloud app deploy']
+    args: [ '-c', 'cd app && cat env/prod.env' ]
+#    args: [ '-c', 'cd app && gcloud config set app/cloud_build_timeout 1600 && gcloud app deploy' ]
 timeout: '1600s'
