@@ -23,7 +23,7 @@ func (t TitileSlice) Swap(i, j int) { t[i], t[j] = t[j], t[i] }
 //TimestampのAfterメソッドで、ソート時に最新のタイトルが先頭に来るようにする
 func (t TitileSlice) Less(i, j int) bool { return t[i].TimeStamp.After(t[j].TimeStamp) }
 
-func routeTitles(userID primitive.ObjectID) []string {
+func getRouteTitles(userID primitive.ObjectID) []string {
 	b, err := model.FindUser("_id", userID)
 	if err != nil {
 		return []string{}

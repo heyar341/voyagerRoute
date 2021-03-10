@@ -14,8 +14,8 @@ type logoutProcess struct {
 	err error
 }
 
-//getCookie gets Cookie contains sessionID from request
-func (l *logoutProcess) getCookie(req *http.Request) *http.Cookie {
+//getCookieFromRequest gets Cookie contains sessionID from request
+func (l *logoutProcess) getCookieFromRequest(req *http.Request) *http.Cookie {
 	if l.err != nil {
 		return nil
 	}
@@ -67,7 +67,7 @@ func (l *logoutProcess) deleteSession(sessionID string) {
 func Logout(w http.ResponseWriter, req *http.Request) {
 	var l logoutProcess
 	controllers.CheckHTTPMethod(req, &l.err)
-	c := l.getCookie(req)
+	c := l.getCookieFromRequest(req)
 	sessionID := l.parseCookieToken(c)
 	l.deleteSession(sessionID)
 

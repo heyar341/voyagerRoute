@@ -41,8 +41,8 @@ func (u *updateEmailProcess) getEmailFromForm(req *http.Request) {
 	u.newEmail = newEmail
 }
 
-//saveEditingEmail saves editing email to DB
-func (u *updateEmailProcess) saveEditingEmail(token string) {
+//saveEditingEmailToDB saves editing email to DB
+func (u *updateEmailProcess) saveEditingEmailToDB(token string) {
 	if u.err != nil {
 		return
 	}
@@ -64,7 +64,7 @@ func UpdateEmail(w http.ResponseWriter, req *http.Request) {
 	u.getEmailFromForm(req)
 	//メールアドレス認証用のトークンを作成
 	token := uuid.New().String()
-	u.saveEditingEmail(token)
+	u.saveEditingEmailToDB(token)
 
 	if u.err != nil {
 		e := u.err.(customerr.BaseErr)

@@ -70,7 +70,7 @@ func ShowAllRoutes(w http.ResponseWriter, req *http.Request) {
 		log.Printf("operation: %s, error: %v", e.Op, e.Err)
 		return
 	}
-	titleNames := routeTitles(t.user.ID)
+	titleNames := getRouteTitles(t.user.ID)
 	t.data["userName"] = t.user.UserName
 	t.data["titles"] = titleNames
 
