@@ -149,7 +149,7 @@ func ShowAndEditRoutesTpl(w http.ResponseWriter, req *http.Request) {
 	routeTitle := req.URL.Query().Get("route_title")
 	eR.getRouteObj(routeTitle)
 	//marshalとunmarshalでMultiRoute Modelを取得
-	eR.getModel()
+	eR.convertDocToStruct()
 	//json marshalでJSON Encodingし、string型に変換
 	eR.getJSONObj()
 	//contextからデータ取得
