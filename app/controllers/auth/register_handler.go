@@ -43,8 +43,8 @@ func (r *registerProcess) generateSecuredPassword() {
 	r.securedPassword = securedPassword
 }
 
-//saveRegisteringUser inserts user document to DB
-func (r *registerProcess) saveRegisteringUser(token string) {
+//saveRegisteringUserToDB inserts user document to DB
+func (r *registerProcess) saveRegisteringUserToDB(token string) {
 	if r.err != nil {
 		return
 	}
@@ -67,8 +67,8 @@ type confirmRegister struct {
 	err             error
 }
 
-//getToken gets token from query parameter
-func (cR *confirmRegister) getToken(req *http.Request) {
+//getTokenFromURL gets token from query parameter
+func (cR *confirmRegister) getTokenFromURL(req *http.Request) {
 	token := req.URL.Query()["token"][0]
 	if token == "" {
 		cR.err = customerr.BaseErr{
@@ -156,7 +156,7 @@ func Register(w http.ResponseWriter, req *http.Request) {
 	r.generateSecuredPassword()
 	//メールアドレス認証用のトークンを作成
 	token := uuid.New().String()
-	r.saveRegisteringUser(token)
+	r.saveRegisteringUserToDB(token)
 	if r.err != nil {
 		e := r.err.(customerr.BaseErr)
 		cookiehandler.MakeCookieAndRedirect(w, req, "msg", e.Msg, "/register_form")
@@ -176,7 +176,7 @@ func Register(w http.ResponseWriter, req *http.Request) {
 
 func ConfirmRegister(w http.ResponseWriter, req *http.Request) {
 	var cR confirmRegister
-	cR.getToken(req)
+	cR.getTokenFromURL(req)
 	d := cR.findUserByToken()
 	controllers.ConvertDucToStruct(d, &cR.registeringUser, &cR.err, "registeringUser")
 	cR.checkTokenExpire()

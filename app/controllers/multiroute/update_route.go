@@ -14,6 +14,13 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+type updateRouteData struct {
+	multiRoute    model.MultiRoute
+	previousTitle string
+	user          model.User
+	err           error
+}
+
 //ルート編集保存requestのフィールドを保存するstruct
 type RouteUpdateRequest struct {
 	ID            primitive.ObjectID     `json:"_id" bson:"_id"`
@@ -22,34 +29,28 @@ type RouteUpdateRequest struct {
 	Routes        map[string]model.Route `json:"routes" bson:"routes"`
 }
 
-//getUpdateRoutesInfo gets validated RouteUpdateRequest from context
-func getUpdateRoutesInfo(req *http.Request) (*routesData, string) {
+//getUpdateRouteFromCtx gets validated RouteUpdateRequest from context
+func (u *updateRouteData) getUpdateRouteFromCtx(req *http.Request) {
 	reqFields, ok := req.Context().Value("reqFields").(RouteUpdateRequest)
 	if !ok {
-		return &routesData{
-			err: customerr.BaseErr{
-				Op:  "Get req routes info from context",
-				Msg: "エラーが発生しました。",
-				Err: fmt.Errorf("error while getting request fields from reuest's context"),
-			},
-		}, ""
+		u.err = customerr.BaseErr{
+			Op:  "Get req routes info from context",
+			Msg: "エラーが発生しました。",
+			Err: fmt.Errorf("error while getting request fields from reuest's context"),
+		}
 	}
-	return &routesData{
-		routesInfo: model.MultiRoute{
-			ID:     reqFields.ID,
-			Title:  reqFields.Title,
-			Routes: reqFields.Routes,
-		},
-		err: nil,
-	}, reqFields.PreviousTitle
+	u.multiRoute.ID = reqFields.ID
+	u.multiRoute.Title = reqFields.Title
+	u.multiRoute.Routes = reqFields.Routes
+	u.previousTitle = reqFields.PreviousTitle
 }
 
 //updateRoute updates route document in routes collection
-func (r *routesData) updateRoute() {
-	if r.err != nil {
+func (u *updateRouteData) updateRoute() {
+	if u.err != nil {
 		return
 	}
-	err := r.routesInfo.UpdateRoute()
+	err := u.multiRoute.UpdateRoute()
 	if err != nil {
 		e := customerr.BaseErr{
 			Op:  "Save new multi route",
@@ -58,27 +59,27 @@ func (r *routesData) updateRoute() {
 
 		if strings.Contains(err.Error(), "(BSONObjectTooLarge)") {
 			e.Msg = "ルートのデータサイズが大きすぎるため、保存できません。\nルートの分割をお願いします。"
-			r.err = e
+			u.err = e
 		} else {
 			e.Msg = "エラーが発生しました。"
-			r.err = e
+			u.err = e
 		}
 	}
 }
 
 //updateRouteTitles updates timestamp of multi_route_titles field in users collection, and delete previous title if title was changed.
-func (r *routesData) updateRouteTitles(pTitle string) {
-	if r.err != nil {
+func (u *updateRouteData) updateRouteTitles() {
+	if u.err != nil {
 		return
 	}
 	now := time.Now().UTC() //MongoDBでは、timeはUTC表記で扱われ、タイムゾーン情報は入れられない
-	if r.routesInfo.Title != pTitle {
+	if u.multiRoute.Title != u.previousTitle {
 		//「元のルート名をuser documentから削除」
 		//documentではなく、document内のフィールドを削除する場合、Deleteではなく、Update operatorの$unsetを使って削除する
 		//公式ドキュメントURL: https://docs.mongodb.com/manual/reference/operator/update/unset/
-		err := model.UpdateMultiRouteTitles(r.user.ID, pTitle, "$unset", "")
+		err := model.UpdateMultiRouteTitles(u.user.ID, u.previousTitle, "$unset", "")
 		if err != nil {
-			r.err = customerr.BaseErr{
+			u.err = customerr.BaseErr{
 				Op:  "Remove previous multi route title",
 				Msg: "エラーが発生しました。",
 				Err: fmt.Errorf("error while removing previous multi route title: %w", err),
@@ -87,9 +88,9 @@ func (r *routesData) updateRouteTitles(pTitle string) {
 		}
 	}
 	//「タイムスタンプを更新または追加」
-	err := model.UpdateMultiRouteTitles(r.user.ID, r.routesInfo.Title, "$set", now)
+	err := model.UpdateMultiRouteTitles(u.user.ID, u.multiRoute.Title, "$set", now)
 	if err != nil {
-		r.err = customerr.BaseErr{
+		u.err = customerr.BaseErr{
 			Op:  "Set new multi route title and timestamp",
 			Msg: "エラーが発生しました。",
 			Err: fmt.Errorf("error while setting new multi route title and timestamp: %w", err),
@@ -100,13 +101,14 @@ func (r *routesData) updateRouteTitles(pTitle string) {
 
 //ルートを更新保存するための関数
 func UpdateRoute(w http.ResponseWriter, req *http.Request) {
-	r, pTitle := getUpdateRoutesInfo(req)
-	controllers.GetUserFromCtx(req, &r.user, &r.err)
-	r.updateRoute()
-	r.updateRouteTitles(pTitle)
+	var u = &updateRouteData{}
+	u.getUpdateRouteFromCtx(req)
+	controllers.GetUserFromCtx(req, &u.user, &u.err)
+	u.updateRoute()
+	u.updateRouteTitles()
 
-	if r.err != nil {
-		e := r.err.(customerr.BaseErr)
+	if u.err != nil {
+		e := u.err.(customerr.BaseErr)
 		http.Error(w, e.Msg, http.StatusInternalServerError)
 		log.Printf("operation: %s, error: %v", e.Op, e.Err)
 	}

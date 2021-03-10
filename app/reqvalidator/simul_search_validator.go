@@ -17,6 +17,7 @@ type simulSearchValidator struct {
 	err       error
 }
 
+//checkHTTPMethod checks request's Content-Type and HTTP methods
 func (s *simulSearchValidator) checkHTTPMethod(req *http.Request) {
 	if req.Header.Get("Content-Type") != "application/json" || req.Method != "POST" {
 		s.err = customerr.BaseErr{
@@ -28,6 +29,7 @@ func (s *simulSearchValidator) checkHTTPMethod(req *http.Request) {
 	}
 }
 
+//convertJSONToStruct converts request's JSON data to simulSearch struct
 func (s *simulSearchValidator) convertJSONToStruct(req *http.Request) {
 	if s.err != nil {
 		return
@@ -44,7 +46,7 @@ func (s *simulSearchValidator) convertJSONToStruct(req *http.Request) {
 	}
 }
 
-//出発地のバリデーションとprefixを追加
+//checkAndModifyOrigin checks origin length and add prefix(place_id:)
 func (s *simulSearchValidator) checkAndModifyOrigin() {
 	if s.err != nil {
 		return
@@ -61,8 +63,8 @@ func (s *simulSearchValidator) checkAndModifyOrigin() {
 	s.reqParams.Origin = "place_id:" + s.reqParams.Origin
 }
 
-//目的地にprefixを追加
-func (s *simulSearchValidator) modifyDestinations() {
+//addPrefixToDestinations adds prefix(place_id:) to destinations
+func (s *simulSearchValidator) addPrefixToDestinations() {
 	if s.err != nil {
 		return
 	}
@@ -81,7 +83,7 @@ func SimulSearchValidator(DoSimulSearch http.HandlerFunc) http.HandlerFunc {
 		s.checkHTTPMethod(req)
 		s.convertJSONToStruct(req)
 		s.checkAndModifyOrigin()
-		s.modifyDestinations()
+		s.addPrefixToDestinations()
 
 		if s.err != nil {
 			e := s.err.(customerr.BaseErr)
