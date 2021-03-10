@@ -12,33 +12,28 @@ import (
 	"time"
 )
 
-type routesData struct {
-	routesInfo model.MultiRoute
+type routeData struct {
+	multiRoute model.MultiRoute
 	user       model.User
 	err        error
 }
 
-//getRoutesInfo gets multiRoute from request's context
-func getRoutesInfo(req *http.Request) *routesData {
+//getMultiRouteFromCtx gets multiRoute from request's context
+func (r *routeData) getMultiRouteFromCtx(req *http.Request) {
 	reqFields, ok := req.Context().Value("reqFields").(model.MultiRoute)
 	if !ok {
-		return &routesData{
-			err: customerr.BaseErr{
-				Op:  "Get req routes info from context",
-				Msg: "エラーが発生しました。",
-				Err: fmt.Errorf("error while getting request fields from reuest's context"),
-			},
+		r.err = customerr.BaseErr{
+			Op:  "Get req routes info from context",
+			Msg: "エラーが発生しました。",
+			Err: fmt.Errorf("error while getting request fields from reuest's context"),
 		}
 	}
-	return &routesData{
-		routesInfo: reqFields,
-		err:        nil,
-	}
+	r.multiRoute = reqFields
 }
 
 //saveRoute saves route document to routes collection
-func (r *routesData) saveRoute() {
-	err := r.routesInfo.SaveRoute(r.user.ID)
+func (r *routeData) saveRoute() {
+	err := r.multiRoute.SaveRoute(r.user.ID)
 	if err != nil {
 		e := customerr.BaseErr{
 			Op:  "Save new multi route",
@@ -56,12 +51,12 @@ func (r *routesData) saveRoute() {
 }
 
 //addRouteTitle adds mult_route_titles field to user document
-func (r *routesData) addRouteTitle() {
+func (r *routeData) addRouteTitle() {
 	if r.err != nil {
 		return
 	}
 	now := time.Now().UTC() //MongoDBでは、timeはUTC表記で扱われ、タイムゾーン情報は入れられない
-	err := model.UpdateMultiRouteTitles(r.user.ID, r.routesInfo.Title, "$set", now)
+	err := model.UpdateMultiRouteTitles(r.user.ID, r.multiRoute.Title, "$set", now)
 	if err != nil {
 		r.err = customerr.BaseErr{
 			Op:  "update user document's multi_route_titles field",
@@ -73,7 +68,8 @@ func (r *routesData) addRouteTitle() {
 }
 
 func SaveNewRoute(w http.ResponseWriter, req *http.Request) {
-	r := getRoutesInfo(req)
+	var r = &routeData{}
+	r.getMultiRouteFromCtx(req)
 	controllers.GetUserFromCtx(req, &r.user, &r.err)
 	r.saveRoute()
 	/*users collectionのmulti_route_titlesフィールドにルート名と作成時刻を追加($set)する。
