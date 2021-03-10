@@ -61,3 +61,8 @@ dbhandler.UpdateOne("googroutes", "users", "$unset", userDoc, deleteField)
 　API KeyがHTML内に表示されないよう、Javascriptから、APIの実行ファイルを取得するよう変更したが、
 Developperツールでファイル取得時のレスポンスでAPI Keyが発見されたので、完全にAPI Keyを秘密にするのは
 不可能そう
+
+　ポインターについて
+変数を作成し、ポインターを渡したい場合、a := &map[string]int{"aaa":211}　aは*map[string]int
+ポインターで渡された値に変数を入れる場合 *a = map[string]int{"bbb":333} *aはmap[string]int
+ポインターとして変数を渡したい場合 &a
