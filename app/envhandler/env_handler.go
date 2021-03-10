@@ -2,9 +2,10 @@ package envhandler
 
 import (
 	"fmt"
-	"github.com/joho/godotenv"
 	"log"
 	"os"
+
+	"github.com/joho/godotenv"
 )
 
 func GetEnvVal(keyName string) (string, error) {

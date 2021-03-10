@@ -1,18 +1,19 @@
 package profile
 
 import (
+	"app/controllers"
 	"app/cookiehandler"
 	"app/customerr"
 	"app/mailhandler"
 	"app/model"
 	"fmt"
-	"github.com/google/uuid"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/google/uuid"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 const REDIRECT_URI_TO_UPDATE_EMAIL_FORM = "/profile/email_edit_form"
@@ -21,34 +22,6 @@ type updateEmailProcess struct {
 	user     model.User
 	newEmail string
 	err      error
-}
-
-//checkHTTPMethod checks HTTP method
-func (u *updateEmailProcess) checkHTTPMethod(req *http.Request) {
-	if req.Method != "POST" {
-		u.err = customerr.BaseErr{
-			Op:  "check HTTP method",
-			Msg: "HTTPメソッドが不正です。",
-			Err: fmt.Errorf("invalid HTTP access method"),
-		}
-	}
-}
-
-//getUserFromCtx gets user from request's context
-func (u *updateEmailProcess) getUserFromCtx(req *http.Request) {
-	if u.err != nil {
-		return
-	}
-	user, ok := req.Context().Value("user").(model.User)
-	if !ok {
-		u.err = customerr.BaseErr{
-			Op:  "get user from request's context",
-			Msg: "エラーが発生しました。",
-			Err: fmt.Errorf("error while getting user from reuest's context"),
-		}
-		return
-	}
-	u.user = user
 }
 
 //getEmailFromForm gets email from request's form
@@ -86,8 +59,8 @@ func (u *updateEmailProcess) saveEditingEmail(token string) {
 
 func UpdateEmail(w http.ResponseWriter, req *http.Request) {
 	var u updateEmailProcess
-	u.checkHTTPMethod(req)
-	u.getUserFromCtx(req)
+	controllers.CheckHTTPMethod(req, &u.err)
+	controllers.GetUserFromCtx(req, &u.user, &u.err)
 	u.getEmailFromForm(req)
 	//メールアドレス認証用のトークンを作成
 	token := uuid.New().String()
@@ -112,24 +85,10 @@ func UpdateEmail(w http.ResponseWriter, req *http.Request) {
 }
 
 type confirmUpdateEmail struct {
-	userID       primitive.ObjectID
+	user         model.User
 	editingEmail model.EditingEmail
 	token        string
 	err          error
-}
-
-//getUserFromCtx gets user from request's context
-func (c *confirmUpdateEmail) getUserFromCtx(req *http.Request) {
-	user, ok := req.Context().Value("user").(model.User)
-	if !ok {
-		log.Printf(": %v", ok)
-		c.err = customerr.BaseErr{
-			Op:  "get user from request's context",
-			Msg: "エラーが発生しました。",
-			Err: fmt.Errorf("error while getting user from reuest's context"),
-		}
-	}
-	c.userID = user.ID
 }
 
 //getTokenFromURL gets token from URL parameter
@@ -174,31 +133,6 @@ func (c *confirmUpdateEmail) getEditingEmailDocFromDB() bson.M {
 	return d
 }
 
-//convertBSONToStruct converts editing email document to struct
-func (c *confirmUpdateEmail) convertBSONToStruct(d bson.M) {
-	if c.err != nil {
-		return
-	}
-	b, err := bson.Marshal(d)
-	if err != nil {
-		c.err = customerr.BaseErr{
-			Op:  "bson marshal editing_email document",
-			Msg: "エラーが発生しました。",
-			Err: fmt.Errorf("error while bson marshaling editing_email document: %w", err),
-		}
-		return
-	}
-	err = bson.Unmarshal(b, &c.editingEmail)
-	if err != nil {
-		c.err = customerr.BaseErr{
-			Op:  "bson unmarshal editing_email []byte document",
-			Msg: "エラーが発生しました。",
-			Err: fmt.Errorf("error while bson unmarshaling []byte editing_email document: %w", err),
-		}
-		return
-	}
-}
-
 //checkTokenExpire checks if token expires or not
 func (c *confirmUpdateEmail) checkTokenExpire() {
 	if c.err != nil {
@@ -220,7 +154,7 @@ func (c *confirmUpdateEmail) updateUserEmail() {
 	if c.err != nil {
 		return
 	}
-	err := model.UpdateUser(c.userID, "email", c.editingEmail.Email)
+	err := model.UpdateUser(c.user.ID, "email", c.editingEmail.Email)
 	if err != nil {
 		c.err = customerr.BaseErr{
 			Op:  "update use document's email field",
@@ -233,10 +167,11 @@ func (c *confirmUpdateEmail) updateUserEmail() {
 
 func ConfirmUpdateEmail(w http.ResponseWriter, req *http.Request) {
 	var c confirmUpdateEmail
-	c.getUserFromCtx(req)
+	controllers.CheckHTTPMethod(req, &c.err)
+	controllers.GetUserFromCtx(req, &c.user, &c.err)
 	c.getTokenFromURL(req)
 	d := c.getEditingEmailDocFromDB()
-	c.convertBSONToStruct(d)
+	controllers.ConvertDucToStruct(d, &c.editingEmail, &c.err, "editing email")
 	c.checkTokenExpire()
 	c.updateUserEmail()
 

@@ -2,8 +2,9 @@ package model
 
 import (
 	"app/dbhandler"
-	"go.mongodb.org/mongo-driver/bson"
 	"time"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 type EditingEmail struct {

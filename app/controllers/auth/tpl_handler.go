@@ -1,9 +1,9 @@
 package auth
 
 import (
+	"app/controllers"
 	"encoding/base64"
 	"html/template"
-	"log"
 	"net/http"
 )
 
@@ -24,20 +24,12 @@ func processCookie(w http.ResponseWriter, c *http.Cookie, data map[string]interf
 }
 
 func AskConfirmEmail(w http.ResponseWriter, req *http.Request) {
-	data, ok := req.Context().Value("data").(map[string]interface{})
-	if !ok {
-		log.Printf("Error whle gettibg data from context")
-		data = map[string]interface{}{"isLoggedIn": false}
-	}
+	data := controllers.GetLoginDataFromCtx(req)
 	authTpl.ExecuteTemplate(w, "ask_confirm_email.html", data)
 }
 
 func RegisterForm(w http.ResponseWriter, req *http.Request) {
-	data, ok := req.Context().Value("data").(map[string]interface{})
-	if !ok {
-		log.Printf("Error whle gettibg data from context")
-		data = map[string]interface{}{"isLoggedIn": false}
-	}
+	data := controllers.GetLoginDataFromCtx(req)
 	c, err := req.Cookie("msg")
 	if err == nil {
 		processCookie(w, c, data, "register.html")
@@ -47,11 +39,7 @@ func RegisterForm(w http.ResponseWriter, req *http.Request) {
 }
 
 func LoginForm(w http.ResponseWriter, req *http.Request) {
-	data, ok := req.Context().Value("data").(map[string]interface{})
-	if !ok {
-		log.Printf("Error whle gettibg data from context")
-		data = map[string]interface{}{"isLoggedIn": false}
-	}
+	data := controllers.GetLoginDataFromCtx(req)
 	c, err := req.Cookie("msg")
 	if err == nil {
 		processCookie(w, c, data, "login.html")

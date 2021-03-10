@@ -1,9 +1,10 @@
 package mypage
 
 import (
+	"app/controllers"
 	"app/cookiehandler"
 	"app/customerr"
-	"app/tplutil"
+	"app/model"
 	"encoding/base64"
 	"html/template"
 	"log"
@@ -11,6 +12,12 @@ import (
 )
 
 var mypageTpl *template.Template
+
+type tplProcess struct {
+	data map[string]interface{}
+	user model.User
+	err  error
+}
 
 func init() {
 	mypageTpl = template.Must(template.Must(template.ParseGlob("templates/mypage/*.html")).ParseGlob("templates/includes/*.html"))
@@ -27,79 +34,87 @@ func processCookie(w http.ResponseWriter, c *http.Cookie, data map[string]interf
 }
 
 func ShowMypage(w http.ResponseWriter, req *http.Request) {
-	t := tplutil.GetTplData(req)
-	if t.Err != nil {
-		e := t.Err.(customerr.BaseErr)
+	var t tplProcess
+	t.data = controllers.GetLoginDataFromCtx(req)
+	controllers.GetUserFromCtx(req, &t.user, &t.err)
+	if t.err != nil {
+		e := t.err.(customerr.BaseErr)
 		cookiehandler.MakeCookieAndRedirect(w, req, "msg", e.Msg, "/")
 		log.Printf("operation: %s, error: %v", e.Op, e.Err)
 		return
 	}
 
-	t.Data["userName"] = t.User.UserName
+	t.data["userName"] = t.user.UserName
 	//successメッセージがある場合
 	c, err := req.Cookie("success")
 	if err == nil {
-		processCookie(w, c, t.Data,"mypage.html")
+		processCookie(w, c, t.data, "mypage.html")
 		return
 	}
 	//エラーメッセージがある場合
 	c, err = req.Cookie("msg")
 	if err == nil {
-		processCookie(w, c, t.Data,"mypage.html")
+		processCookie(w, c, t.data, "mypage.html")
 		return
 	}
-	mypageTpl.ExecuteTemplate(w, "mypage.html", t.Data)
+	mypageTpl.ExecuteTemplate(w, "mypage.html", t.data)
 }
 
 func ShowAllRoutes(w http.ResponseWriter, req *http.Request) {
-	t := tplutil.GetTplData(req)
-	if t.Err != nil {
-		e := t.Err.(customerr.BaseErr)
+	var t tplProcess
+	t.data = controllers.GetLoginDataFromCtx(req)
+	controllers.GetUserFromCtx(req, &t.user, &t.err)
+	if t.err != nil {
+		e := t.err.(customerr.BaseErr)
 		cookiehandler.MakeCookieAndRedirect(w, req, "msg", e.Msg, "/mypage")
 		log.Printf("operation: %s, error: %v", e.Op, e.Err)
 		return
 	}
-	titleNames := routeTitles(t.User.ID)
-	t.Data["userName"] = t.User.UserName
-	t.Data["titles"] = titleNames
+	titleNames := routeTitles(t.user.ID)
+	t.data["userName"] = t.user.UserName
+	t.data["titles"] = titleNames
 
 	//successメッセージがある場合
 	c, err := req.Cookie("success")
 	if err == nil {
-		processCookie(w, c, t.Data,"show_routes.html")
+		processCookie(w, c, t.data, "show_routes.html")
 		return
 	}
 	//エラーメッセージがある場合
 	c, err = req.Cookie("msg")
 	if err == nil {
-		processCookie(w, c, t.Data,"show_routes.html")
+		processCookie(w, c, t.data, "show_routes.html")
 		return
 	}
 
-	mypageTpl.ExecuteTemplate(w, "show_routes.html", t.Data)
+	mypageTpl.ExecuteTemplate(w, "show_routes.html", t.data)
 }
 
 func ConfirmDelete(w http.ResponseWriter, req *http.Request) {
-	t := tplutil.GetTplData(req)
-	if t.Err != nil {
-		e := t.Err.(customerr.BaseErr)
+	var t tplProcess
+	t.data = controllers.GetLoginDataFromCtx(req)
+	controllers.GetUserFromCtx(req, &t.user, &t.err)
+	if t.err != nil {
+		e := t.err.(customerr.BaseErr)
 		cookiehandler.MakeCookieAndRedirect(w, req, "msg", e.Msg, "/mypage/show_routes")
 		log.Printf("operation: %s, error: %v", e.Op, e.Err)
 		return
 	}
-	t.Data["title"] = req.FormValue("title")
-	mypageTpl.ExecuteTemplate(w, "confirm_delete.html", t.Data)
+	t.data["title"] = req.FormValue("title")
+	mypageTpl.ExecuteTemplate(w, "confirm_delete.html", t.data)
 }
 
 func ShowQuestionForm(w http.ResponseWriter, req *http.Request) {
-	t := tplutil.GetTplData(req)
-	if t.Err != nil {
-		e := t.Err.(customerr.BaseErr)
+	var t tplProcess
+	t.data = controllers.GetLoginDataFromCtx(req)
+	controllers.GetUserFromCtx(req, &t.user, &t.err)
+	if t.err != nil {
+		e := t.err.(customerr.BaseErr)
 		cookiehandler.MakeCookieAndRedirect(w, req, "msg", e.Msg, "/mypage")
 		log.Printf("operation: %s, error: %v", e.Op, e.Err)
 		return
 	}
-	t.Data["userName"] = t.User.UserName
-	t.Data["email"] = t.User.Email
-	mypageTpl.ExecuteTemplate(w, "question_form.html", t.Data)
+	t.data["userName"] = t.user.UserName
+	t.data["email"] = t.user.Email
+	mypageTpl.ExecuteTemplate(w, "question_form.html", t.data)
 }

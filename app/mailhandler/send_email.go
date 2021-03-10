@@ -1,8 +1,8 @@
 package mailhandler
 
 import (
-	"app/envhandler"
 	"app/cookiehandler"
+	"app/envhandler"
 	"app/model"
 	"fmt"
 	"log"

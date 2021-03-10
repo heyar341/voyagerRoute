@@ -3,8 +3,9 @@ package auth
 import (
 	"app/envhandler"
 	"fmt"
-	"github.com/dgrijalva/jwt-go"
 	"time"
+
+	"github.com/dgrijalva/jwt-go"
 )
 
 type customClaim struct {
@@ -21,7 +22,7 @@ func createToken(sessionID string) (string, error) {
 		SessionID: sessionID,
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claim)
-	keyStr,err := envhandler.GetEnvVal("TOKENIZE_KEY")
+	keyStr, err := envhandler.GetEnvVal("TOKENIZE_KEY")
 	if err != nil {
 		return "", err
 	}
@@ -34,7 +35,7 @@ func createToken(sessionID string) (string, error) {
 }
 
 func ParseToken(sessionValue string) (string, error) {
-	keyStr,err := envhandler.GetEnvVal("TOKENIZE_KEY")
+	keyStr, err := envhandler.GetEnvVal("TOKENIZE_KEY")
 	if err != nil {
 		return "", err
 	}

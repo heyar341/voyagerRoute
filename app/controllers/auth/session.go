@@ -2,10 +2,11 @@ package auth
 
 import (
 	"app/model"
-	"github.com/google/uuid"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"log"
 	"net/http"
+
+	"github.com/google/uuid"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func genNewSession(userID primitive.ObjectID, w http.ResponseWriter) error {
@@ -26,10 +27,10 @@ func genNewSession(userID primitive.ObjectID, w http.ResponseWriter) error {
 
 	//Cookieの設定
 	c := &http.Cookie{
-		Name:  "session_id",
-		Value: signedStr,
-		Path:  "/",
-		MaxAge: 60*60*24*30,//３０日間有効
+		Name:   "session_id",
+		Value:  signedStr,
+		Path:   "/",
+		MaxAge: 60 * 60 * 24 * 30, //３０日間有効
 	}
 	http.SetCookie(w, c)
 

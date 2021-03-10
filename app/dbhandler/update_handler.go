@@ -1,10 +1,11 @@
 package dbhandler
 
 import (
+	"log"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"log"
 )
 
 func UpdateOne(dbName, collectionName, updateMode string, document, updateField interface{}) error {

@@ -1,6 +1,7 @@
 package reqvalidator
 
 import (
+	"app/controllers"
 	"app/cookiehandler"
 	"app/customerr"
 	"app/mailhandler"
@@ -15,16 +16,6 @@ type authValidator struct {
 	email    string
 	password string
 	err      error
-}
-
-func (a *authValidator) checkHTTPMethod(req *http.Request) {
-	if req.Method != "POST" {
-		a.err = customerr.BaseErr{
-			Op:  "checking HTTP method",
-			Msg: "HTTPメソッドが不正です。",
-			Err: fmt.Errorf("invalid HTTP method access"),
-		}
-	}
 }
 
 func (a *authValidator) getUserName(req *http.Request) {
@@ -95,7 +86,7 @@ func (a *authValidator) checkEmail(email string) {
 func RegisterValidator(Register http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		var a authValidator
-		a.checkHTTPMethod(req)
+		controllers.CheckHTTPMethod(req, &a.err)
 		a.getUserName(req)
 		a.getEmail(req)
 		a.checkEmail(a.email)
@@ -121,7 +112,7 @@ func RegisterValidator(Register http.HandlerFunc) http.HandlerFunc {
 func LoginValidator(Login http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		var a authValidator
-		a.checkHTTPMethod(req)
+		controllers.CheckHTTPMethod(req, &a.err)
 		a.getEmail(req)
 		a.getPassword(req)
 

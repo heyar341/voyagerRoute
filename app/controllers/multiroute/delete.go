@@ -1,6 +1,7 @@
 package multiroute
 
 import (
+	"app/controllers"
 	"app/cookiehandler"
 	"app/customerr"
 	"app/model"
@@ -13,23 +14,6 @@ type deleteRoute struct {
 	user       model.User
 	routeTitle string
 	err        error
-}
-
-//getUserFromCtx gets user from request's context
-func (d *deleteRoute) getUserFromCtx(req *http.Request) {
-	if d.err != nil {
-		return
-	}
-	user, ok := req.Context().Value("user").(model.User)
-	if !ok {
-		d.err = customerr.BaseErr{
-			Op:  "Getting user from context",
-			Msg: "エラーが発生しました。",
-			Err: fmt.Errorf("error while getting user from reuest's context"),
-		}
-		return
-	}
-	d.user = user
 }
 
 //deleteRoute delete multi_route_title field from user document
@@ -49,18 +33,10 @@ func (d *deleteRoute) deleteRoute() {
 }
 
 func DeleteRoute(w http.ResponseWriter, req *http.Request) {
-	var d = deleteRoute{}
-	if req.Method != "POST" {
-		d.err = customerr.BaseErr{
-			Msg: "HTTPメソッドが不正です。",
-			Err: fmt.Errorf("invalid HTTP method access"),
-		}
-	}
-	//Auth middlewareからuserIDを取得
-	d.getUserFromCtx(req)
-	//requestから要挙するタイトルを取得
+	var d deleteRoute
+	controllers.CheckHTTPMethod(req, &d.err)
+	controllers.GetUserFromCtx(req, &d.user, &d.err)
 	d.routeTitle = req.FormValue("title")
-	//「元のルート名をuser documentから削除」
 	d.deleteRoute()
 
 	//レスポンス作成
