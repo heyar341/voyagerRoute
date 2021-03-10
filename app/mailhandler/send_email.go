@@ -2,6 +2,7 @@ package mailhandler
 
 import (
 	"app/envhandler"
+	"app/cookiehandler"
 	"app/model"
 	"fmt"
 	"log"
@@ -53,7 +54,7 @@ func SendQuestion(w http.ResponseWriter, req *http.Request) {
 	gmailPassword, err := envhandler.GetEnvVal("GMAIL_APP_PASS")
 	if err != nil {
 		msg := "送信中にエラーが発生しました。"
-		http.Redirect(w, req, "/question_form/?msg="+msg, http.StatusSeeOther)
+		cookiehandler.MakeCookieAndRedirect(w, req, "msg", msg, "/question_form")
 		log.Printf("Error while getting gmail app password form env file: %v", err)
 		return
 	}
@@ -61,7 +62,7 @@ func SendQuestion(w http.ResponseWriter, req *http.Request) {
 	user, ok := req.Context().Value("user").(model.User)
 	if !ok {
 		msg := "送信中にエラーが発生しました。"
-		http.Redirect(w, req, "/question_form/?msg="+msg, http.StatusSeeOther)
+		cookiehandler.MakeCookieAndRedirect(w, req, "msg", msg, "/question_form")
 		log.Printf("Error while getting userName from context: %v", err)
 		return
 	}
@@ -92,10 +93,10 @@ func SendQuestion(w http.ResponseWriter, req *http.Request) {
 	)
 	if err != nil {
 		msg := "送信中にエラーが発生しました。"
-		http.Redirect(w, req, "/question_form/?msg="+msg, http.StatusSeeOther)
+		cookiehandler.MakeCookieAndRedirect(w, req, "msg", msg, "/question_form")
 		log.Printf("Error sending email for question: %v", err)
 		return
 	}
 
-	http.Redirect(w, req, "/mypage", http.StatusSeeOther)
+	cookiehandler.MakeCookieAndRedirect(w, req, "success", "お問い合わせを送信しました。", "/mypage")
 }
