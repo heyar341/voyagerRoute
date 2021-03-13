@@ -207,7 +207,7 @@ class AutocompleteDirectionsHandler {
     );
     const originAutocomplete = new google.maps.places.Autocomplete(originInput);
     //Places detailは高額料金がかかるので、必要なフィールドを指定して、料金を下げる
-    originAutocomplete.setFields(["place_id", "geometry", "formatted_address"]);
+    originAutocomplete.setFields(["place_id", "geometry", "formatted_address", "utc_offset_minutes"]);
     const destinationAutocomplete = new google.maps.places.Autocomplete(
       destinationInput
     );
@@ -216,6 +216,7 @@ class AutocompleteDirectionsHandler {
       "place_id",
       "geometry",
       "formatted_address",
+      "utc_offset_minutes"
     ]);
 
     //EventListenerの設定
@@ -289,6 +290,9 @@ class AutocompleteDirectionsHandler {
       } else {
         me.destinationPlaceId = place.place_id;
       }
+
+      //UTCとの時差をminnutes単位で取得
+      me.timeDiffMin = place.utc_offset_minutes;
       //経度と緯度を設定
       me.originLatitude = place.geometry.location.lat();
       me.originLongitue = place.geometry.location.lng();
@@ -383,39 +387,6 @@ class AutocompleteDirectionsHandler {
       });
   }
 
-  //TimeZOne APIを使用し、出発地のタイムゾーンを取得するメソッド
-  getTimeZone(me) {
-    $.ajax({
-      url: "/get_timezone", // 通信先のURL
-      async: false, //プログラムの途中で実行するので、同期通信で行う
-      type: "POST", // 使用するHTTPメソッド
-      data: JSON.stringify({
-        lat: String(me.originLatitude), //緯度
-        lng: String(me.originLongitue), //経度
-        unix_time: String(today.getTime()).slice(0, 10), //Unix表記の現在時
-      }),
-      contentType: "application/json",
-      dataType: "json", // responseのデータの種類
-      timespan: 1000, // 通信のタイムアウトの設定(ミリ秒)
-    })
-      .done(function (data, textStatus, jqXHR) {
-        //UTCとの時差をminnutes単位で取得
-        me.timeDiffMin = data.rawOffset;
-      })
-      //通信失敗
-      .fail(function (xhr, status, error) {
-        // HTTPエラー時
-        switch (xhr.status) {
-          case 401:
-            alert(xhr.responseText);
-            return;
-          case 500:
-            alert(xhr.responseText);
-            return;
-        }
-      });
-  }
-
   //directions Serviceを使用し、ルート検索
   route() {
     if (!this.originPlaceId || !this.destinationPlaceId) {
@@ -451,8 +422,6 @@ class AutocompleteDirectionsHandler {
             "T" +
             document.getElementById("time" + this.routeNum).value
         );
-        //入力された場所のタイムゾーンを取得
-        me.getTimeZone(me);
 
         /*(ブラウザのタイムゾーンの時刻) ー (ブラウザのタイムゾーンのoffset) ー (入力地のタイムゾーンのoffset) = (入力地のタイムゾーンの時刻)
                 例:ロサンゼルスの鉄道の3月1日,10:00出発を調べたい場合、
