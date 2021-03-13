@@ -280,7 +280,7 @@ class AutocompleteDirectionsHandler {
         place.formatted_address.indexOf("日本") !== -1
       ) {
         window.alert(
-          "日本の公共交通機関情報はGoogle Maps APIの仕様上、ご利用いただけません。"
+          "日本の公共交通機関情報はGoogleによる機能制限により、ご利用いただけません。海外の公共交通機関情報はご利用いただけます。"
         );
         return;
       }
@@ -433,7 +433,7 @@ class AutocompleteDirectionsHandler {
     if (document.getElementById("changemode-transit" + this.routeNum).checked) {
       if (document.getElementById("origin-input" + me.routeNum).value.indexOf("日本") !== -1) {
         window.alert(
-            "日本の公共交通機関情報はGoogle Maps APIの仕様上、ご利用いただけません。"
+            "日本の公共交通機関情報はGoogleによる機能制限により、ご利用いただけません。海外の公共交通機関情報はご利用いただけます。"
         );
         return;
       }
@@ -509,7 +509,7 @@ class AutocompleteDirectionsHandler {
         ) {
           document.getElementById("route-decide" + me.routeNum).style.display =
             "none";
-          alert("日本国内の公共交通機関情報はご利用いただけません。");
+          alert("日本の公共交通機関情報はGoogleによる機能制限により、ご利用いただけません。海外の公共交通機関情報はご利用いただけます。");
           return;
         }
         //複数ルートが帰ってきた場合、それぞれについて、ラインを描画する
@@ -536,9 +536,6 @@ class AutocompleteDirectionsHandler {
           suppressPolylines: true,
         });
         me.directionsRenderer.setDirections(response);
-        // console.log(response.routes[0].summary);
-        // console.log(response.routes[0].legs[0].distance.text);
-        // console.log(response.routes[0].legs[0].duration.text);
 
         //ルートが１つのみの場合、detail-panelが表示されないので、span要素で距離、所要時間を表示する
         if (response.routes.length === 1) {
@@ -583,6 +580,7 @@ function genSearchBox(routeId, color) {
         <div class="search-fields">
             <hr color="white" class="mt-0">
             <div id="required-fields">
+                <div style="width: 350px"><small>出発地と目的地は、地名の一部を入力すると下に地名の選択肢が表示されますので、その中からお選びください。</small></div>
                 <input
                         id="origin-input${routeId}"
                         class="controls input-fields"
