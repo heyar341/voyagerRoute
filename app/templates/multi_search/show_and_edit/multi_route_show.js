@@ -18,6 +18,9 @@ const multiSearchUpdateReq = Object.assign({}, routeInfo);
 delete multiSearchUpdateReq.route_count;
 multiSearchUpdateReq["previous_title"] = routeInfo.title;
 
+// 入力中のルート番号を入れる
+var currRouteNum = "0";
+
 //Ajax通信
 $(function () {
   $("#save-route").click(function () {
@@ -160,6 +163,7 @@ function initMap() {
   $("#add-route").on("click", function () {
     $("#add-route").attr("disabled", true);
     routeID++;
+    currRouteNum = String(routeID);
     if (routeID === 9) {
       document.getElementById("add-route").style.display = "none";
     }
@@ -207,6 +211,7 @@ class AutocompleteDirectionsHandler {
     this.destinationPlaceId = destID;
     this.timeDiffMin = 0;
     this.poly = [];
+    this.inputFieldID = "";
     this.travelMode = google.maps.TravelMode.WALKING;
     this.directionsService = new google.maps.DirectionsService();
     this.directionsRenderer = new google.maps.DirectionsRenderer();
@@ -279,6 +284,14 @@ class AutocompleteDirectionsHandler {
     this.setupOptionListener("avoid-highway" + this.routeNum);
     this.setUpRouteSelectedListener(this, this.directionsRenderer);
     this.setUpDecideRouteListener(this, this.directionsRenderer);
+    //マップ上のクリックに対する処理の設定
+    this.placesService = new google.maps.places.PlacesService(map);
+    this.infowindow = new google.maps.InfoWindow();
+    this.infowindowContent = document.getElementById("infowindow-content");
+    this.infowindow.setContent(this.infowindowContent);
+    this.map.addListener("click", this.handleMapClick.bind(this));
+    this.getFocusedElementID("origin-input" + this.routeNum, this);
+    this.getFocusedElementID("destination-input" + this.routeNum, this);
   }
 
   //経路オプションのラジオボタンが押されたら発火
@@ -310,6 +323,7 @@ class AutocompleteDirectionsHandler {
   setupPlaceChangedListener(autocomplete, mode, me) {
     autocomplete.bindTo("bounds", this.map);
     autocomplete.addListener("place_changed", () => {
+      me.infowindow.close(); //クリックした場所の詳細表示を削除
       const place = autocomplete.getPlace();
       if (!place.place_id) {
         window.alert("表示された選択肢の中から選んでください。");
@@ -325,6 +339,9 @@ class AutocompleteDirectionsHandler {
       }
       if (mode === "ORIG") {
         me.originPlaceId = place.place_id;
+        //出発地にズームインする
+        me.map.setCenter(place.geometry.location);
+        me.map.setZoom(15);
       } else {
         me.destinationPlaceId = place.place_id;
       }
@@ -334,7 +351,7 @@ class AutocompleteDirectionsHandler {
       //経度と緯度を設定
       me.originLatitude = place.geometry.location.lat();
       me.originLongitue = place.geometry.location.lng();
-      this.route();
+      me.getPlaceInformation(place.place_id, me);
     });
   }
 
@@ -423,6 +440,78 @@ class AutocompleteDirectionsHandler {
           }
         }
       });
+  }
+
+  //マップ上のクリックを扱うメソッド
+  handleMapClick(clickedPlace) {
+    if (this.routeNum !== currRouteNum) {
+      return
+    }
+    const me = this;
+    if ("placeId" in clickedPlace) {
+      // デフォルトのinfo windowを無効化
+      clickedPlace.stop();
+      if (clickedPlace.placeId) {
+        this.getPlaceInformation(clickedPlace.placeId, me);
+      }
+    }
+  }
+
+  //クリックした場所の情報表示とルート検索を行うメソッド
+  getPlaceInformation(placeId, me) {
+    me.placesService.getDetails(
+        {
+          placeId: placeId,
+          fields: [
+            "icon",
+            "name",
+            "place_id",
+            "formatted_address",
+            "geometry",
+            "utc_offset_minutes",
+          ],
+        },
+        (place, status) => {
+          if (
+              status === "OK" &&
+              place &&
+              place.geometry &&
+              place.geometry.location
+          ) {
+            //入力が選択されていなければ、出発地として扱う
+            if (!me.inputFieldID) {
+              me.inputFieldID = "origin-input" + me.routeNum;
+            }
+            document.getElementById(me.inputFieldID).value =
+                place.formatted_address;
+            if (me.inputFieldID === "origin-input" + me.routeNum) {
+              me.originPlaceId = place.place_id;
+              //UTCとの時差をminutes単位で取得
+              me.timeDiffMin = place.utc_offset_minutes;
+            } else if (me.inputFieldID === "destination-input" + me.routeNum) {
+              me.destinationPlaceId = place.place_id;
+            }
+            me.infowindow.close();
+            me.infowindow.setPosition(place.geometry.location);
+            me.infowindowContent.children["place-icon"].src = place.icon;
+            me.infowindowContent.children["place-name"].textContent = place.name;
+            me.infowindowContent.children["place-address"].textContent =
+                place.formatted_address;
+            me.infowindow.open(me.map);
+
+            me.route();
+          }
+        }
+    );
+  }
+
+  //origin-input destination-inputどちらが選択されているか取得するメソッド
+  getFocusedElementID(id, me) {
+    const currentInput = document.getElementById(id);
+    currentInput.addEventListener("focus", () => {
+      currRouteNum = me.routeNum; //focusされたら、currRouteNumを選択されたルート番号に設定
+      me.inputFieldID = id;
+    });
   }
 
   //directions Serviceを使用し、ルート検索
@@ -546,9 +635,6 @@ class AutocompleteDirectionsHandler {
           suppressPolylines: true,
         });
         me.directionsRenderer.setDirections(response);
-        // console.log(response.routes[0].summary);
-        // console.log(response.routes[0].legs[0].distance.text);
-        // console.log(response.routes[0].legs[0].duration.text);
 
         //ルートが１つのみの場合、detail-panelが表示されないので、span要素で距離、所要時間を表示する
         if (response.routes.length === 1) {
@@ -592,19 +678,19 @@ function genSearchBox(routeId, color) {
         <div class="search-fields">
             <hr color="white" class="mt-0">
             <div id="required-fields">
-                <div style="width: 350px"><small>出発地と目的地は、地名の一部を入力すると下に地名の選択肢が表示されますので、その中からお選びください。</small></div>
+                <div style="width: 350px"><small>出発地と目的地を入力する場合、地名の一部を入力すると下に選択肢が表示されますので、その中からお選びください。</small></div>
                 <input
                         id="origin-input${routeId}"
                         class="controls input-fields"
                         type="text"
-                        placeholder="出発地を入力"
+                        placeholder="出発地の一部を入力または地名をクリック"
                 />
                 <br><br>
                 <input
                         id="destination-input${routeId}"
                         class="controls input-fields"
                         type="text"
-                        placeholder="目的地を入力"
+                        placeholder="目的地の一部を入力または地名をクリック"
                 />
                 <br>
                 <div id="route-options${routeId}">
