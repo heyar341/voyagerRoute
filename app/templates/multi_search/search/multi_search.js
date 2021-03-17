@@ -17,6 +17,8 @@ const multiSearchReq = {
   title: "",
   routes: {},
 };
+// 入力中のルート番号を入れる
+var currRouteNum = "0";
 
 //Ajax通信
 $(function () {
@@ -100,6 +102,18 @@ window.onload = function () {
     });
 };
 
+//地図上に路線図と道路状況を表示するlayerの表示制御
+function setUpLayersListener(id,layerController, m) {
+  return function () {
+    var layerButton = document.getElementById(id);
+    if (!layerButton.checked) {
+      layerController.setMap(null);
+    } else {
+      layerController.setMap(m);
+    }
+  }
+}
+
 function initMap() {
   const map = new google.maps.Map(document.getElementById("map"), {
     mapTypeControl: false,
@@ -111,6 +125,12 @@ function initMap() {
       gestureHandling: "greedy", //地図埋め込み時Ctrボタン要求の無効化
     },
   });
+  //地図上に路線図と道路状況を表示するlayer
+  const transitLayer = new google.maps.TransitLayer();
+  const trafficLayer = new google.maps.TrafficLayer();
+  map.controls[google.maps.ControlPosition.TOP_LEFT].push(document.getElementById("add-layers"));
+  document.getElementById("add-transport-layer").addEventListener("change", setUpLayersListener("add-transport-layer", transitLayer, map))
+  document.getElementById("add-traffic-layer").addEventListener("change", setUpLayersListener("add-traffic-layer", trafficLayer, map))
 
   $("#add-route").attr("disabled", true);
   //１番目のルート要素をHTMLに追加
@@ -191,6 +211,7 @@ class AutocompleteDirectionsHandler {
     this.destinationPlaceId = "";
     this.timeDiffMin = 0;
     this.poly = [];
+    this.inputFieldID = "";
     this.travelMode = google.maps.TravelMode.WALKING;
     this.directionsService = new google.maps.DirectionsService();
     this.directionsRenderer = new google.maps.DirectionsRenderer();
@@ -207,7 +228,12 @@ class AutocompleteDirectionsHandler {
     );
     const originAutocomplete = new google.maps.places.Autocomplete(originInput);
     //Places detailは高額料金がかかるので、必要なフィールドを指定して、料金を下げる
-    originAutocomplete.setFields(["place_id", "geometry", "formatted_address"]);
+    originAutocomplete.setFields([
+      "place_id",
+      "geometry",
+      "formatted_address",
+      "utc_offset_minutes",
+    ]);
     const destinationAutocomplete = new google.maps.places.Autocomplete(
       destinationInput
     );
@@ -216,6 +242,7 @@ class AutocompleteDirectionsHandler {
       "place_id",
       "geometry",
       "formatted_address",
+      "utc_offset_minutes",
     ]);
 
     //EventListenerの設定
@@ -240,6 +267,15 @@ class AutocompleteDirectionsHandler {
     this.setupOptionListener("avoid-highway" + this.routeNum);
     this.setUpRouteSelectedListener(this, this.directionsRenderer);
     this.setUpDecideRouteListener(this, this.directionsRenderer);
+    //マップ上のクリックに対する処理の設定
+    this.placesService = new google.maps.places.PlacesService(map);
+    this.infowindow = new google.maps.InfoWindow();
+    this.infowindowContent = document.getElementById("infowindow-content");
+    this.infowindow.setContent(this.infowindowContent);
+    this.map.addListener("click", this.handleMapClick.bind(this));
+    this.getFocusedElementID("origin-input" + this.routeNum, this);
+    this.getFocusedElementID("destination-input" + this.routeNum, this);
+    currRouteNum = routeNum;
   }
 
   //経路オプションのラジオボタンが押されたら発火
@@ -271,6 +307,7 @@ class AutocompleteDirectionsHandler {
   setupPlaceChangedListener(autocomplete, mode, me) {
     autocomplete.bindTo("bounds", this.map);
     autocomplete.addListener("place_changed", () => {
+      me.infowindow.close(); //クリックした場所の詳細表示を削除
       const place = autocomplete.getPlace();
       if (!place.place_id) {
         window.alert("表示された選択肢の中から選んでください。");
@@ -280,19 +317,25 @@ class AutocompleteDirectionsHandler {
         place.formatted_address.indexOf("日本") !== -1
       ) {
         window.alert(
-          "日本の公共交通機関情報はGoogle Maps APIの仕様上、ご利用いただけません。"
+          "日本の公共交通機関情報はGoogleによる機能制限により、ご利用いただけません。海外の公共交通機関情報はご利用いただけます。"
         );
         return;
       }
       if (mode === "ORIG") {
         me.originPlaceId = place.place_id;
+        //出発地にズームインする
+        me.map.setCenter(place.geometry.location);
+        me.map.setZoom(15);
       } else {
         me.destinationPlaceId = place.place_id;
       }
+
+      //UTCとの時差をminnutes単位で取得
+      me.timeDiffMin = place.utc_offset_minutes;
       //経度と緯度を設定
       me.originLatitude = place.geometry.location.lat();
       me.originLongitue = place.geometry.location.lng();
-      me.route();
+      me.getPlaceInformation(place.place_id, me);
     });
   }
 
@@ -317,42 +360,36 @@ class AutocompleteDirectionsHandler {
   //複数ルートがある場合、パネルのルートを押したら発火
   setUpRouteSelectedListener(obj, directionsRenderer) {
     //documentに明記されていない
-    google.maps.event.addListener(
-      directionsRenderer,
-      "routeindex_changed",
-      function () {
-        document.getElementById("route-decide" + obj.routeNum).style.display =
-          "block";
-        var target = directionsRenderer.getRouteIndex();
-        for (var i = 0; i < obj.poly.length; i++) {
-          if (i == target) {
-            obj.poly[i].setOptions({
-              //選択したルートの場合、色をcolorCodeに従って変更
-              polylineOptions: {
-                strokeColor: obj.colorCode,
-                strokeOpacity: 1.0,
-                strokeWeight: 7,
-                //色付きラインを一番上に表示するため、zIndexを他のルートより大きくする。
-                zIndex: parseInt(obj.routeNum) + 1,
-              },
-            });
-          } else {
-            obj.poly[i].setOptions({
-              //選択したルート以外の場合、色を#808080に設定(選択されている場合、色付きだから、
-              //元に戻すためには、全てのルートについて#808080に設定する必要あり。)
-              polylineOptions: {
-                strokeColor: "#808080",
-                strokeOpacity: 0.7,
-                strokeWeight: 7,
-                //色付きラインを一番上に表示するため、zIndexを小さくする
-                zIndex: parseInt(obj.routeNum),
-              },
-            });
-          }
-          obj.poly[i].setMap(obj.map);
+    directionsRenderer.addListener("routeindex_changed", function () {
+      document.getElementById("route-decide" + obj.routeNum).style.display =
+        "block";
+      var target = directionsRenderer.getRouteIndex();
+      for (var i = 0; i < obj.poly.length; i++) {
+        if (i == target) {
+          obj.poly[i].setOptions({
+            //選択したルートの場合、色をcolorCodeに従って変更
+            clickable: true,
+            strokeColor: obj.colorCode,
+            strokeOpacity: 1.0,
+            strokeWeight: 7,
+            //色付きラインを一番上に表示するため、zIndexを他のルートより大きくする。
+            zIndex: parseInt(obj.routeNum) + 1,
+          });
+        } else {
+          obj.poly[i].setOptions({
+            //選択したルート以外の場合、色を#808080に設定(選択されている場合、色付きだから、
+            //元に戻すためには、全てのルートについて#808080に設定する必要あり。)
+            clickable: true,
+            strokeColor: "#808080",
+            strokeOpacity: 0.7,
+            strokeWeight: 7,
+            //色付きラインを一番上に表示するため、zIndexを小さくする
+            zIndex: parseInt(obj.routeNum),
+          });
         }
+        obj.poly[i].setMap(obj.map);
       }
-    );
+    });
   }
 
   setUpDecideRouteListener(obj, directionsRenderer) {
@@ -383,37 +420,108 @@ class AutocompleteDirectionsHandler {
       });
   }
 
-  //TimeZOne APIを使用し、出発地のタイムゾーンを取得するメソッド
-  getTimeZone(me) {
-    $.ajax({
-      url: "/get_timezone", // 通信先のURL
-      async: false, //プログラムの途中で実行するので、同期通信で行う
-      type: "POST", // 使用するHTTPメソッド
-      data: JSON.stringify({
-        lat: String(me.originLatitude), //緯度
-        lng: String(me.originLongitue), //経度
-        unix_time: String(today.getTime()).slice(0, 10), //Unix表記の現在時
-      }),
-      contentType: "application/json",
-      dataType: "json", // responseのデータの種類
-      timespan: 1000, // 通信のタイムアウトの設定(ミリ秒)
-    })
-      .done(function (data, textStatus, jqXHR) {
-        //UTCとの時差をminnutes単位で取得
-        me.timeDiffMin = data.rawOffset;
-      })
-      //通信失敗
-      .fail(function (xhr, status, error) {
-        // HTTPエラー時
-        switch (xhr.status) {
-          case 401:
-            alert(xhr.responseText);
-            return;
-          case 500:
-            alert(xhr.responseText);
-            return;
+  //マップ上のクリックを扱うメソッド
+  handleMapClick(clickedPlace) {
+    if (this.routeNum !== currRouteNum) {
+      return;
+    }
+    const me = this;
+    if ("placeId" in clickedPlace) {
+      // デフォルトのinfo windowを無効化
+      clickedPlace.stop();
+      if (clickedPlace.placeId) {
+        this.getPlaceInformation(clickedPlace.placeId, me);
+      }
+    }
+  }
+
+  //クリックした場所の情報表示とルート検索を行うメソッド
+  getPlaceInformation(placeId, me) {
+    me.placesService.getDetails(
+      {
+        placeId: placeId,
+        fields: [
+          "icon",
+          "name",
+          "place_id",
+          "formatted_address",
+          "geometry",
+          "utc_offset_minutes",
+        ],
+      },
+      (place, status) => {
+        if (
+          status === "OK" &&
+          place &&
+          place.geometry &&
+          place.geometry.location
+        ) {
+          //入力が選択されていなければ、出発地として扱う
+          if (!me.inputFieldID) {
+            me.inputFieldID = "origin-input" + me.routeNum;
+          }
+          document.getElementById(me.inputFieldID).value =
+            place.formatted_address;
+          if (me.inputFieldID === "origin-input" + me.routeNum) {
+            me.originPlaceId = place.place_id;
+            //UTCとの時差をminutes単位で取得
+            me.timeDiffMin = place.utc_offset_minutes;
+          } else if (me.inputFieldID === "destination-input" + me.routeNum) {
+            me.destinationPlaceId = place.place_id;
+          }
+          me.infowindow.close();
+          me.infowindow.setPosition(place.geometry.location);
+          me.infowindowContent.children["place-icon"].src = place.icon;
+          me.infowindowContent.children["place-name"].textContent = place.name;
+          me.infowindowContent.children["place-address"].textContent =
+            place.formatted_address;
+          me.infowindow.open(me.map);
+
+          me.route();
         }
-      });
+      }
+    );
+  }
+
+  //origin-input destination-inputどちらが選択されているか取得するメソッド
+  getFocusedElementID(id, me) {
+    const currentInput = document.getElementById(id);
+    currentInput.addEventListener("focus", () => {
+      currRouteNum = me.routeNum; //focusされたら、currRouteNumを選択されたルート番号に設定
+      me.inputFieldID = id;
+    });
+  }
+
+  //ルートをクリックした時のイベントリスナーに使用するcallback関数を返すメソッド
+  polyLineListenerCallback(idx, me) {
+    return function () {
+      me.directionsRenderer.setRouteIndex(idx);
+      for (var j = 0; j < me.poly.length; j++) {
+        if (j == idx) {
+          me.poly[j].setOptions({
+            //選択したルートの場合、色をcolorCodeに従って変更
+            clickable: true,
+            strokeColor: me.colorCode,
+            strokeOpacity: 1.0,
+            strokeWeight: 7,
+            //色付きラインを一番上に表示するため、zIndexを他のルートより大きくする。
+            zIndex: parseInt(me.routeNum) + 1,
+          });
+        } else {
+          me.poly[j].setOptions({
+            //選択したルート以外の場合、色を#808080に設定(選択されている場合、色付きだから、
+            //元に戻すためには、全てのルートについて#808080に設定する必要あり。
+            clickable: true,
+            strokeColor: "#808080",
+            strokeOpacity: 0.7,
+            strokeWeight: 7,
+            //色付きラインを一番上に表示するため、zIndexを小さくする
+            zIndex: parseInt(me.routeNum),
+          });
+        }
+        me.poly[j].setMap(me.map);
+      }
+    };
   }
 
   //directions Serviceを使用し、ルート検索
@@ -431,9 +539,13 @@ class AutocompleteDirectionsHandler {
     };
     //公共交通機関を選択した場合
     if (document.getElementById("changemode-transit" + this.routeNum).checked) {
-      if (document.getElementById("origin-input" + me.routeNum).value.indexOf("日本") !== -1) {
+      if (
+        document
+          .getElementById("origin-input" + me.routeNum)
+          .value.indexOf("日本") !== -1
+      ) {
         window.alert(
-            "日本の公共交通機関情報はGoogle Maps APIの仕様上、ご利用いただけません。"
+          "日本の公共交通機関情報はGoogleによる機能制限により、ご利用いただけません。海外の公共交通機関情報はご利用いただけます。"
         );
         return;
       }
@@ -451,8 +563,6 @@ class AutocompleteDirectionsHandler {
             "T" +
             document.getElementById("time" + this.routeNum).value
         );
-        //入力された場所のタイムゾーンを取得
-        me.getTimeZone(me);
 
         /*(ブラウザのタイムゾーンの時刻) ー (ブラウザのタイムゾーンのoffset) ー (入力地のタイムゾーンのoffset) = (入力地のタイムゾーンの時刻)
                 例:ロサンゼルスの鉄道の3月1日,10:00出発を調べたい場合、
@@ -509,36 +619,43 @@ class AutocompleteDirectionsHandler {
         ) {
           document.getElementById("route-decide" + me.routeNum).style.display =
             "none";
-          alert("日本国内の公共交通機関情報はご利用いただけません。");
+          alert(
+            "日本の公共交通機関情報はGoogleによる機能制限により、ご利用いただけません。海外の公共交通機関情報はご利用いただけます。"
+          );
           return;
         }
         //複数ルートが帰ってきた場合、それぞれについて、ラインを描画する
         for (var i = 0; i < response.routes.length; i++) {
-          //jsではObjectは参照渡しなので、Object.assignを使って、値渡しにする
-          var sub_res = Object.assign({}, response);
-          sub_res.routes = [response.routes[i]];
-          // Rendererは１つのラインしか描画できないので、各ルートごとにRenderオブジェクトを作成する必要がある
-          var subRouteRenderer = new google.maps.DirectionsRenderer();
-          //ドキュメントURL: https://developers.google.com/maps/documentation/javascript/reference/directions#DirectionsRendererOptions
-          subRouteRenderer.setOptions({
-            polylineOptions: {
-              strokeColor: "#808080", //線の色
-              strokeOpacity: 0.5, //線の透明度
-              strokeWeight: 7, //線の太さ
-            },
+          var routePolyline = new google.maps.Polyline();
+          routePolyline.setPath(response.routes[i].overview_path);
+
+          //
+          routePolyline.setOptions({
+            clickable: true,
+            strokeColor: "#808080", //線の色
+            strokeOpacity: 0.5, //線の透明度
+            strokeWeight: 7, //線の太さ
           });
-          subRouteRenderer.setDirections(sub_res);
-          subRouteRenderer.setMap(me.map);
-          me.poly.push(subRouteRenderer);
+          routePolyline.setMap(me.map);
+          me.poly.push(routePolyline);
+
+          var callback = me.polyLineListenerCallback(i, me);
+          me.poly[i].addListener("click", callback);
         }
+        //インデックス番号0のルートに色をつける
+        me.poly[0].setOptions({
+          clickable: true,
+          strokeColor: me.colorCode, //線の色
+          strokeOpacity: 0.5, //線の透明度
+          strokeWeight: 7, //線の太さ
+        });
+        me.directionsRenderer.setRouteIndex(0);
+
         //responseをRendererに渡して、パネルにルートを表示
         me.directionsRenderer.setOptions({
           suppressPolylines: true,
         });
         me.directionsRenderer.setDirections(response);
-        // console.log(response.routes[0].summary);
-        // console.log(response.routes[0].legs[0].distance.text);
-        // console.log(response.routes[0].legs[0].duration.text);
 
         //ルートが１つのみの場合、detail-panelが表示されないので、span要素で距離、所要時間を表示する
         if (response.routes.length === 1) {
@@ -583,18 +700,19 @@ function genSearchBox(routeId, color) {
         <div class="search-fields">
             <hr color="white" class="mt-0">
             <div id="required-fields">
+                <div style="width: 350px"><small>出発地と目的地を入力する場合、地名の一部を入力すると下に選択肢が表示されますので、その中からお選びください。</small></div>
                 <input
                         id="origin-input${routeId}"
                         class="controls input-fields"
                         type="text"
-                        placeholder="出発地を入力"
+                        placeholder="出発地の一部を入力または地名をクリック"
                 />
                 <br><br>
                 <input
                         id="destination-input${routeId}"
                         class="controls input-fields"
                         type="text"
-                        placeholder="目的地を入力"
+                        placeholder="目的地の一部を入力または地名をクリック"
                 />
                 <br>
                 <div id="route-options${routeId}">
