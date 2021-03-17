@@ -102,6 +102,18 @@ window.onload = function () {
     });
 };
 
+//地図上に路線図と道路状況を表示するlayerの表示制御
+function setUpLayersListener(id,layerController, m) {
+  return function () {
+    var layerButton = document.getElementById(id);
+    if (!layerButton.checked) {
+      layerController.setMap(null);
+    } else {
+      layerController.setMap(m);
+    }
+  }
+}
+
 function initMap() {
   const map = new google.maps.Map(document.getElementById("map"), {
     mapTypeControl: false,
@@ -113,6 +125,12 @@ function initMap() {
       gestureHandling: "greedy", //地図埋め込み時Ctrボタン要求の無効化
     },
   });
+  //地図上に路線図と道路状況を表示するlayer
+  const transitLayer = new google.maps.TransitLayer();
+  const trafficLayer = new google.maps.TrafficLayer();
+  map.controls[google.maps.ControlPosition.TOP_LEFT].push(document.getElementById("add-layers"));
+  document.getElementById("add-transport-layer").addEventListener("change", setUpLayersListener("add-transport-layer", transitLayer, map))
+  document.getElementById("add-traffic-layer").addEventListener("change", setUpLayersListener("add-traffic-layer", trafficLayer, map))
 
   $("#add-route").attr("disabled", true);
   //１番目のルート要素をHTMLに追加
