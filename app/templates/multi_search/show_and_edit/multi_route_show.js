@@ -250,7 +250,12 @@ class AutocompleteDirectionsHandler {
     );
     const originAutocomplete = new google.maps.places.Autocomplete(originInput);
     //Places detailは高額料金がかかるので、必要なフィールドを指定して、料金を下げる
-    originAutocomplete.setFields(["place_id", "geometry", "formatted_address", "utc_offset_minutes"]);
+    originAutocomplete.setFields([
+      "place_id",
+      "geometry",
+      "formatted_address",
+      "utc_offset_minutes",
+    ]);
     const destinationAutocomplete = new google.maps.places.Autocomplete(
       destinationInput
     );
@@ -376,42 +381,36 @@ class AutocompleteDirectionsHandler {
   //複数ルートがある場合、パネルのルートを押したら発火
   setUpRouteSelectedListener(obj, directionsRenderer) {
     //documentに明記されていない
-    google.maps.event.addListener(
-      directionsRenderer,
-      "routeindex_changed",
-      function () {
-        document.getElementById("route-decide" + obj.routeNum).style.display =
-          "block";
-        var target = directionsRenderer.getRouteIndex();
-        for (var i = 0; i < obj.poly.length; i++) {
-          if (i == target) {
-            obj.poly[i].setOptions({
-              //選択したルートの場合、色をcolorCodeに従って変更
-              polylineOptions: {
-                strokeColor: obj.colorCode,
-                strokeOpacity: 1.0,
-                strokeWeight: 7,
-                //色付きラインを一番上に表示するため、zIndexを他のルートより大きくする。
-                zIndex: parseInt(obj.routeNum) + 1,
-              },
-            });
-          } else {
-            obj.poly[i].setOptions({
-              //選択したルート以外の場合、色を#808080に設定(選択されている場合、色付きだから、
-              //元に戻すためには、全てのルートについて#808080に設定する必要あり。)
-              polylineOptions: {
-                strokeColor: "#808080",
-                strokeOpacity: 0.7,
-                strokeWeight: 7,
-                //色付きラインを一番上に表示するため、zIndexを小さくする
-                zIndex: parseInt(obj.routeNum),
-              },
-            });
-          }
-          obj.poly[i].setMap(obj.map);
+    directionsRenderer.addListener("routeindex_changed", function () {
+      document.getElementById("route-decide" + obj.routeNum).style.display =
+        "block";
+      var target = directionsRenderer.getRouteIndex();
+      for (var i = 0; i < obj.poly.length; i++) {
+        if (i == target) {
+          obj.poly[i].setOptions({
+            //選択したルートの場合、色をcolorCodeに従って変更
+            clickable: true,
+            strokeColor: obj.colorCode,
+            strokeOpacity: 1.0,
+            strokeWeight: 7,
+            //色付きラインを一番上に表示するため、zIndexを他のルートより大きくする。
+            zIndex: parseInt(obj.routeNum) + 1,
+          });
+        } else {
+          obj.poly[i].setOptions({
+            //選択したルート以外の場合、色を#808080に設定(選択されている場合、色付きだから、
+            //元に戻すためには、全てのルートについて#808080に設定する必要あり。)
+            clickable: true,
+            strokeColor: "#808080",
+            strokeOpacity: 0.7,
+            strokeWeight: 7,
+            //色付きラインを一番上に表示するため、zIndexを小さくする
+            zIndex: parseInt(obj.routeNum),
+          });
         }
+        obj.poly[i].setMap(obj.map);
       }
-    );
+    });
   }
 
   setUpDecideRouteListener(obj, directionsRenderer) {
@@ -445,7 +444,7 @@ class AutocompleteDirectionsHandler {
   //マップ上のクリックを扱うメソッド
   handleMapClick(clickedPlace) {
     if (this.routeNum !== currRouteNum) {
-      return
+      return;
     }
     const me = this;
     if ("placeId" in clickedPlace) {
@@ -460,48 +459,48 @@ class AutocompleteDirectionsHandler {
   //クリックした場所の情報表示とルート検索を行うメソッド
   getPlaceInformation(placeId, me) {
     me.placesService.getDetails(
-        {
-          placeId: placeId,
-          fields: [
-            "icon",
-            "name",
-            "place_id",
-            "formatted_address",
-            "geometry",
-            "utc_offset_minutes",
-          ],
-        },
-        (place, status) => {
-          if (
-              status === "OK" &&
-              place &&
-              place.geometry &&
-              place.geometry.location
-          ) {
-            //入力が選択されていなければ、出発地として扱う
-            if (!me.inputFieldID) {
-              me.inputFieldID = "origin-input" + me.routeNum;
-            }
-            document.getElementById(me.inputFieldID).value =
-                place.formatted_address;
-            if (me.inputFieldID === "origin-input" + me.routeNum) {
-              me.originPlaceId = place.place_id;
-              //UTCとの時差をminutes単位で取得
-              me.timeDiffMin = place.utc_offset_minutes;
-            } else if (me.inputFieldID === "destination-input" + me.routeNum) {
-              me.destinationPlaceId = place.place_id;
-            }
-            me.infowindow.close();
-            me.infowindow.setPosition(place.geometry.location);
-            me.infowindowContent.children["place-icon"].src = place.icon;
-            me.infowindowContent.children["place-name"].textContent = place.name;
-            me.infowindowContent.children["place-address"].textContent =
-                place.formatted_address;
-            me.infowindow.open(me.map);
-
-            me.route();
+      {
+        placeId: placeId,
+        fields: [
+          "icon",
+          "name",
+          "place_id",
+          "formatted_address",
+          "geometry",
+          "utc_offset_minutes",
+        ],
+      },
+      (place, status) => {
+        if (
+          status === "OK" &&
+          place &&
+          place.geometry &&
+          place.geometry.location
+        ) {
+          //入力が選択されていなければ、出発地として扱う
+          if (!me.inputFieldID) {
+            me.inputFieldID = "origin-input" + me.routeNum;
           }
+          document.getElementById(me.inputFieldID).value =
+            place.formatted_address;
+          if (me.inputFieldID === "origin-input" + me.routeNum) {
+            me.originPlaceId = place.place_id;
+            //UTCとの時差をminutes単位で取得
+            me.timeDiffMin = place.utc_offset_minutes;
+          } else if (me.inputFieldID === "destination-input" + me.routeNum) {
+            me.destinationPlaceId = place.place_id;
+          }
+          me.infowindow.close();
+          me.infowindow.setPosition(place.geometry.location);
+          me.infowindowContent.children["place-icon"].src = place.icon;
+          me.infowindowContent.children["place-name"].textContent = place.name;
+          me.infowindowContent.children["place-address"].textContent =
+            place.formatted_address;
+          me.infowindow.open(me.map);
+
+          me.route();
         }
+      }
     );
   }
 
@@ -512,6 +511,38 @@ class AutocompleteDirectionsHandler {
       currRouteNum = me.routeNum; //focusされたら、currRouteNumを選択されたルート番号に設定
       me.inputFieldID = id;
     });
+  }
+
+  //ルートをクリックした時のイベントリスナーに使用するcallback関数を返すメソッド
+  polyLineListenerCallback(idx, me) {
+    return function () {
+      me.directionsRenderer.setRouteIndex(idx);
+      for (var j = 0; j < me.poly.length; j++) {
+        if (j == idx) {
+          me.poly[j].setOptions({
+            //選択したルートの場合、色をcolorCodeに従って変更
+            clickable: true,
+            strokeColor: me.colorCode,
+            strokeOpacity: 1.0,
+            strokeWeight: 7,
+            //色付きラインを一番上に表示するため、zIndexを他のルートより大きくする。
+            zIndex: parseInt(me.routeNum) + 1,
+          });
+        } else {
+          me.poly[j].setOptions({
+            //選択したルート以外の場合、色を#808080に設定(選択されている場合、色付きだから、
+            //元に戻すためには、全てのルートについて#808080に設定する必要あり。
+            clickable: true,
+            strokeColor: "#808080",
+            strokeOpacity: 0.7,
+            strokeWeight: 7,
+            //色付きラインを一番上に表示するため、zIndexを小さくする
+            zIndex: parseInt(me.routeNum),
+          });
+        }
+        me.poly[j].setMap(me.map);
+      }
+    };
   }
 
   //directions Serviceを使用し、ルート検索
@@ -529,9 +560,13 @@ class AutocompleteDirectionsHandler {
     };
     //公共交通機関を選択した場合
     if (document.getElementById("changemode-transit" + this.routeNum).checked) {
-      if (document.getElementById("origin-input" + me.routeNum).value.indexOf("日本") !== -1) {
+      if (
+        document
+          .getElementById("origin-input" + me.routeNum)
+          .value.indexOf("日本") !== -1
+      ) {
         window.alert(
-            "日本の公共交通機関情報はGoogleによる機能制限により、ご利用いただけません。海外の公共交通機関情報はご利用いただけます。"
+          "日本の公共交通機関情報はGoogleによる機能制限により、ご利用いただけません。海外の公共交通機関情報はご利用いただけます。"
         );
         return;
       }
@@ -607,29 +642,38 @@ class AutocompleteDirectionsHandler {
         ) {
           document.getElementById("route-decide" + me.routeNum).style.display =
             "none";
-          alert("日本の公共交通機関情報はGoogleによる機能制限により、ご利用いただけません。海外の公共交通機関情報はご利用いただけます。");
+          alert(
+            "日本の公共交通機関情報はGoogleによる機能制限により、ご利用いただけません。海外の公共交通機関情報はご利用いただけます。"
+          );
           return;
         }
         //複数ルートが帰ってきた場合、それぞれについて、ラインを描画する
         for (var i = 0; i < response.routes.length; i++) {
-          //jsではObjectは参照渡しなので、Object.assignを使って、値渡しにする
-          var sub_res = Object.assign({}, response);
-          sub_res.routes = [response.routes[i]];
-          // Rendererは１つのラインしか描画できないので、各ルートごとにRenderオブジェクトを作成する必要がある
-          var subRouteRenderer = new google.maps.DirectionsRenderer();
-          //ドキュメントURL: https://developers.google.com/maps/documentation/javascript/reference/directions#DirectionsRendererOptions
-          subRouteRenderer.setOptions({
-            //Colorとopacity(不透明度)と太さを設定
-            polylineOptions: {
-              strokeColor: "#808080",
-              strokeOpacity: 0.5,
-              strokeWeight: 7,
-            },
+          var routePolyline = new google.maps.Polyline();
+          routePolyline.setPath(response.routes[i].overview_path);
+
+          //
+          routePolyline.setOptions({
+            clickable: true,
+            strokeColor: "#808080", //線の色
+            strokeOpacity: 0.5, //線の透明度
+            strokeWeight: 7, //線の太さ
           });
-          subRouteRenderer.setDirections(sub_res);
-          subRouteRenderer.setMap(this.map);
-          me.poly.push(subRouteRenderer);
+          routePolyline.setMap(me.map);
+          me.poly.push(routePolyline);
+
+          var callback = me.polyLineListenerCallback(i, me);
+          me.poly[i].addListener("click", callback);
         }
+        //インデックス番号0のルートに色をつける
+        me.poly[0].setOptions({
+          clickable: true,
+          strokeColor: me.colorCode, //線の色
+          strokeOpacity: 0.5, //線の透明度
+          strokeWeight: 7, //線の太さ
+        });
+        me.directionsRenderer.setRouteIndex(0);
+
         //responseをRendererに渡して、パネルにルートを表示
         me.directionsRenderer.setOptions({
           suppressPolylines: true,
