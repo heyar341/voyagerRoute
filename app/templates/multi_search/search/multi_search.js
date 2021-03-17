@@ -342,42 +342,36 @@ class AutocompleteDirectionsHandler {
   //複数ルートがある場合、パネルのルートを押したら発火
   setUpRouteSelectedListener(obj, directionsRenderer) {
     //documentに明記されていない
-    google.maps.event.addListener(
-      directionsRenderer,
-      "routeindex_changed",
-      function () {
-        document.getElementById("route-decide" + obj.routeNum).style.display =
-          "block";
-        var target = directionsRenderer.getRouteIndex();
-        for (var i = 0; i < obj.poly.length; i++) {
-          if (i == target) {
-            obj.poly[i].setOptions({
-              //選択したルートの場合、色をcolorCodeに従って変更
-              polylineOptions: {
-                strokeColor: obj.colorCode,
-                strokeOpacity: 1.0,
-                strokeWeight: 7,
-                //色付きラインを一番上に表示するため、zIndexを他のルートより大きくする。
-                zIndex: parseInt(obj.routeNum) + 1,
-              },
-            });
-          } else {
-            obj.poly[i].setOptions({
-              //選択したルート以外の場合、色を#808080に設定(選択されている場合、色付きだから、
-              //元に戻すためには、全てのルートについて#808080に設定する必要あり。)
-              polylineOptions: {
-                strokeColor: "#808080",
-                strokeOpacity: 0.7,
-                strokeWeight: 7,
-                //色付きラインを一番上に表示するため、zIndexを小さくする
-                zIndex: parseInt(obj.routeNum),
-              },
-            });
-          }
-          obj.poly[i].setMap(obj.map);
+    directionsRenderer.addListener("routeindex_changed", function () {
+      document.getElementById("route-decide" + obj.routeNum).style.display =
+        "block";
+      var target = directionsRenderer.getRouteIndex();
+      for (var i = 0; i < obj.poly.length; i++) {
+        if (i == target) {
+          obj.poly[i].setOptions({
+            //選択したルートの場合、色をcolorCodeに従って変更
+            clickable: true,
+            strokeColor: obj.colorCode,
+            strokeOpacity: 1.0,
+            strokeWeight: 7,
+            //色付きラインを一番上に表示するため、zIndexを他のルートより大きくする。
+            zIndex: parseInt(obj.routeNum) + 1,
+          });
+        } else {
+          obj.poly[i].setOptions({
+            //選択したルート以外の場合、色を#808080に設定(選択されている場合、色付きだから、
+            //元に戻すためには、全てのルートについて#808080に設定する必要あり。)
+            clickable: true,
+            strokeColor: "#808080",
+            strokeOpacity: 0.7,
+            strokeWeight: 7,
+            //色付きラインを一番上に表示するため、zIndexを小さくする
+            zIndex: parseInt(obj.routeNum),
+          });
         }
+        obj.poly[i].setMap(obj.map);
       }
-    );
+    });
   }
 
   setUpDecideRouteListener(obj, directionsRenderer) {
@@ -411,7 +405,7 @@ class AutocompleteDirectionsHandler {
   //マップ上のクリックを扱うメソッド
   handleMapClick(clickedPlace) {
     if (this.routeNum !== currRouteNum) {
-      return
+      return;
     }
     const me = this;
     if ("placeId" in clickedPlace) {
@@ -478,6 +472,38 @@ class AutocompleteDirectionsHandler {
       currRouteNum = me.routeNum; //focusされたら、currRouteNumを選択されたルート番号に設定
       me.inputFieldID = id;
     });
+  }
+
+  //ルートをクリックした時のイベントリスナーに使用するcallback関数を返すメソッド
+  polyLineListenerCallback(idx, me) {
+    return function () {
+      me.directionsRenderer.setRouteIndex(idx);
+      for (var j = 0; j < me.poly.length; j++) {
+        if (j == idx) {
+          me.poly[j].setOptions({
+            //選択したルートの場合、色をcolorCodeに従って変更
+            clickable: true,
+            strokeColor: me.colorCode,
+            strokeOpacity: 1.0,
+            strokeWeight: 7,
+            //色付きラインを一番上に表示するため、zIndexを他のルートより大きくする。
+            zIndex: parseInt(me.routeNum) + 1,
+          });
+        } else {
+          me.poly[j].setOptions({
+            //選択したルート以外の場合、色を#808080に設定(選択されている場合、色付きだから、
+            //元に戻すためには、全てのルートについて#808080に設定する必要あり。
+            clickable: true,
+            strokeColor: "#808080",
+            strokeOpacity: 0.7,
+            strokeWeight: 7,
+            //色付きラインを一番上に表示するため、zIndexを小さくする
+            zIndex: parseInt(me.routeNum),
+          });
+        }
+        me.poly[j].setMap(me.map);
+      }
+    };
   }
 
   //directions Serviceを使用し、ルート検索
@@ -582,23 +608,31 @@ class AutocompleteDirectionsHandler {
         }
         //複数ルートが帰ってきた場合、それぞれについて、ラインを描画する
         for (var i = 0; i < response.routes.length; i++) {
-          //jsではObjectは参照渡しなので、Object.assignを使って、値渡しにする
-          var sub_res = Object.assign({}, response);
-          sub_res.routes = [response.routes[i]];
-          // Rendererは１つのラインしか描画できないので、各ルートごとにRenderオブジェクトを作成する必要がある
-          var subRouteRenderer = new google.maps.DirectionsRenderer();
-          //ドキュメントURL: https://developers.google.com/maps/documentation/javascript/reference/directions#DirectionsRendererOptions
-          subRouteRenderer.setOptions({
-            polylineOptions: {
-              strokeColor: "#808080", //線の色
-              strokeOpacity: 0.5, //線の透明度
-              strokeWeight: 7, //線の太さ
-            },
+          var routePolyline = new google.maps.Polyline();
+          routePolyline.setPath(response.routes[i].overview_path);
+
+          //
+          routePolyline.setOptions({
+            clickable: true,
+            strokeColor: "#808080", //線の色
+            strokeOpacity: 0.5, //線の透明度
+            strokeWeight: 7, //線の太さ
           });
-          subRouteRenderer.setDirections(sub_res);
-          subRouteRenderer.setMap(me.map);
-          me.poly.push(subRouteRenderer);
+          routePolyline.setMap(me.map);
+          me.poly.push(routePolyline);
+
+          var callback = me.polyLineListenerCallback(i, me);
+          me.poly[i].addListener("click", callback);
         }
+        //インデックス番号0のルートに色をつける
+        me.poly[0].setOptions({
+          clickable: true,
+          strokeColor: me.colorCode, //線の色
+          strokeOpacity: 0.5, //線の透明度
+          strokeWeight: 7, //線の太さ
+        });
+        me.directionsRenderer.setRouteIndex(0);
+
         //responseをRendererに渡して、パネルにルートを表示
         me.directionsRenderer.setOptions({
           suppressPolylines: true,
