@@ -2,7 +2,7 @@ package main
 
 import (
 	"app/controllers"
-	"app/controllers/apikey"
+	"app/controllers/api"
 	"app/controllers/auth"
 	"app/controllers/multiroute"
 	"app/controllers/mypage"
@@ -41,8 +41,7 @@ func main() {
 
 	//「まとめ検索」
 	http.HandleFunc("/multi_search", middleware.Auth(multiroute.MultiSearchTpl))                                 //検索画面
-	http.HandleFunc("/get_apikey", apikey.GetApiKey)                                                             //Google Maps API Javascriptの実行に必要なJavascriptファイルを取得するためのエンドポイント
-	http.HandleFunc("/get_timezone", middleware.Auth(multiroute.GetTimezone))                                    //タイムゾーン取得用エンドポイント
+	http.HandleFunc("/get_api_source", api.GetApiSource)                                                             //Google Maps API Javascriptの実行に必要なJavascriptファイルを取得するためのエンドポイント
 	http.HandleFunc("/routes_save", middleware.Auth(reqvalidator.SaveRoutesValidator(multiroute.SaveNewRoute)))  //保存用エンドポイント
 	http.HandleFunc("/show_route/", middleware.Auth(multiroute.ShowAndEditRoutesTpl))                            //確認編集画面
 	http.HandleFunc("/update_route", middleware.Auth(reqvalidator.UpdateRouteValidator(multiroute.UpdateRoute))) //編集用エンドポイント
