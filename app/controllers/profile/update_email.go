@@ -76,7 +76,7 @@ func UpdateEmail(w http.ResponseWriter, req *http.Request) {
 	http.Redirect(w, req, "/ask_confirm", http.StatusSeeOther)
 
 	//メールでトークン付きのURLを送る
-	err := mailhandler.SendConfirmEmail(token, u.newEmail, u.user.UserName, "confirm_email")
+	err := mailhandler.SendConfirmEmail(token, u.newEmail, "confirm_email")
 	return
 	if err != nil {
 		log.Printf("Error while sending email at registering: %v", err)
