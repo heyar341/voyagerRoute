@@ -1,4 +1,4 @@
-package apikey
+package api
 
 import (
 	"app/envhandler"
@@ -7,7 +7,7 @@ import (
 	"net/http"
 )
 
-func GetApiKey(w http.ResponseWriter, req *http.Request) {
+func GetApiSource(w http.ResponseWriter, _ *http.Request) {
 	apiKey, err := envhandler.GetEnvVal("MAP_API_KEY")
 	if err != nil || apiKey == "" {
 		http.Error(w, "エラーが発生しました。", http.StatusBadRequest)

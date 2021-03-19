@@ -55,6 +55,10 @@
 * TimeZone API
 * Places API
 
+#### メール送信
+* mailgun
+
+
 ### 導入検討中技術
 * Kubernetes
 
