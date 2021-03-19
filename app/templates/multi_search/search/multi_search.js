@@ -89,7 +89,7 @@ var tzoneOffsetminu = today.getTimezoneOffset();
 
 //Google Maps API実行ファイル読み込み
 window.onload = function () {
-  fetch("/get_apikey")
+  fetch("/get_api_source")
     .then((resp) => {
       return resp.text();
     })
