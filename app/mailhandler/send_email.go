@@ -4,43 +4,44 @@ import (
 	"app/cookiehandler"
 	"app/envhandler"
 	"app/model"
+	"context"
 	"fmt"
+	"github.com/mailgun/mailgun-go/v4"
 	"log"
 	"net/http"
-	"net/smtp"
+	"time"
 )
 
-func SendConfirmEmail(token, email, userName, path string) error {
-	//envファイルからGmailのアプリパスワード取得
-	gmailPassword, err := envhandler.GetEnvVal("GMAIL_APP_PASS")
-	if err != nil {
-		log.Printf("Error while getting gmail app password form env file: %v", err)
-		return err
-	}
-	mailAuth := smtp.PlainAuth(
-		"",
-		"app.goog.routes@gmail.com",
-		gmailPassword,
-		"smtp.gmail.com",
-	)
+var mailDomain = "mail.googroutes.com"
 
-	tokenURL := "グーグる〜とをご利用いただきありがとうございます。\n" +
+func SendConfirmEmail(token, email, path string) error {
+	apiKey, err := envhandler.GetEnvVal("MAILGUN_API_KEY")
+	if err != nil {
+		return fmt.Errorf("couldn't get mailgun apiKey form env file: %w", err)
+	}
+
+	mg := mailgun.NewMailgun(mailDomain, apiKey)
+
+	sender := "グーグる〜と運営 <customer_service@mail.googroutes.com>"
+	subject := "メールアドレス認証のお願い。"
+	body := "グーグる〜とをご利用いただきありがとうございます。\n" +
 		"このメールはメールアドレス認証用に送信されたメールです。\n" +
 		"このメールを受信してから１時間以内に認証を行ってください。\n" +
 		"１時間以内に認証が行われない場合、認証はキャンセルされます。\n\n" +
 		"認証用URL:\n" +
 		"https://googroutes.com/" + path + "/?token=" + token
-	err = smtp.SendMail(
-		"smtp.gmail.com:587",
-		mailAuth,
-		"app.goog.routes@gmail.com",
-		[]string{email},
-		[]byte(fmt.Sprintf("To:%s\r\nSubject:メールアドレス認証のお願い\r\n\r\n%s", userName, tokenURL)),
-	)
+	recipient := email
+
+	m := mg.NewMessage(sender, subject, body, recipient)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+
+	_, _, err = mg.Send(ctx, m)
 	if err != nil {
-		log.Printf("Error sending email for confirm registering: %v", err)
-		return err
+		return fmt.Errorf("failed to send message: %w", err)
 	}
+
 	return nil
 }
 
@@ -50,47 +51,49 @@ func SendQuestion(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	//envファイルからGmailのアプリパスワード取得
-	gmailPassword, err := envhandler.GetEnvVal("GMAIL_APP_PASS")
-	if err != nil {
-		msg := "送信中にエラーが発生しました。"
-		cookiehandler.MakeCookieAndRedirect(w, req, "msg", msg, "/question_form")
-		log.Printf("Error while getting gmail app password form env file: %v", err)
-		return
-	}
-
 	user, ok := req.Context().Value("user").(model.User)
 	if !ok {
 		msg := "送信中にエラーが発生しました。"
 		cookiehandler.MakeCookieAndRedirect(w, req, "msg", msg, "/question_form")
-		log.Printf("Error while getting userName from context: %v", err)
+		log.Printf("Error while getting userName from context")
 		return
 	}
 
 	userName := user.UserName
 	email := user.Email
-
 	qText := req.FormValue("question")
 
-	mailAuth := smtp.PlainAuth(
-		"",
-		"app.goog.routes@gmail.com",
-		gmailPassword,
-		"smtp.gmail.com",
-	)
+	apiKey, err := envhandler.GetEnvVal("MAILGUN_API_KEY")
+	if err != nil {
+		msg := "送信中にエラーが発生しました。"
+		cookiehandler.MakeCookieAndRedirect(w, req, "msg", msg, "/question_form")
+		log.Printf("couldn't get mailgun apiKey form env file: %v", err)
+		return
+	}
+	myMail, err := envhandler.GetEnvVal("MY_MAIL")
+	if err != nil {
+		msg := "送信中にエラーが発生しました。"
+		cookiehandler.MakeCookieAndRedirect(w, req, "msg", msg, "/question_form")
+		log.Printf("couldn't get mailgun apiKey form env file: %v", err)
+		return
+	}
 
-	t := "問い合わせ\n" +
+	mg := mailgun.NewMailgun(mailDomain, apiKey)
+
+	sender := "グーグる〜と運営 <customer_service@mail.googroutes.com>"
+	subject := "お問い合わせ"
+	body := "お問い合わせ\n" +
 		"ユーザー名：" + userName + "\n" +
 		"メールアドレス:" + email + "\n" +
 		"質問内容：" + qText + "\n"
+	recipient := myMail
 
-	err = smtp.SendMail(
-		"smtp.gmail.com:587",
-		mailAuth,
-		"app.goog.routes@gmail.com",
-		[]string{"app.goog.routes@gmail.com"},
-		[]byte(fmt.Sprintf("To:%s\r\nSubject:問い合わせ\r\n\r\n%s", "自分", t)),
-	)
+	m := mg.NewMessage(sender, subject, body, recipient)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+
+	_, _, err = mg.Send(ctx, m)
 	if err != nil {
 		msg := "送信中にエラーが発生しました。"
 		cookiehandler.MakeCookieAndRedirect(w, req, "msg", msg, "/question_form")
@@ -98,5 +101,5 @@ func SendQuestion(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	cookiehandler.MakeCookieAndRedirect(w, req, "success", "お問い合わせを送信しました。", "/mypage")
+	cookiehandler.MakeCookieAndRedirect(w, req, "success", "お問い合わせの受付が完了しました。", "/mypage")
 }
