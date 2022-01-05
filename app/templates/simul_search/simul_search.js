@@ -1,3 +1,63 @@
+var searchResult = {
+  title: "",
+  simul_routes:{},
+}
+
+//検索結果保存
+$(function () {
+  $("#save-route").click(function () {
+    var keys = Object.keys(searchResult.simul_routes);
+    if (keys.length === 0) {
+      window.alert("ルートを１つ以上設定してください。");
+      return;
+    }
+    if ($("#route-title").val() === "") {
+      window.alert("保存名は１文字以上入力してください。");
+      return;
+    }
+    searchResult.title = document.getElementById("route-title").value;
+    if (/[\.\$]/.test(document.getElementById("route-title").value)) {
+      window.alert(".または$はタイトル名に使用できません。");
+      return;
+    }
+    // 多重送信を防ぐため通信完了までボタンをdisableにする
+    var button = $(this);
+    button.attr("disabled", true);
+
+    $.ajax({
+      url: "/simul_search/routes_save", // 通信先のURL
+      type: "POST", // 使用するHTTPメソッド
+      data: JSON.stringify(searchResult),
+      contentType: "application/json",
+      dataType: "json", // responseのデータの種類
+      timespan: 1000, // 通信のタイムアウトの設定(ミリ秒)
+    })
+        //通信成功
+        .done(function (data, textStatus, jqXHR) {
+          window.location.href = "/simul_search";
+          //通信失敗
+        })
+        .fail(function (xhr, status, error) {
+          // HTTPエラー時
+          switch (xhr.status) {
+            case 401:
+              alert(xhr.responseText);
+              break;
+            case 500:
+              alert(xhr.responseText);
+          }
+
+          //通信終了後
+        })
+        .always(function (arg1, status, arg2) {
+          //status が "success" の場合は always(data, status, xhr) となるが
+          //、"success" 以外の場合は always(xhr, status, error)となる。
+          button.attr("disabled", false); // ボタンを再び enableにする
+        });
+  });
+});
+
+
 //Ajax通信
 $(function () {
   $("#simul-search").click(function () {
@@ -37,13 +97,14 @@ $(function () {
       timespan: 2000, // 通信のタイムアウトの設定(ミリ秒)
       //通信成功
     })
-      .done(function (data, textStatus, jqXHR) {
+      .done(function (simulSearchResult, textStatus, jqXHR) {
+        searchResult.simul_routes = simulSearchResult;
         for (var i = 1; i < 10; i++) {
-          if (data.resp[i]) {
+          if (simulSearchResult[i]) {
             document.getElementById("distance" + String(i)).innerText =
-              data.resp[i][0];
+              simulSearchResult[i].distance;
             document.getElementById("duration" + String(i)).innerText =
-              data.resp[i][1];
+              simulSearchResult[i].duration;
           }
         }
         //通信失敗
