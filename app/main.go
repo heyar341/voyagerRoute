@@ -48,8 +48,9 @@ func main() {
 	http.HandleFunc("/delete_route", middleware.Auth(multiroute.DeleteRoute))                                    //削除用エンドポイント
 
 	//「同時検索」
-	http.HandleFunc("/simul_search", middleware.Auth(simulsearch.SimulSearchTpl))                     //検索画面
-	http.HandleFunc("/do_simul_search", reqvalidator.SimulSearchValidator(simulsearch.DoSimulSearch)) //検索実行用エンドポイント
+	http.HandleFunc("/simul_search", middleware.Auth(simulsearch.SimulSearchTpl))                                                 //検索画面
+	http.HandleFunc("/do_simul_search", reqvalidator.SimulSearchValidator(simulsearch.DoSimulSearch))                             //検索実行用エンドポイント
+	http.HandleFunc("/simul_search/routes_save", middleware.Auth(reqvalidator.SaveSimulRouteValidator(simulsearch.SaveNewRoute))) //保存用エンドポイント
 
 	//「マイページ」
 	http.HandleFunc("/mypage", middleware.Auth(mypage.ShowMypage))                 //マイページ表示
