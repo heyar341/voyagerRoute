@@ -1,7 +1,8 @@
 package multiroute
 
 import (
-	"app/controllers"
+	"app/bsonconv"
+	"app/contexthandler"
 	"app/cookiehandler"
 	"app/customerr"
 	"app/model"
@@ -87,10 +88,10 @@ func (eR *editRoute) convertStructToJSON() {
 
 func ShowAndEditRoutesTpl(w http.ResponseWriter, req *http.Request) {
 	var eR editRoute
-	controllers.GetUserFromCtx(req, &eR.user, &eR.err)
+	contexthandler.GetUserFromCtx(req, &eR.user, &eR.err)
 	routeTitle := req.URL.Query().Get("route_title")
 	d := eR.getRouteFromDB(routeTitle)
-	controllers.ConvertDucToStruct(d, &eR.routeModel, &eR.err, "multi route")
+	bsonconv.ConvertDucToStruct(d, &eR.routeModel, &eR.err, "multi route")
 	eR.convertStructToJSON()
 	if eR.err != nil {
 		e := eR.err.(customerr.BaseErr)
@@ -98,7 +99,7 @@ func ShowAndEditRoutesTpl(w http.ResponseWriter, req *http.Request) {
 		log.Printf("operation: %s, error: %v", e.Op, e.Err)
 		return
 	}
-	data := controllers.GetLoginDataFromCtx(req)
+	data := contexthandler.GetLoginStateFromCtx(req)
 	data["routeInfo"] = eR.routeJSON
 	showRouteTpl.ExecuteTemplate(w, "multi_route_show.html", data)
 }

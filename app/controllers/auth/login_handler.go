@@ -1,7 +1,8 @@
 package auth
 
 import (
-	"app/controllers"
+	"app/bsonconv"
+	"app/contexthandler"
 	"app/cookiehandler"
 	"app/customerr"
 	"app/model"
@@ -82,10 +83,10 @@ func (l *loginProcess) generateNewSession(w http.ResponseWriter) {
 
 func Login(w http.ResponseWriter, req *http.Request) {
 	var l loginProcess
-	controllers.GetStrValueFromCtx(req, &l.email, &l.err, "email")
-	controllers.GetStrValueFromCtx(req, &l.password, &l.err, "password")
+	contexthandler.GetStrValueFromCtx(req, &l.email, &l.err, "email")
+	contexthandler.GetStrValueFromCtx(req, &l.password, &l.err, "password")
 	d := l.getUserFromDB()
-	controllers.ConvertDucToStruct(d, &l.user, &l.err, "login user")
+	bsonconv.ConvertDucToStruct(d, &l.user, &l.err, "login user")
 	l.comparePasswords()
 	l.generateNewSession(w)
 

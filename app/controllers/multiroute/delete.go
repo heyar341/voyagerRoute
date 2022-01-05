@@ -1,6 +1,7 @@
 package multiroute
 
 import (
+	"app/contexthandler"
 	"app/controllers"
 	"app/cookiehandler"
 	"app/customerr"
@@ -35,7 +36,7 @@ func (d *deleteRoute) deleteRoute() {
 func DeleteRoute(w http.ResponseWriter, req *http.Request) {
 	var d deleteRoute
 	controllers.CheckHTTPMethod(req, &d.err)
-	controllers.GetUserFromCtx(req, &d.user, &d.err)
+	contexthandler.GetUserFromCtx(req, &d.user, &d.err)
 	d.routeTitle = req.FormValue("title")
 	d.deleteRoute()
 

@@ -1,7 +1,8 @@
 package auth
 
 import (
-	"app/controllers"
+	"app/bsonconv"
+	"app/contexthandler"
 	"app/cookiehandler"
 	"app/customerr"
 	"app/mailhandler"
@@ -150,9 +151,9 @@ func (cR *confirmRegister) generateNewSession(w http.ResponseWriter) {
 
 func Register(w http.ResponseWriter, req *http.Request) {
 	var r registerProcess
-	controllers.GetStrValueFromCtx(req, &r.userName, &r.err, "username")
-	controllers.GetStrValueFromCtx(req, &r.email, &r.err, "email")
-	controllers.GetStrValueFromCtx(req, &r.password, &r.err, "password")
+	contexthandler.GetStrValueFromCtx(req, &r.userName, &r.err, "username")
+	contexthandler.GetStrValueFromCtx(req, &r.email, &r.err, "email")
+	contexthandler.GetStrValueFromCtx(req, &r.password, &r.err, "password")
 	r.generateSecuredPassword()
 	//メールアドレス認証用のトークンを作成
 	token := uuid.New().String()
@@ -178,7 +179,7 @@ func ConfirmRegister(w http.ResponseWriter, req *http.Request) {
 	var cR confirmRegister
 	cR.getTokenFromURL(req)
 	d := cR.findUserByToken()
-	controllers.ConvertDucToStruct(d, &cR.registeringUser, &cR.err, "registeringUser")
+	bsonconv.ConvertDucToStruct(d, &cR.registeringUser, &cR.err, "registeringUser")
 	cR.checkTokenExpire()
 	cR.saveNewUserToDB()
 	cR.generateNewSession(w)

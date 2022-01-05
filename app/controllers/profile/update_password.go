@@ -1,6 +1,7 @@
 package profile
 
 import (
+	"app/contexthandler"
 	"app/controllers"
 	"app/cookiehandler"
 	"app/customerr"
@@ -89,7 +90,7 @@ func (uP *updatePassword) updatePassword() {
 func UpdatePassword(w http.ResponseWriter, req *http.Request) {
 	var uP updatePassword
 	controllers.CheckHTTPMethod(req, &uP.err)
-	controllers.GetUserFromCtx(req, &uP.user, &uP.err)
+	contexthandler.GetUserFromCtx(req, &uP.user, &uP.err)
 	currPassword := uP.getPasswordFromForm(req, "current-password")
 	newPassword := uP.getPasswordFromForm(req, "password")
 	uP.comparePasswords(currPassword)

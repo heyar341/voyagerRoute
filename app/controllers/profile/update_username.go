@@ -1,6 +1,7 @@
 package profile
 
 import (
+	"app/contexthandler"
 	"app/controllers"
 	"app/cookiehandler"
 	"app/customerr"
@@ -55,7 +56,7 @@ func (uU *updateUserName) updateUserName() {
 func UpdateUserName(w http.ResponseWriter, req *http.Request) {
 	var uU updateUserName
 	controllers.CheckHTTPMethod(req, &uU.err)
-	controllers.GetUserFromCtx(req, &uU.user, &uU.err)
+	contexthandler.GetUserFromCtx(req, &uU.user, &uU.err)
 	uU.getUserNameFromForm(req)
 	uU.updateUserName()
 

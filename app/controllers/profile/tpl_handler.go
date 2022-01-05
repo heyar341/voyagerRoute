@@ -1,7 +1,7 @@
 package profile
 
 import (
-	"app/controllers"
+	"app/contexthandler"
 	"app/cookiehandler"
 	"app/customerr"
 	"app/model"
@@ -35,8 +35,8 @@ func processCookie(w http.ResponseWriter, c *http.Cookie, data map[string]interf
 
 func ShowProfile(w http.ResponseWriter, req *http.Request) {
 	var t tplProcess
-	t.data = controllers.GetLoginDataFromCtx(req)
-	controllers.GetUserFromCtx(req, &t.user, &t.err)
+	t.data = contexthandler.GetLoginStateFromCtx(req)
+	contexthandler.GetUserFromCtx(req, &t.user, &t.err)
 	if t.err != nil {
 		e := t.err.(customerr.BaseErr)
 		cookiehandler.MakeCookieAndRedirect(w, req, "msg", e.Msg, "/mypage")
@@ -61,8 +61,8 @@ func ShowProfile(w http.ResponseWriter, req *http.Request) {
 
 func EditUserNameForm(w http.ResponseWriter, req *http.Request) {
 	var t tplProcess
-	t.data = controllers.GetLoginDataFromCtx(req)
-	controllers.GetUserFromCtx(req, &t.user, &t.err)
+	t.data = contexthandler.GetLoginStateFromCtx(req)
+	contexthandler.GetUserFromCtx(req, &t.user, &t.err)
 	if t.err != nil {
 		e := t.err.(customerr.BaseErr)
 		cookiehandler.MakeCookieAndRedirect(w, req, "msg", e.Msg, "/mypage")
@@ -80,8 +80,8 @@ func EditUserNameForm(w http.ResponseWriter, req *http.Request) {
 }
 func EditEmailForm(w http.ResponseWriter, req *http.Request) {
 	var t tplProcess
-	t.data = controllers.GetLoginDataFromCtx(req)
-	controllers.GetUserFromCtx(req, &t.user, &t.err)
+	t.data = contexthandler.GetLoginStateFromCtx(req)
+	contexthandler.GetUserFromCtx(req, &t.user, &t.err)
 	if t.err != nil {
 		e := t.err.(customerr.BaseErr)
 		cookiehandler.MakeCookieAndRedirect(w, req, "msg", e.Msg, "/mypage")
@@ -103,8 +103,8 @@ func EditEmailForm(w http.ResponseWriter, req *http.Request) {
 
 func EditPasswordForm(w http.ResponseWriter, req *http.Request) {
 	var t tplProcess
-	t.data = controllers.GetLoginDataFromCtx(req)
-	controllers.GetUserFromCtx(req, &t.user, &t.err)
+	t.data = contexthandler.GetLoginStateFromCtx(req)
+	contexthandler.GetUserFromCtx(req, &t.user, &t.err)
 	if t.err != nil {
 		e := t.err.(customerr.BaseErr)
 		cookiehandler.MakeCookieAndRedirect(w, req, "msg", e.Msg, "/mypage")

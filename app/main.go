@@ -1,7 +1,7 @@
 package main
 
 import (
-	"app/controllers"
+	"app/contexthandler"
 	"app/controllers/api"
 	"app/controllers/auth"
 	"app/controllers/multiroute"
@@ -41,7 +41,7 @@ func main() {
 
 	//「まとめ検索」
 	http.HandleFunc("/multi_search", middleware.Auth(multiroute.MultiSearchTpl))                                 //検索画面
-	http.HandleFunc("/get_api_source", api.GetApiSource)                                                             //Google Maps API Javascriptの実行に必要なJavascriptファイルを取得するためのエンドポイント
+	http.HandleFunc("/get_api_source", api.GetApiSource)                                                         //Google Maps API Javascriptの実行に必要なJavascriptファイルを取得するためのエンドポイント
 	http.HandleFunc("/routes_save", middleware.Auth(reqvalidator.SaveRoutesValidator(multiroute.SaveNewRoute)))  //保存用エンドポイント
 	http.HandleFunc("/show_route/", middleware.Auth(multiroute.ShowAndEditRoutesTpl))                            //確認編集画面
 	http.HandleFunc("/update_route", middleware.Auth(reqvalidator.UpdateRouteValidator(multiroute.UpdateRoute))) //編集用エンドポイント
@@ -75,7 +75,7 @@ func main() {
 }
 
 func home(w http.ResponseWriter, req *http.Request) {
-	data := controllers.GetLoginDataFromCtx(req)
+	data := contexthandler.GetLoginStateFromCtx(req)
 	//successメッセージがある場合
 	c, err := req.Cookie("success")
 	if err == nil {

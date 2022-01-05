@@ -1,7 +1,7 @@
 package multiroute
 
 import (
-	"app/controllers"
+	"app/contexthandler"
 	"app/customerr"
 	"app/model"
 	"encoding/json"
@@ -103,7 +103,7 @@ func (u *updateRouteData) updateRouteTitles() {
 func UpdateRoute(w http.ResponseWriter, req *http.Request) {
 	var u = &updateRouteData{}
 	u.getUpdateRouteFromCtx(req)
-	controllers.GetUserFromCtx(req, &u.user, &u.err)
+	contexthandler.GetUserFromCtx(req, &u.user, &u.err)
 	u.updateRoute()
 	u.updateRouteTitles()
 

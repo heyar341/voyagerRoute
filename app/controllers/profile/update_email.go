@@ -1,6 +1,8 @@
 package profile
 
 import (
+	"app/bsonconv"
+	"app/contexthandler"
 	"app/controllers"
 	"app/cookiehandler"
 	"app/customerr"
@@ -60,7 +62,7 @@ func (u *updateEmailProcess) saveEditingEmailToDB(token string) {
 func UpdateEmail(w http.ResponseWriter, req *http.Request) {
 	var u updateEmailProcess
 	controllers.CheckHTTPMethod(req, &u.err)
-	controllers.GetUserFromCtx(req, &u.user, &u.err)
+	contexthandler.GetUserFromCtx(req, &u.user, &u.err)
 	u.getEmailFromForm(req)
 	//メールアドレス認証用のトークンを作成
 	token := uuid.New().String()
@@ -168,10 +170,10 @@ func (c *confirmUpdateEmail) updateUserEmail() {
 func ConfirmUpdateEmail(w http.ResponseWriter, req *http.Request) {
 	var c confirmUpdateEmail
 	controllers.CheckHTTPMethod(req, &c.err)
-	controllers.GetUserFromCtx(req, &c.user, &c.err)
+	contexthandler.GetUserFromCtx(req, &c.user, &c.err)
 	c.getTokenFromURL(req)
 	d := c.getEditingEmailDocFromDB()
-	controllers.ConvertDucToStruct(d, &c.editingEmail, &c.err, "editing email")
+	bsonconv.ConvertDucToStruct(d, &c.editingEmail, &c.err, "editing email")
 	c.checkTokenExpire()
 	c.updateUserEmail()
 

@@ -1,7 +1,7 @@
 package multiroute
 
 import (
-	"app/controllers"
+	"app/contexthandler"
 	"app/customerr"
 	"app/model"
 	"encoding/json"
@@ -70,7 +70,7 @@ func (r *routeData) addRouteTitle() {
 func SaveNewRoute(w http.ResponseWriter, req *http.Request) {
 	var r = &routeData{}
 	r.getMultiRouteFromCtx(req)
-	controllers.GetUserFromCtx(req, &r.user, &r.err)
+	contexthandler.GetUserFromCtx(req, &r.user, &r.err)
 	r.saveRoute()
 	/*users collectionのmulti_route_titlesフィールドにルート名と作成時刻を追加($set)する。
 	  作成時刻はルート名取得時に作成時刻でソートするため*/
