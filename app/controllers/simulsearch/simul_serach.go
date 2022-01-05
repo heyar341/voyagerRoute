@@ -2,6 +2,7 @@ package simulsearch
 
 import (
 	"app/envhandler"
+	"app/model"
 	"context"
 	"encoding/json"
 	"io/ioutil"
@@ -12,10 +13,6 @@ import (
 
 	"googlemaps.github.io/maps"
 )
-
-type Resp struct {
-	Field map[string][]string `json:"resp"`
-}
 
 //同時検索のリクエストパラメータ
 type SimulParams struct {
@@ -65,7 +62,7 @@ func DoSimulSearch(w http.ResponseWriter, req *http.Request) {
 	}
 
 	//検索結果を入れるmap
-	simulRoutes := map[string][]string{}
+	simulRoutes := map[string]model.SimulRouteData{}
 
 	//同時検索
 	for i := 1; i < 10; i++ {
@@ -73,10 +70,14 @@ func DoSimulSearch(w http.ResponseWriter, req *http.Request) {
 		if destination == "" {
 			continue
 		}
-		disntance, duration := simulSearch(client, destination, &reqParams)
+		distance, duration := simulSearch(client, destination, &reqParams)
 		//エラーもしくは検索結果がない場合
-		if disntance == "" && duration == 0 {
-			simulRoutes[strconv.Itoa(i)] = []string{"検索結果なし", "検索結果なし"}
+		if distance == "" && duration == 0 {
+			simulRoutes[strconv.Itoa(i)] = model.SimulRouteData{
+				Destination: destination,
+				Distance:    "検索結果なし",
+				Duration:    "検索結果なし",
+			}
 		} else {
 			var durationResp string
 			//１時間以上の場合、〜時間〜分にフォーマットを変える
@@ -88,16 +89,18 @@ func DoSimulSearch(w http.ResponseWriter, req *http.Request) {
 			} else {
 				durationResp = strconv.Itoa(duration) + "分"
 			}
-			simulRoutes[strconv.Itoa(i)] = []string{disntance, durationResp}
+			simulRoutes[strconv.Itoa(i)] = model.SimulRouteData{
+				Destination: destination,
+				Distance:    distance,
+				Duration:    durationResp,
+			}
 		}
 	}
 
 	//レスポンスを作成
-	resp := Resp{
-		Field: simulRoutes,
-	}
+
 	w.Header().Set("Content-Type", "application/json")
-	respJson, err := json.Marshal(resp)
+	respJson, err := json.Marshal(simulRoutes)
 	if err != nil {
 		http.Error(w, "問題が発生しました。もう一度操作しなおしてください", http.StatusInternalServerError)
 	}
