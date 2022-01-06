@@ -1,0 +1,104 @@
+<!doctype html>
+<head>
+    <title>9地点同時検索</title>
+    {{ template "imports" }}
+    <!--読み込んだルートのJSONをrouteInfoに入れる-->
+    <script>routeInfo = JSON.parse(
+        {{.routeInfo}});
+    </script>
+    <!--CSS-->
+    <link href="https://fonts.googleapis.com/css?family=Noto+Sans+JP&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/templates/simul_search/show_and_edit/simul_search_show.css">
+
+    <!--Javascript-->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=default"></script>
+
+    <script src="/templates/simul_search/show_and_edit/simul_search_show.js"></script>
+</head>
+
+<body>
+{{ template "navbar" .}}
+<form action="/do_simul_search" method="POST">
+    <div class="container row mx-auto">
+        <div class="col-2"></div>
+        <div class="col-8 origin px-3 py-3 pt-md-5 pb-md-4 mx-auto text-center">
+            <h3>出発地</h3>
+            <div class="mode-selector">
+                <div class="row">
+                    <div class="col-3"></div>
+                    <div class="col-6 pr-0">
+                        <input placeholder="出発地を入力" id="origin-input" name="origin-input" style="width: 100%;"><br>
+                    </div>
+                    <div class="col-3 text-left">
+                        <button type="button" id="simul-search" class="btn-success" style="font-size: 18px">同時検索
+                        </button>
+                    </div>
+                </div>
+                <small>選択肢の中からお選びください</small><br>
+                <input type="radio" name="route-option" id="walking" value="walking" checked="checked">
+                <label class="mr-1" for="walking">徒歩</label>
+                <input type="radio" name="route-option" id="transit" value="transit">
+                <label for="transit">公共交通機関</label>
+                <input type="radio" name="route-option" id="driving" value="driving">
+                <label for="driving">自動車</label>
+            </div>
+            <div class="departure-time" id="departure-time" style="display: none">
+                <input type="radio" id="set-now" name="time-option" checked="checked">
+                <label class="mr-2" for="set-now">すぐに出発</label>
+                <input type="radio" id="set-future" name="time-option">
+                <label class="mr-2" for="set-future">出発時間</label>
+                <input type="date" id="date">
+                <input type="time" id="time">
+            </div>
+            <div class="driving-option" id="driving-option" style="display: none">
+                <input type="checkbox" name="driving-option-select" id="avoid-tolls"/>有料道路を使用しない
+                <br>
+                <input type="checkbox" name="driving-option-select" id="avoid-highways"/>高速道路を使用しない
+            </div>
+        </div>
+        <div class="col-2"></div>
+    </div>
+
+    <div class="container">
+        <hr>
+        <div class="row card-deck mb-1 text-center">
+            {{range $_, $route_num := .nineIterator}}
+            <div class="col-md-4 mb-3 shadow-sm">
+                <div class="card">
+                    <div class="card-header" style="background-color: #1A73E8">
+                        <h4 class="my-0 font-weight-normal" style="color: white">目的地{{$route_num}}</h4>
+                    </div>
+                    <div class="card-body">
+                        <input id="destination-input{{$route_num}}" name="destination-input{{$route_num}}"
+                               placeholder="目的地{{$route_num}}を入力">
+                        <ul class="list-unstyled mt-3 mb-2">
+                            <li>目的地までの距離:</li>
+                            <li id="distance{{$route_num}}"></li>
+                            <li>目的地までの所要時間:</li>
+                            <li id="duration{{$route_num}}" style="color: coral"></li>
+                        </ul>
+                    </div><!-- card-body end .// -->
+                </div><!-- card end.// -->
+            </div>
+            {{end}}
+        </div>
+
+    </div>
+</form>
+<div class="container row mx-auto mt-2 pb-5">{{if .isLoggedIn}}
+    <div class="col-3"></div>
+    <div class="col-6 text-right">
+        <span class="ml-2" style="color: black">検索結果の保存:</span>
+        <input type="text" id="route-title" style="width: 350px"
+               placeholder="保存するタイトルを入力(.,$以外の文字)"><br>
+    </div>
+    <div class="col-3 pl-0">
+        <input type="button" class="btn-info" id="save-route" value="ルートを保存">
+    </div>
+    {{else}}
+    <span style="color:grey;">新規登録していただくと検索結果の保存ができます。</span><br>
+    <a href="/register_form">新規登録はこちらから</a>
+    {{end}}
+</div>
+</body>
+</html>
