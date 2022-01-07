@@ -118,3 +118,33 @@ func ShowQuestionForm(w http.ResponseWriter, req *http.Request) {
 	t.data["email"] = t.user.Email
 	mypageTpl.ExecuteTemplate(w, "question_form.html", t.data)
 }
+
+func ShowAllSimulRoutes(w http.ResponseWriter, req *http.Request) {
+	var t tplProcess
+	t.data = contexthandler.GetLoginStateFromCtx(req)
+	contexthandler.GetUserFromCtx(req, &t.user, &t.err)
+	if t.err != nil {
+		e := t.err.(customerr.BaseErr)
+		cookiehandler.MakeCookieAndRedirect(w, req, "msg", e.Msg, "/mypage")
+		log.Printf("operation: %s, error: %v", e.Op, e.Err)
+		return
+	}
+	titleNames := getSimulRouteTitles(t.user.ID)
+	t.data["userName"] = t.user.UserName
+	t.data["titles"] = titleNames
+
+	//successメッセージがある場合
+	c, err := req.Cookie("success")
+	if err == nil {
+		processCookie(w, c, t.data, "show_simul_routes.html")
+		return
+	}
+	//エラーメッセージがある場合
+	c, err = req.Cookie("msg")
+	if err == nil {
+		processCookie(w, c, t.data, "show_simul_routes.html")
+		return
+	}
+
+	mypageTpl.ExecuteTemplate(w, "show_simul_routes.html", t.data)
+}

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<head>
+    <meta charset="UTF-8">
+    <title>保存済みルート一覧</title>
+    {{ template "imports" }}
+
+</head>
+<body>
+{{ template "navbar" .}}
+{{if .msg}}
+<div class="py-2 d-flex" style="background-color: pink"><span class="mx-auto" style="color: brown">{{.msg}}</span></div>
+{{else if .success}}
+<div class="py-2 d-flex" style="background-color: lightblue"><span class="mx-auto"
+                                                                   style="color: green">{{.success}}</span></div>
+{{end}}
+<div class="mt-5 text-center">
+    <h3>{{.userName}}さんが保存したルート</h3>
+</div>
+<div class="container">
+    <hr>
+    <div class="row card-deck mb-1 text-center">
+        {{range $_, $title := .titles}}
+        <div class="col-md-4 mb-5 shadow-sm">
+            <div class="card">
+                <div class="card-header" style="background-color: #0dcaf0">
+                    <h4 class="my-0 font-weight-normal" style="color: white">{{$title}}</h4>
+                </div>
+                <div class="card-body">
+                    <a href="/simul_search/show_route/?route_title={{$title}}">
+                        <button class="btn-success" type="button">確認または編集</button>
+                    </a>
+                    <hr>
+                    <form action="/mypage/simul_search/delete_route" method="POST">
+<!--                        <button class="btn-danger" type="submit" name="title" value="{{$title}}">削除する</button>-->
+                    </form>
+                </div><!-- card-body end .// -->
+            </div><!-- card end.// -->
+        </div>
+        {{end}}
+    </div>
+
+</div>
+
+</body>
+</html>

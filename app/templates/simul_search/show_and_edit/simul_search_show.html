@@ -2,14 +2,18 @@
 <head>
     <title>9地点同時検索</title>
     {{ template "imports" }}
+    <!--読み込んだルートのJSONをrouteInfoに入れる-->
+    <script>const routeInfo = JSON.parse(
+        {{.routeInfo}});
+    </script>
     <!--CSS-->
     <link href="https://fonts.googleapis.com/css?family=Noto+Sans+JP&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="templates/simul_search/simul_search.css">
+    <link rel="stylesheet" href="/templates/simul_search/show_and_edit/simul_search_show.css">
 
     <!--Javascript-->
     <script src="https://polyfill.io/v3/polyfill.min.js?features=default"></script>
 
-    <script src="templates/simul_search/simul_search.js"></script>
+    <script src="/templates/simul_search/show_and_edit/simul_search_show.js"></script>
 </head>
 
 <body>
@@ -81,7 +85,7 @@
 
     </div>
 </form>
-<div class="container row mx-auto mt-2 pb-5">{{if .isLoggedIn}}
+<div class="container row mx-auto mt-2 pb-5">
     <div class="col-3"></div>
     <div class="col-6 text-right">
         <span class="ml-2" style="color: black">検索結果の保存:</span>
@@ -91,12 +95,6 @@
     <div class="col-3 pl-0">
         <input type="button" class="btn-info" id="save-route" value="ルートを保存">
     </div>
-    {{else}}
-    <div class="d-flex mx-auto">
-        <span style="color:grey;">新規登録していただくと検索結果の保存ができます。</span><br>
-        <a href="/register_form">新規登録はこちらから</a>
-    </div>
-    {{end}}
 </div>
 </body>
 </html>

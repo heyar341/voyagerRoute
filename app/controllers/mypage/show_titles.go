@@ -57,3 +57,38 @@ func getRouteTitles(userID primitive.ObjectID) []string {
 
 	return titleNames
 }
+
+func getSimulRouteTitles(userID primitive.ObjectID) []string {
+	b, err := model.FindUser("_id", userID)
+	if err != nil {
+		return []string{}
+	}
+	titlesM := b["simul_route_titles"].(primitive.M) //bson M型 (map[string]interface{})
+
+	var titles = make(map[string]time.Time)
+	for title, tStamp := range titlesM {
+		t, ok := tStamp.(primitive.DateTime)
+		if !ok {
+			log.Println("Assertion error at checking timestamp type")
+			return []string{}
+		}
+		timeStamp := t.Time() //time.Time型に変換
+		titles[title] = timeStamp
+	}
+
+	tSlice := make(TitileSlice, len(titles))
+	i := 0
+	for k, v := range titles {
+		tSlice[i] = TitleMap{k, v}
+		i++
+	}
+	//保存日時順にソート
+	sort.Sort(tSlice)
+	//タイトル名を入れるsliceを作成
+	titleNames := make([]string, 0, len(titles))
+	for _, tMap := range tSlice {
+		titleNames = append(titleNames, tMap.TitleName)
+	}
+
+	return titleNames
+}

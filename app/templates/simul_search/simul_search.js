@@ -1,3 +1,104 @@
+var destinationFormattedAddress = {};
+var originFormattedAddress = "";
+var searchResult = {};
+var savingReq = {
+  title: "",
+  origin: "",
+  origin_address: "",
+  mode: "",
+  departure_time: "",
+  latlng: { lat: "", lng: "" },
+  avoid: [],
+  destinations: {
+  //searchResultが入る
+  },
+};
+
+var simulReq = {
+  origin: "",
+  destinations: {
+    1: "",
+    2: "",
+    3: "",
+    4: "",
+    5: "",
+    6: "",
+    7: "",
+    8: "",
+    9: "",
+  },
+  mode: "",
+  departure_time: "",
+  latlng: { lat: "", lng: "" },
+  avoid: [],
+};
+//検索結果保存
+$(function () {
+  $("#save-route").click(function () {
+    var keys = Object.keys(searchResult);
+    if (keys.length === 0) {
+      window.alert("ルートを１つ以上設定してください。");
+      return;
+    }
+    if ($("#route-title").val() === "") {
+      window.alert("保存名は１文字以上入力してください。");
+      return;
+    }
+    if (/[\.\$]/.test(document.getElementById("route-title").value)) {
+      window.alert(".または$はタイトル名に使用できません。");
+      return;
+    }
+    savingReq.title = document.getElementById("route-title").value;
+    savingReq.origin = simulReq.origin;
+    savingReq.origin_address = originFormattedAddress;
+    savingReq.mode = simulReq.mode;
+    savingReq.departure_time = simulReq.departure_time;
+    savingReq.latlng = simulReq.latlng;
+    savingReq.avoid = simulReq.avoid;
+    savingReq.destinations = searchResult;
+    for (var i = 1; i < 10; i++){
+      if (destinationFormattedAddress.hasOwnProperty(i)){
+        savingReq.destinations[i].address = destinationFormattedAddress[i];
+      }
+    }
+    // 多重送信を防ぐため通信完了までボタンをdisableにする
+    var button = $(this);
+    button.attr("disabled", true);
+
+    $.ajax({
+      url: "/simul_search/routes_save", // 通信先のURL
+      type: "POST", // 使用するHTTPメソッド
+      data: JSON.stringify(savingReq),
+      contentType: "application/json",
+      dataType: "json", // responseのデータの種類
+      timespan: 1000, // 通信のタイムアウトの設定(ミリ秒)
+    })
+        //通信成功
+        .done(function (data, textStatus, jqXHR) {
+          window.location.href = "/simul_search";
+          //通信失敗
+        })
+        .fail(function (xhr, status, error) {
+          // HTTPエラー時
+          switch (xhr.status) {
+            case 401:
+              alert(xhr.responseText);
+              break;
+            case 500:
+              alert(xhr.responseText);
+          }
+
+          //通信終了後
+        })
+        .always(function (arg1, status, arg2) {
+          //status が "success" の場合は always(data, status, xhr) となるが
+          //、"success" 以外の場合は always(xhr, status, error)となる。
+          button.attr("disabled", false); // ボタンを再び enableにする
+        });
+  });
+});
+
+
 //Ajax通信
 $(function () {
   $("#simul-search").click(function () {
@@ -37,13 +138,15 @@ $(function () {
       timespan: 2000, // 通信のタイムアウトの設定(ミリ秒)
       //通信成功
     })
-      .done(function (data, textStatus, jqXHR) {
+      .done(function (simulSearchResult, textStatus, jqXHR) {
+        searchResult = simulSearchResult;
         for (var i = 1; i < 10; i++) {
-          if (data.resp[i]) {
+          if (simulSearchResult[i]) {
+            searchResult[i].address = destinationFormattedAddress[i];
             document.getElementById("distance" + String(i)).innerText =
-              data.resp[i][0];
+              simulSearchResult[i].distance;
             document.getElementById("duration" + String(i)).innerText =
-              data.resp[i][1];
+              simulSearchResult[i].duration;
           }
         }
         //通信失敗
@@ -67,24 +170,7 @@ $(function () {
   });
 });
 
-var simulReq = {
-  origin: "",
-  destinations: {
-    1: "",
-    2: "",
-    3: "",
-    4: "",
-    5: "",
-    6: "",
-    7: "",
-    8: "",
-    9: "",
-  },
-  mode: "",
-  departure_time: "",
-  latlng: { lat: "", lng: "" },
-  avoid: [],
-};
+
 //現在時刻を取得し、時間指定要素に挿入
 var today = new Date();
 var yyyy = today.getFullYear();
@@ -134,6 +220,7 @@ function initAutocomplete() {
       );
       return;
     }
+    originFormattedAddress = place.formatted_address;
     simulReq["origin"] = place.place_id;
     simulReq["latlng"]["lat"] = String(place.geometry.location.lat());
     simulReq["latlng"]["lng"] = String(place.geometry.location.lng());
@@ -211,6 +298,7 @@ class AutocompleteHandler {
         return;
       }
       simulReq["destinations"][this.routeNum] = place.place_id;
+      destinationFormattedAddress[this.routeNum] = place.formatted_address;
     });
   }
 }

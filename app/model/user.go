@@ -23,6 +23,13 @@ func UpdateMultiRouteTitles(userID primitive.ObjectID, routeTitle, operator stri
 	return err
 }
 
+func UpdateSimulRouteTitles(userID primitive.ObjectID, routeTitle, operator string, updateVal interface{}) error {
+	userDoc := bson.M{"_id": userID}
+	updateField := bson.M{"simul_route_titles." + routeTitle: updateVal} //nested fieldsは.(ドット表記)で繋いで書く
+	err := dbhandler.UpdateOne("googroutes", "users", operator, userDoc, updateField)
+	return err
+}
+
 func FindUser(fieldName string, fieldValue interface{}) (bson.M, error) {
 	//取得するドキュメントの条件
 	userDoc := bson.M{fieldName: fieldValue}
