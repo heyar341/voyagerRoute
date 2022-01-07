@@ -10,12 +10,12 @@ import (
 	"net/http"
 )
 
-type logoutProcess struct {
+type logoutController struct {
 	err error
 }
 
 //getCookieFromRequest gets Cookie contains sessionID from request
-func (l *logoutProcess) getCookieFromRequest(req *http.Request) *http.Cookie {
+func (l *logoutController) getCookieFromRequest(req *http.Request) *http.Cookie {
 	if l.err != nil {
 		return nil
 	}
@@ -32,7 +32,7 @@ func (l *logoutProcess) getCookieFromRequest(req *http.Request) *http.Cookie {
 }
 
 //parseCookieToken parse token of sessionID in Cookie
-func (l *logoutProcess) parseCookieToken(c *http.Cookie) string {
+func (l *logoutController) parseCookieToken(c *http.Cookie) string {
 	if l.err != nil {
 		return ""
 	}
@@ -49,7 +49,7 @@ func (l *logoutProcess) parseCookieToken(c *http.Cookie) string {
 }
 
 //deleteSession deletes session document from sessions collection
-func (l *logoutProcess) deleteSession(sessionID string) {
+func (l *logoutController) deleteSession(sessionID string) {
 	if l.err != nil {
 		return
 	}
@@ -65,7 +65,7 @@ func (l *logoutProcess) deleteSession(sessionID string) {
 }
 
 func Logout(w http.ResponseWriter, req *http.Request) {
-	var l logoutProcess
+	var l logoutController
 	controllers.CheckHTTPMethod(req, &l.err)
 	c := l.getCookieFromRequest(req)
 	sessionID := l.parseCookieToken(c)

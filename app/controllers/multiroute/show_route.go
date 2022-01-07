@@ -91,7 +91,7 @@ func ShowAndEditRoutesTpl(w http.ResponseWriter, req *http.Request) {
 	contexthandler.GetUserFromCtx(req, &eR.user, &eR.err)
 	routeTitle := req.URL.Query().Get("route_title")
 	d := eR.getRouteFromDB(routeTitle)
-	bsonconv.ConvertDucToStruct(d, &eR.routeModel, &eR.err, "multi route")
+	bsonconv.DocToStruct(d, &eR.routeModel, &eR.err, "multi route")
 	eR.convertStructToJSON()
 	if eR.err != nil {
 		e := eR.err.(customerr.BaseErr)
