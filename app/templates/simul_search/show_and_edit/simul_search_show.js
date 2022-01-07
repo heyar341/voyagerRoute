@@ -1,4 +1,5 @@
-const originFormattedAddress = "";
+var destinationFormattedAddress = {};
+let originFormattedAddress = routeInfo.origin_address;
 var searchResult = {};
 const simulSearchUpdateReq = Object.assign({}, routeInfo);
 simulSearchUpdateReq.previous_title = routeInfo.title;
@@ -21,6 +22,16 @@ var simulReq = {
     latlng: {lat: "", lng: ""},
     avoid: [],
 };
+simulReq.origin = routeInfo.origin;
+for(var i = 0; i < 10; i ++) {
+    if (routeInfo.destinations.hasOwnProperty(i)){
+    simulReq.destinations[i] = routeInfo.destinations[i].place_id;
+}
+}
+simulReq.mode = routeInfo.mode;
+simulReq.departure_time = routeInfo.departureTime;
+simulReq.latlng = Object.assign({}, routeInfo.latlng);
+simulReq.avoid = Object.assign([], routeInfo.avoid);
 
 //検索結果保存
 $(function () {
@@ -34,7 +45,6 @@ $(function () {
             window.alert("保存名は１文字以上入力してください。");
             return;
         }
-        searchResult.title = document.getElementById("route-title").value;
         if (/[\.\$]/.test(document.getElementById("route-title").value)) {
             window.alert(".または$はタイトル名に使用できません。");
             return;
@@ -57,7 +67,7 @@ $(function () {
         button.attr("disabled", true);
 
         $.ajax({
-            url: "/simul_search/routes_update", // 通信先のURL
+            url: "/simul_search/update_route", // 通信先のURL
             type: "POST", // 使用するHTTPメソッド
             data: JSON.stringify(simulSearchUpdateReq),
             contentType: "application/json",
@@ -66,7 +76,7 @@ $(function () {
         })
             //通信成功
             .done(function (data, textStatus, jqXHR) {
-                // window.location.href = "/simul_search";
+                window.location.href = "/simul_search/show_route/?route_title=" + simulSearchUpdateReq.title;
                 //通信失敗
             })
             .fail(function (xhr, status, error) {
@@ -173,16 +183,20 @@ var clock = hr + ":" + minu + ":00";
 
 //Google Maps API実行ファイル読み込み
 window.onload = function () {
-    simulReq = Object.assign({}, routeInfo)
-    document.getElementById("origin-input").value = routeInfo.origin_address;
     document.getElementById("origin-input").value = routeInfo.origin_address;
     for (var i = 1; i < 10; i++) {
         if (routeInfo.destinations.hasOwnProperty(i)) {
+            destinationFormattedAddress[i] = routeInfo.destinations[i].address;
             var destinationInput = document.getElementById(
                 "destination-input" + String(i)
             );
             destinationInput.value = routeInfo.destinations[i].address;
             simulReq["destinations"][i] = routeInfo.destinations[i].place_id;
+            document.getElementById("distance" + String(i)).innerText =
+                routeInfo.destinations[i].distance;
+            document.getElementById("duration" + String(i)).innerText =
+                routeInfo.destinations[i].duration;
+
         }
     }
     document.getElementById("route-title").value = routeInfo.title;
