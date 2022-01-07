@@ -2,7 +2,7 @@ package auth
 
 import (
 	"app/bsonconv"
-	"app/contexthandler"
+	"app/controllers"
 	"app/cookiehandler"
 	"app/customerr"
 	"app/mailhandler"
@@ -18,23 +18,23 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type registerProcess struct {
+type registerController struct {
+	controllers.Controller
 	userName        string
 	email           string
 	password        string
 	securedPassword []byte
-	err             error
 }
 
 //generateSecuredPassword generates a hashed password
-func (r *registerProcess) generateSecuredPassword() {
-	if r.err != nil {
+func (r *registerController) generateSecuredPassword() {
+	if r.Err != nil {
 		return
 	}
 	//パスワードをハッシュ化
 	securedPassword, err := bcrypt.GenerateFromPassword([]byte(r.password), 5)
 	if err != nil {
-		r.err = customerr.BaseErr{
+		r.Err = customerr.BaseErr{
 			Op:  "generate hashed password",
 			Msg: "エラーが発生しました。",
 			Err: fmt.Errorf("error while hashing password :%w", err),
@@ -45,14 +45,14 @@ func (r *registerProcess) generateSecuredPassword() {
 }
 
 //saveRegisteringUserToDB inserts user document to DB
-func (r *registerProcess) saveRegisteringUserToDB(token string) {
-	if r.err != nil {
+func (r *registerController) saveRegisteringUserToDB(token string) {
+	if r.Err != nil {
 		return
 	}
 	//DBに保存
 	err := model.SaveRegisteringUser(r.userName, r.email, token, r.securedPassword)
 	if err != nil {
-		r.err = customerr.BaseErr{
+		r.Err = customerr.BaseErr{
 			Op:  "insert user to registering collection",
 			Msg: "エラーが発生しました。",
 			Err: fmt.Errorf("error while inserting user to registering collecion :%w", err),
@@ -150,16 +150,16 @@ func (cR *confirmRegister) generateNewSession(w http.ResponseWriter) {
 }
 
 func Register(w http.ResponseWriter, req *http.Request) {
-	var r registerProcess
-	contexthandler.GetStrValueFromCtx(req, &r.userName, &r.err, "username")
-	contexthandler.GetStrValueFromCtx(req, &r.email, &r.err, "email")
-	contexthandler.GetStrValueFromCtx(req, &r.password, &r.err, "password")
+	var r registerController
+	r.GetStrValueFromCtx(req, &r.userName, "username")
+	r.GetStrValueFromCtx(req, &r.email, "email")
+	r.GetStrValueFromCtx(req, &r.password, "password")
 	r.generateSecuredPassword()
 	//メールアドレス認証用のトークンを作成
 	token := uuid.New().String()
 	r.saveRegisteringUserToDB(token)
-	if r.err != nil {
-		e := r.err.(customerr.BaseErr)
+	if r.Err != nil {
+		e := r.Err.(customerr.BaseErr)
 		cookiehandler.MakeCookieAndRedirect(w, req, "msg", e.Msg, "/register_form")
 		log.Printf("operation: %s, error: %v", e.Op, e.Err)
 		return
@@ -179,7 +179,7 @@ func ConfirmRegister(w http.ResponseWriter, req *http.Request) {
 	var cR confirmRegister
 	cR.getTokenFromURL(req)
 	d := cR.findUserByToken()
-	bsonconv.ConvertDucToStruct(d, &cR.registeringUser, &cR.err, "registeringUser")
+	bsonconv.DocToStruct(d, &cR.registeringUser, &cR.err, "registeringUser")
 	cR.checkTokenExpire()
 	cR.saveNewUserToDB()
 	cR.generateNewSession(w)
