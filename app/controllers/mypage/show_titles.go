@@ -28,7 +28,10 @@ func getRouteTitles(userID primitive.ObjectID) []string {
 	if err != nil {
 		return []string{}
 	}
-	titlesM := b["multi_route_titles"].(primitive.M) //bson M型 (map[string]interface{})
+	titlesM, ok := b["multi_route_titles"].(primitive.M) //bson M型 (map[string]interface{})
+	if !ok {
+		return []string{}
+	}
 
 	var titles = make(map[string]time.Time)
 	for title, tStamp := range titlesM {
@@ -63,8 +66,10 @@ func getSimulRouteTitles(userID primitive.ObjectID) []string {
 	if err != nil {
 		return []string{}
 	}
-	titlesM := b["simul_route_titles"].(primitive.M) //bson M型 (map[string]interface{})
-
+	titlesM, ok := b["simul_route_titles"].(primitive.M) //bson M型 (map[string]interface{})
+	if !ok {
+		return []string{}
+	}
 	var titles = make(map[string]time.Time)
 	for title, tStamp := range titlesM {
 		t, ok := tStamp.(primitive.DateTime)
