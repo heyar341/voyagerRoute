@@ -1,6 +1,7 @@
 package reqvalidator
 
 import (
+	"app/controllers"
 	"app/customerr"
 	"app/model"
 	"context"
@@ -83,25 +84,25 @@ func SaveSimulRouteValidator(SaveRoutes http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-//func UpdateSimulRouteValidator(UpdateRoute http.HandlerFunc) http.HandlerFunc {
-//	return func(w http.ResponseWriter, req *http.Request) {
-//		var s simulRouteValidator
-//		controllers.CheckHTTPMethod(req, &s.err)
-//		//convertJSONToStructの第２引数はinterfaceなので、変数を宣言してポインタを渡す必要がある
-//		var reqFields multiroute.RouteUpdateRequest
-//		s.convertJSONToStruct(req, &reqFields)
-//		s.checkContainedChar(reqFields.Title)
-//
-//		if s.err != nil {
-//			e := s.err.(customerr.BaseErr)
-//			http.Error(w, e.Msg, http.StatusBadRequest)
-//			log.Printf("operation: %s, error: %v", e.Op, e.Err)
-//			return
-//		}
-//
-//		//contextに各フィールドの値を追加
-//		ctx := req.Context()
-//		ctx = context.WithValue(ctx, "reqFields", reqFields)
-//		UpdateRoute.ServeHTTP(w, req.WithContext(ctx))
-//	}
-//}
+func UpdateSimulRouteValidator(UpdateRoute http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+		var s simulRouteValidator
+		controllers.CheckHTTPMethod(req, &s.err)
+		//convertJSONToStructの第２引数はinterfaceなので、変数を宣言してポインタを渡す必要がある
+		var reqFields model.RouteUpdateRequest
+		s.convertJSONToStruct(req, &reqFields)
+		s.checkContainedChar(reqFields.Title)
+
+		if s.err != nil {
+			e := s.err.(customerr.BaseErr)
+			http.Error(w, e.Msg, http.StatusBadRequest)
+			log.Printf("operation: %s, error: %v", e.Op, e.Err)
+			return
+		}
+
+		//contextに各フィールドの値を追加
+		ctx := req.Context()
+		ctx = context.WithValue(ctx, "reqFields", reqFields)
+		UpdateRoute.ServeHTTP(w, req.WithContext(ctx))
+	}
+}
