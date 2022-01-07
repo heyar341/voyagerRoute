@@ -34,6 +34,11 @@ type SimulRoute struct {
 	Destinations  map[string]DestinationData `json:"destinations" bson:"destinations"`
 }
 
+type RouteUpdateRequest struct {
+	SimulRoute
+	PreviousTitle string `json:"previous_title" bson:"previous_title"`
+}
+
 func (s *SimulRoute) SaveRoute(userID primitive.ObjectID) error {
 	routeDocument := bson.D{
 		{"user_id", userID},
