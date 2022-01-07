@@ -62,7 +62,7 @@ func DoSimulSearch(w http.ResponseWriter, req *http.Request) {
 	}
 
 	//検索結果を入れるmap
-	simulRoutes := map[string]model.SimulRouteData{}
+	var destinations map[string]interface{} = map[string]interface{}{}
 
 	//同時検索
 	for i := 1; i < 10; i++ {
@@ -73,10 +73,10 @@ func DoSimulSearch(w http.ResponseWriter, req *http.Request) {
 		distance, duration := simulSearch(client, destination, &reqParams)
 		//エラーもしくは検索結果がない場合
 		if distance == "" && duration == 0 {
-			simulRoutes[strconv.Itoa(i)] = model.SimulRouteData{
-				Destination: destination,
-				Distance:    "検索結果なし",
-				Duration:    "検索結果なし",
+			destinations[strconv.Itoa(i)] = model.DestinationData{
+				PlaceId:  destination[9:],
+				Distance: "検索結果なし",
+				Duration: "検索結果なし",
 			}
 		} else {
 			var durationResp string
@@ -89,10 +89,10 @@ func DoSimulSearch(w http.ResponseWriter, req *http.Request) {
 			} else {
 				durationResp = strconv.Itoa(duration) + "分"
 			}
-			simulRoutes[strconv.Itoa(i)] = model.SimulRouteData{
-				Destination: destination,
-				Distance:    distance,
-				Duration:    durationResp,
+			destinations[strconv.Itoa(i)] = model.DestinationData{
+				PlaceId:  destination[9:],
+				Distance: distance,
+				Duration: durationResp,
 			}
 		}
 	}
@@ -100,7 +100,7 @@ func DoSimulSearch(w http.ResponseWriter, req *http.Request) {
 	//レスポンスを作成
 
 	w.Header().Set("Content-Type", "application/json")
-	respJson, err := json.Marshal(simulRoutes)
+	respJson, err := json.Marshal(destinations)
 	if err != nil {
 		http.Error(w, "問題が発生しました。もう一度操作しなおしてください", http.StatusInternalServerError)
 	}
@@ -152,9 +152,10 @@ func simulSearch(client *maps.Client, destination string, reqParam *SimulParams)
 
 	//ルートを取得
 	routes, _, err := client.Directions(context.Background(), SearchReq)
-	if err != nil {
+	if err != nil || len(routes) == 0 {
 		return "", 0
 	}
+
 	return routes[0].Legs[0].Distance.HumanReadable, int(routes[0].Legs[0].Duration.Minutes())
 }
 

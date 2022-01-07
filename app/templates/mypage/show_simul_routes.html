@@ -22,7 +22,7 @@
         {{range $_, $title := .titles}}
         <div class="col-md-4 mb-5 shadow-sm">
             <div class="card">
-                <div class="card-header" style="background-color: #1A73E8">
+                <div class="card-header" style="background-color: #0dcaf0">
                     <h4 class="my-0 font-weight-normal" style="color: white">{{$title}}</h4>
                 </div>
                 <div class="card-body">
@@ -31,7 +31,7 @@
                     </a>
                     <hr>
                     <form action="/mypage/simul_search/delete_route" method="POST">
-                        <button class="btn-danger" type="submit" name="title" value="{{$title}}">削除する</button>
+<!--                        <button class="btn-danger" type="submit" name="title" value="{{$title}}">削除する</button>-->
                     </form>
                 </div><!-- card-body end .// -->
             </div><!-- card end.// -->
