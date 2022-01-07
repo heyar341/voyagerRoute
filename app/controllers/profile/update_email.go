@@ -173,7 +173,7 @@ func ConfirmUpdateEmail(w http.ResponseWriter, req *http.Request) {
 	contexthandler.GetUserFromCtx(req, &c.user, &c.err)
 	c.getTokenFromURL(req)
 	d := c.getEditingEmailDocFromDB()
-	bsonconv.ConvertDucToStruct(d, &c.editingEmail, &c.err, "editing email")
+	bsonconv.DocToStruct(d, &c.editingEmail, &c.err, "editing email")
 	c.checkTokenExpire()
 	c.updateUserEmail()
 
