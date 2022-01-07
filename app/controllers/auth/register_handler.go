@@ -5,6 +5,7 @@ import (
 	"app/controllers"
 	"app/cookiehandler"
 	"app/customerr"
+	"app/errormsg"
 	"app/mailhandler"
 	"app/model"
 	"fmt"
@@ -36,7 +37,7 @@ func (r *registerController) generateSecuredPassword() {
 	if err != nil {
 		r.Err = customerr.BaseErr{
 			Op:  "generate hashed password",
-			Msg: "エラーが発生しました。",
+			Msg: errormsg.SomethingBad,
 			Err: fmt.Errorf("error while hashing password :%w", err),
 		}
 		return
@@ -54,14 +55,14 @@ func (r *registerController) saveRegisteringUserToDB(token string) {
 	if err != nil {
 		r.Err = customerr.BaseErr{
 			Op:  "insert user to registering collection",
-			Msg: "エラーが発生しました。",
+			Msg: errormsg.SomethingBad,
 			Err: fmt.Errorf("error while inserting user to registering collecion :%w", err),
 		}
 		return
 	}
 }
 
-type confirmRegister struct {
+type confirmRegisterController struct {
 	registeringUser model.Registering
 	token           string
 	userID          primitive.ObjectID
@@ -69,7 +70,7 @@ type confirmRegister struct {
 }
 
 //getTokenFromURL gets token from query parameter
-func (cR *confirmRegister) getTokenFromURL(req *http.Request) {
+func (cR *confirmRegisterController) getTokenFromURL(req *http.Request) {
 	token := req.URL.Query()["token"][0]
 	if token == "" {
 		cR.err = customerr.BaseErr{
@@ -83,7 +84,7 @@ func (cR *confirmRegister) getTokenFromURL(req *http.Request) {
 }
 
 //findUserByToken fetch user document from DB using token
-func (cR *confirmRegister) findUserByToken() bson.M {
+func (cR *confirmRegisterController) findUserByToken() bson.M {
 	if cR.err != nil {
 		return nil
 	}
@@ -100,7 +101,7 @@ func (cR *confirmRegister) findUserByToken() bson.M {
 }
 
 //checkTokenExpire checks if token expires or not
-func (cR *confirmRegister) checkTokenExpire() {
+func (cR *confirmRegisterController) checkTokenExpire() {
 	if cR.err != nil {
 		return
 	}
@@ -117,7 +118,7 @@ func (cR *confirmRegister) checkTokenExpire() {
 }
 
 //saveNewUserToDB saves user document to users collection
-func (cR *confirmRegister) saveNewUserToDB() {
+func (cR *confirmRegisterController) saveNewUserToDB() {
 	if cR.err != nil {
 		return
 	}
@@ -125,7 +126,7 @@ func (cR *confirmRegister) saveNewUserToDB() {
 	if err != nil {
 		cR.err = customerr.BaseErr{
 			Op:  "insert user to users collection",
-			Msg: "エラーが発生しました。",
+			Msg: errormsg.SomethingBad,
 			Err: fmt.Errorf("error while inserting user to users collection: %w", err),
 		}
 		return
@@ -134,7 +135,7 @@ func (cR *confirmRegister) saveNewUserToDB() {
 }
 
 //generateNewSession generates new session
-func (cR *confirmRegister) generateNewSession(w http.ResponseWriter) {
+func (cR *confirmRegisterController) generateNewSession(w http.ResponseWriter) {
 	if cR.err != nil {
 		return
 	}
@@ -142,7 +143,7 @@ func (cR *confirmRegister) generateNewSession(w http.ResponseWriter) {
 	if err != nil {
 		cR.err = customerr.BaseErr{
 			Op:  "generate new session",
-			Msg: "エラーが発生しました。",
+			Msg: errormsg.SomethingBad,
 			Err: fmt.Errorf("error while generating a new session: %w", err),
 		}
 		return
@@ -151,6 +152,16 @@ func (cR *confirmRegister) generateNewSession(w http.ResponseWriter) {
 
 func Register(w http.ResponseWriter, req *http.Request) {
 	var r registerController
+	if req.Method == "GET" {
+		data := map[string]interface{}{"isLoggedIn": false}
+		c, err := req.Cookie("msg")
+		if err == nil {
+			tplWithCookieMsg(w, c, data, "register.html")
+			return
+		}
+		authTpl.ExecuteTemplate(w, "register.html", data)
+		return
+	}
 	r.GetStrValueFromCtx(req, &r.userName, "username")
 	r.GetStrValueFromCtx(req, &r.email, "email")
 	r.GetStrValueFromCtx(req, &r.password, "password")
@@ -166,7 +177,8 @@ func Register(w http.ResponseWriter, req *http.Request) {
 	}
 
 	//認証依頼画面表示
-	http.Redirect(w, req, "/ask_confirm", http.StatusSeeOther)
+	data := map[string]interface{}{"isLoggedIn": false} //新規登録はログイン時にしないと想定
+	authTpl.ExecuteTemplate(w, "ask_confirm_email.html", data)
 
 	//「メールでトークン付きのURLを送る」
 	err := mailhandler.SendConfirmEmail(token, r.email, "confirm_register")
@@ -176,7 +188,7 @@ func Register(w http.ResponseWriter, req *http.Request) {
 }
 
 func ConfirmRegister(w http.ResponseWriter, req *http.Request) {
-	var cR confirmRegister
+	var cR confirmRegisterController
 	cR.getTokenFromURL(req)
 	d := cR.findUserByToken()
 	bsonconv.DocToStruct(d, &cR.registeringUser, &cR.err, "registeringUser")

@@ -88,6 +88,11 @@ func (a *authValidator) checkEmail(email string) {
 
 func RegisterValidator(Register http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
+		if req.Method == "GET" {
+			ctx := req.Context()
+			Register.ServeHTTP(w, req.WithContext(ctx))
+			return
+		}
 		var a authValidator
 		controllers.CheckHTTPMethod(req, &a.err)
 		a.getUserNameFromForm(req)
@@ -114,6 +119,11 @@ func RegisterValidator(Register http.HandlerFunc) http.HandlerFunc {
 
 func LoginValidator(Login http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
+		if req.Method == "GET" {
+			ctx := req.Context()
+			Login.ServeHTTP(w, req.WithContext(ctx))
+			return
+		}
 		var a authValidator
 		controllers.CheckHTTPMethod(req, &a.err)
 		a.getEmailFromForm(req)
