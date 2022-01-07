@@ -5,6 +5,7 @@ import (
 	"app/controllers"
 	"app/cookiehandler"
 	"app/customerr"
+	"app/errormsg"
 	"app/model"
 	"fmt"
 	"log"
@@ -33,13 +34,13 @@ func (l *loginController) getUserFromDB() bson.M {
 		case mongo.ErrNoDocuments:
 			l.Err = customerr.BaseErr{
 				Op:  "get user from DB",
-				Msg: "メールアドレスまたはパスワードが間違っています。",
+				Msg: errormsg.WrongMailOrPwd,
 				Err: fmt.Errorf("error while getting user from DB: %w", err),
 			}
 		default:
 			l.Err = customerr.BaseErr{
 				Op:  "get user from DB",
-				Msg: "エラーが発生しました。",
+				Msg: errormsg.SomethingBad,
 				Err: fmt.Errorf("error while getting user from DB: %w", err),
 			}
 		}
@@ -57,7 +58,7 @@ func (l *loginController) comparePasswords() {
 	if err != nil {
 		l.Err = customerr.BaseErr{
 			Op:  "compare passwords",
-			Msg: "メールアドレスまたはパスワードが間違っています。",
+			Msg: errormsg.WrongMailOrPwd,
 			Err: fmt.Errorf("error while comparing passwords: %w", err),
 		}
 		return
@@ -74,7 +75,7 @@ func (l *loginController) generateNewSession(w http.ResponseWriter) {
 	if err != nil {
 		l.Err = customerr.BaseErr{
 			Op:  "generate new session",
-			Msg: "エラーが発生しました。",
+			Msg: errormsg.SomethingBad,
 			Err: fmt.Errorf("error while generating new session: %w", err),
 		}
 		return
@@ -83,6 +84,20 @@ func (l *loginController) generateNewSession(w http.ResponseWriter) {
 
 func Login(w http.ResponseWriter, req *http.Request) {
 	var l loginController
+	// GET Method
+	if req.Method == "GET" {
+		data := l.GetLoginStateFromCtx(req)
+		c, err := req.Cookie("msg")
+		//Cookie にmsgがある場合
+		if err == nil {
+			tplWithCookieMsg(w, c, data, "login.html")
+			return
+		}
+		authTpl.ExecuteTemplate(w, "login.html", data)
+		return
+	}
+
+	// POST Method
 	l.GetStrValueFromCtx(req, &l.email, "email")
 	l.GetStrValueFromCtx(req, &l.password, "password")
 	d := l.getUserFromDB()
@@ -92,10 +107,10 @@ func Login(w http.ResponseWriter, req *http.Request) {
 
 	if l.Err != nil {
 		e := l.Err.(customerr.BaseErr)
-		cookiehandler.MakeCookieAndRedirect(w, req, "msg", e.Msg, "/login_form")
+		cookiehandler.MakeCookieAndRedirect(w, req, "msg", e.Msg, "/login")
 		log.Printf("operation: %s, error: %v", e.Op, e.Err)
 		return
 	}
 
-	http.Redirect(w, req, "/", http.StatusSeeOther)
+	cookiehandler.MakeCookieAndRedirect(w, req, "success", "ログインしました", "/")
 }
