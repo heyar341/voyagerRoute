@@ -84,7 +84,7 @@ func SaveSimulRouteValidator(SaveRoutes http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-func UpdateSimulRouteValidator(UpdateRoute http.HandlerFunc) http.HandlerFunc {
+func UpdateSimulRouteValidator(Update http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		var s simulRouteValidator
 		controllers.CheckHTTPMethod(req, &s.err)
@@ -103,6 +103,6 @@ func UpdateSimulRouteValidator(UpdateRoute http.HandlerFunc) http.HandlerFunc {
 		//contextに各フィールドの値を追加
 		ctx := req.Context()
 		ctx = context.WithValue(ctx, "reqFields", reqFields)
-		UpdateRoute.ServeHTTP(w, req.WithContext(ctx))
+		Update.ServeHTTP(w, req.WithContext(ctx))
 	}
 }

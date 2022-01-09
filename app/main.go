@@ -45,11 +45,11 @@ func main() {
 	http.HandleFunc("/delete_route", middleware.Auth(multiroute.DeleteRoute))                                    //削除用エンドポイント
 
 	//「同時検索」
-	http.HandleFunc("/simul_search", middleware.Auth(simulsearch.SimulSearchTpl))                                                   //検索画面
-	http.HandleFunc("/do_simul_search", reqvalidator.SimulSearchValidator(simulsearch.DoSimulSearch))                               //検索実行用エンドポイント
-	http.HandleFunc("/simul_search/routes_save", middleware.Auth(reqvalidator.SaveSimulRouteValidator(simulsearch.SaveNewRoute)))   //保存用エンドポイント
-	http.HandleFunc("/simul_search/show_route/", middleware.Auth(simulsearch.ShowAndEditSimulRoutesTpl))                            //確認編集画面
-	http.HandleFunc("/simul_search/update_route", middleware.Auth(reqvalidator.UpdateSimulRouteValidator(simulsearch.UpdateRoute))) //編集用エンドポイント
+	http.HandleFunc("/simul_search", middleware.Auth(simulsearch.Index))                                                       //検索画面
+	http.HandleFunc("/do_simul_search", reqvalidator.SimulSearchValidator(simulsearch.Search))                                 //検索実行用エンドポイント
+	http.HandleFunc("/simul_search/routes_save", middleware.Auth(reqvalidator.SaveSimulRouteValidator(simulsearch.Save)))      //保存用エンドポイント
+	http.HandleFunc("/simul_search/show_route/", middleware.Auth(simulsearch.Show))                                            //確認編集画面
+	http.HandleFunc("/simul_search/update_route", middleware.Auth(reqvalidator.UpdateSimulRouteValidator(simulsearch.Update))) //編集用エンドポイント
 
 	//「マイページ」
 	http.HandleFunc("/mypage", middleware.Auth(mypage.ShowMypage))                                  //マイページ表示
