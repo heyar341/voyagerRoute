@@ -213,7 +213,7 @@ func (s *simulSearchController) updateRouteDoc() {
 	if err != nil {
 		var m string
 		if strings.Contains(err.Error(), "(BSONObjectTooLarge)") {
-			m = errormsg.TooLargeData
+			m = errormsg.RouteDataTooLarge
 		} else {
 			m = errormsg.SomethingBad
 		}
