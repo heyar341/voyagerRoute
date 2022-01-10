@@ -16,25 +16,25 @@ import (
 )
 
 //user documentのmulti_route_titlesフィールドの値を入れるstruct
-type TitleMap struct {
-	TitleName string
-	TimeStamp time.Time
+type titleMap struct {
+	titleName string
+	timeStamp time.Time
 }
 
-type TitileSlice []TitleMap
+type titleSlice []titleMap
 
-func (t TitileSlice) Len() int      { return len(t) }
-func (t TitileSlice) Swap(i, j int) { t[i], t[j] = t[j], t[i] }
+func (t titleSlice) Len() int      { return len(t) }
+func (t titleSlice) Swap(i, j int) { t[i], t[j] = t[j], t[i] }
 
 //TimestampのAfterメソッドで、ソート時に最新のタイトルが先頭に来るようにする
-func (t TitileSlice) Less(i, j int) bool { return t[i].TimeStamp.After(t[j].TimeStamp) }
+func (t titleSlice) Less(i, j int) bool { return t[i].timeStamp.After(t[j].timeStamp) }
 
-func getRouteTitles(userID primitive.ObjectID) []string {
+func getRouteTitles(userID primitive.ObjectID, fieldName string) []string {
 	b, err := model.FindUser("_id", userID)
 	if err != nil {
 		return []string{}
 	}
-	titlesM, ok := b["multi_route_titles"].(primitive.M) //bson M型 (map[string]interface{})
+	titlesM, ok := b[fieldName].(primitive.M) //bson M型 (map[string]interface{})
 	if !ok {
 		return []string{}
 	}
@@ -50,10 +50,10 @@ func getRouteTitles(userID primitive.ObjectID) []string {
 		titles[title] = timeStamp
 	}
 
-	tSlice := make(TitileSlice, len(titles))
+	tSlice := make(titleSlice, len(titles))
 	i := 0
 	for k, v := range titles {
-		tSlice[i] = TitleMap{k, v}
+		tSlice[i] = titleMap{k, v}
 		i++
 	}
 	//保存日時順にソート
@@ -61,44 +61,7 @@ func getRouteTitles(userID primitive.ObjectID) []string {
 	//タイトル名を入れるsliceを作成
 	titleNames := make([]string, 0, len(titles))
 	for _, tMap := range tSlice {
-		titleNames = append(titleNames, tMap.TitleName)
-	}
-
-	return titleNames
-}
-
-func getSimulRouteTitles(userID primitive.ObjectID) []string {
-	b, err := model.FindUser("_id", userID)
-	if err != nil {
-		return []string{}
-	}
-	titlesM, ok := b["simul_route_titles"].(primitive.M) //bson M型 (map[string]interface{})
-	if !ok {
-		return []string{}
-	}
-	var titles = make(map[string]time.Time)
-	for title, tStamp := range titlesM {
-		t, ok := tStamp.(primitive.DateTime)
-		if !ok {
-			log.Println("Assertion error at checking timestamp type")
-			return []string{}
-		}
-		timeStamp := t.Time() //time.Time型に変換
-		titles[title] = timeStamp
-	}
-
-	tSlice := make(TitileSlice, len(titles))
-	i := 0
-	for k, v := range titles {
-		tSlice[i] = TitleMap{k, v}
-		i++
-	}
-	//保存日時順にソート
-	sort.Sort(tSlice)
-	//タイトル名を入れるsliceを作成
-	titleNames := make([]string, 0, len(titles))
-	for _, tMap := range tSlice {
-		titleNames = append(titleNames, tMap.TitleName)
+		titleNames = append(titleNames, tMap.titleName)
 	}
 
 	return titleNames
@@ -163,7 +126,7 @@ func ShowAllRoutes(w http.ResponseWriter, req *http.Request) {
 		log.Printf("operation: %s, error: %v", e.Op, e.Err)
 		return
 	}
-	titleNames := getRouteTitles(t.user.ID)
+	titleNames := getRouteTitles(t.user.ID, "multi_route_titles")
 	t.data["userName"] = t.user.UserName
 	t.data["titles"] = titleNames
 
@@ -222,7 +185,7 @@ func ShowAllSimulRoutes(w http.ResponseWriter, req *http.Request) {
 		log.Printf("operation: %s, error: %v", e.Op, e.Err)
 		return
 	}
-	titleNames := getSimulRouteTitles(t.user.ID)
+	titleNames := getRouteTitles(t.user.ID, "simul_route_titles")
 	t.data["userName"] = t.user.UserName
 	t.data["titles"] = titleNames
 
