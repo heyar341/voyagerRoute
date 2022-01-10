@@ -1,10 +1,13 @@
 package simulsearch
 
 import (
+	"app/customerr"
 	"app/envhandler"
+	"app/errormsg"
 	"app/model"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -31,83 +34,6 @@ type LatLng struct {
 	Lng string `json:"lng"`
 }
 
-type TimeZoneResp struct {
-	SummerTimeOffset int    `json:"dstOffset"` //サマータイム時のオフセット
-	RawOffset        int    `json:"rawOffset"` //通常時のオフセット
-	Status           string `json:"status"`
-	TimeZoneID       string `json:"timeZoneId"`
-	TimeZoneName     string `json:"timeZoneName"`
-}
-
-func DoSimulSearch(w http.ResponseWriter, req *http.Request) {
-	//Validation後の炉クエストパラメータを取得
-	reqParams, ok := req.Context().Value("reqParams").(SimulParams)
-	if !ok {
-		http.Error(w, "リクエストパラメータに不備があります。", http.StatusInternalServerError)
-		log.Printf("Error while getting reqParams from context: %v", ok)
-		return
-	}
-
-	//envファイルからAPIキー取得
-	apiKey, err := envhandler.GetEnvVal("MAP_API_KEY")
-	if err != nil {
-		http.Error(w, "エラーが発生しました。", http.StatusInternalServerError)
-		return
-	}
-	//API呼び出しクライアントを作成
-	client, err := maps.NewClient(maps.WithAPIKey(apiKey), maps.WithRateLimit(10))
-	if err != nil {
-		http.Error(w, "APIが使用できません。しばらく経ってからもう一度お試しください。", http.StatusInternalServerError)
-		log.Printf("Couldn't use Directions API :%v", err)
-		return
-	}
-
-	//検索結果を入れるmap
-	var destinations map[string]interface{} = map[string]interface{}{}
-
-	//同時検索
-	for i := 1; i < 10; i++ {
-		destination := reqParams.Destinations[strconv.Itoa(i)]
-		if destination == "" {
-			continue
-		}
-		distance, duration := simulSearch(client, destination, &reqParams)
-		//エラーもしくは検索結果がない場合
-		if distance == "" && duration == 0 {
-			destinations[strconv.Itoa(i)] = model.DestinationData{
-				PlaceId:  destination[9:],
-				Distance: "検索結果なし",
-				Duration: "検索結果なし",
-			}
-		} else {
-			var durationResp string
-			//１時間以上の場合、〜時間〜分にフォーマットを変える
-			if duration >= 24*60 {
-				durationResp = strconv.Itoa(int(duration/(24*60))) + "日" + strconv.Itoa(int(duration%(24*60)/60)) + "時間" +
-					strconv.Itoa(int(duration%(24*60)%60)) + "分"
-			} else if duration >= 60 {
-				durationResp = strconv.Itoa(int(duration/60)) + "時間" + strconv.Itoa(int(duration%60)) + "分"
-			} else {
-				durationResp = strconv.Itoa(duration) + "分"
-			}
-			destinations[strconv.Itoa(i)] = model.DestinationData{
-				PlaceId:  destination[9:],
-				Distance: distance,
-				Duration: durationResp,
-			}
-		}
-	}
-
-	//レスポンスを作成
-
-	w.Header().Set("Content-Type", "application/json")
-	respJson, err := json.Marshal(destinations)
-	if err != nil {
-		http.Error(w, "問題が発生しました。もう一度操作しなおしてください", http.StatusInternalServerError)
-	}
-	w.Write(respJson)
-}
-
 //徒歩、運転、乗り換えのモード選択
 func lookupMode(mode string, r *maps.DirectionsRequest) {
 	switch mode {
@@ -126,7 +52,7 @@ func lookupMode(mode string, r *maps.DirectionsRequest) {
 	}
 }
 
-//trueの場合複数ルートを探し、falseの場合１つのルートのみ返す
+//lookupAlternatives sets Alternatives field value in DirectionsRequest.
 func lookupAlternatives(alternatives string, r *maps.DirectionsRequest) {
 	if alternatives == "true" {
 		r.Alternatives = true
@@ -135,7 +61,7 @@ func lookupAlternatives(alternatives string, r *maps.DirectionsRequest) {
 	}
 }
 
-//乗り換え数の少なさを優先するか、歩行距離の短さを優先するか選択
+//lookupTransitRoutingPreference sets TransitRoutingPreference field value in DirectionsRequest.
 func lookupTransitRoutingPreference(transitRoutingPreference string, r *maps.DirectionsRequest) {
 	switch transitRoutingPreference {
 	case "fewer_transfers":
@@ -149,7 +75,7 @@ func lookupTransitRoutingPreference(transitRoutingPreference string, r *maps.Dir
 	}
 }
 
-//最速時間、過去のデータからの最適予測時間、最も遅い場合の予測のどれか選択
+//lookupTrafficModel sets TrafficModel field value in DirectionsRequest.
 func lookupTrafficModel(trafficModel string, r *maps.DirectionsRequest) {
 	switch trafficModel {
 	case "optimistic":
@@ -165,8 +91,11 @@ func lookupTrafficModel(trafficModel string, r *maps.DirectionsRequest) {
 	}
 }
 
-//有料道路、高速道路、フェリーを除外する場合選択
+//lookupAvoid sets Avoid field value in DirectionsRequest.
 func lookupAvoid(avoid []string, r *maps.DirectionsRequest) {
+	if len(avoid) == 0 {
+		return
+	}
 	for _, a := range avoid {
 		switch a {
 		case "tolls":
@@ -181,7 +110,7 @@ func lookupAvoid(avoid []string, r *maps.DirectionsRequest) {
 	}
 }
 
-//交通手段を選択
+//lookupTransitMode sets TransitMode field value in DirectionsRequest.
 func lookupTransitMode(transitMode string, r *maps.DirectionsRequest) {
 	for _, t := range strings.Split(transitMode, "|") {
 		switch t {
@@ -199,10 +128,69 @@ func lookupTransitMode(transitMode string, r *maps.DirectionsRequest) {
 	}
 }
 
-//google maps Directions APIを使用して、距離と所要時間お取得する関数
-func simulSearch(client *maps.Client, destination string, reqParam *SimulParams) (string, int) {
+type timeZoneResp struct {
+	SummerTimeOffset int    `json:"dstOffset"` //サマータイム時のオフセット
+	RawOffset        int    `json:"rawOffset"` //通常時のオフセット
+	Status           string `json:"status"`
+	TimeZoneID       string `json:"timeZoneId"`
+	TimeZoneName     string `json:"timeZoneName"`
+}
+
+var timeZoneAPIURL string = "https://maps.googleapis.com/maps/api/timezone/json?location="
+
+//getTimeZoneOffset fetches timezone offset from Google Maps API TimeZone API in second unit.
+//the returned value from TimeZone API is converted to hour unit and formatted as RFC3339.
+func getTimeZoneOffset(lat, lng string) (string, error) {
+	apiKey, err := envhandler.GetEnvVal("TIMEZONE_API_KEY")
+	if err != nil {
+		return "", err
+	}
+	//timezone API用URL
+	reqURL := timeZoneAPIURL + lat + "," + lng + "&timestamp=" +
+		strconv.Itoa(int(time.Now().Unix())) + "&key=" + apiKey
+
+	resp, err := http.Get(reqURL)
+	if err != nil {
+		log.Printf("Error while getting timezone response: %v", err)
+		return "", err
+	}
+	//responseのフィールドを保存する変数
+	var tZResp timeZoneResp
+	body, _ := ioutil.ReadAll(resp.Body)
+	err = json.Unmarshal(body, &tZResp)
+	if err != nil {
+		log.Printf("Error while json unmarshaling timezone response: %v", err)
+		return "", err
+	}
+	err = resp.Body.Close()
+
+	offset := tZResp.RawOffset       //seconds
+	offsetHour := int(offset / 3600) //hours
+
+	var strOffset string
+	switch {
+	case offsetHour == 0:
+		strOffset = "Z" //YTC
+	case offsetHour > 0:
+		//UTCより進んでいる場所
+		strOffset = "0" + strconv.Itoa(offsetHour)
+		strOffset = "+" + strOffset[len(strOffset)-2:] + ":00" //1桁なら+0(number):00, 2桁なら+1or2(number):00
+	case offsetHour < 0:
+		//UTCより遅れている場所
+		strOffset = "0" + strconv.Itoa(-offsetHour)
+		strOffset = "-" + strOffset[len(strOffset)-2:] + ":00"
+	}
+	return strOffset, nil
+
+}
+
+//getDataFromAPI fetches distance and duration from Google Maps API Directions API.
+// Request is initiated with default values. According to specified options, some
+//fields(Mode, DepartureTime TrafficModel) are set.
+//distance is human readable format like ~m or ~km, and distance is integer format in minute unit.
+func getDataFromAPI(client *maps.Client, destination string, reqParam *SimulParams) (string, int) {
 	//requestの変数宣言
-	SearchReq := &maps.DirectionsRequest{
+	searchReq := &maps.DirectionsRequest{
 		Language:    "ja",
 		Region:      "JP",
 		Origin:      reqParam.Origin,
@@ -214,9 +202,10 @@ func simulSearch(client *maps.Client, destination string, reqParam *SimulParams)
 		TrafficModel: maps.TrafficModelBestGuess,
 	}
 
-	if reqParam.Mode == "trasit" {
-		lookupMode(reqParam.Mode, SearchReq)
-		//オプション指定されている場合、SearchReqにその値を入れる
+	lookupMode(reqParam.Mode, searchReq)
+	switch reqParam.Mode {
+	case "transit":
+		//オプション指定されている場合、searchReqにその値を入れる
 		if reqParam.DepartureTime != "" {
 			lat := reqParam.LatLng.Lat
 			lng := reqParam.LatLng.Lng
@@ -231,63 +220,143 @@ func simulSearch(client *maps.Client, destination string, reqParam *SimulParams)
 				log.Printf("Invalid specTime :%v", err)
 				return "", 0
 			}
-			SearchReq.DepartureTime = strconv.Itoa(int(t.Unix()))
+			searchReq.DepartureTime = strconv.Itoa(int(t.Unix()))
 		}
-	} else if reqParam.Mode == "driving" {
-		lookupMode(reqParam.Mode, SearchReq)
-		if len(reqParam.Avoid) > 0 {
-			lookupAvoid(reqParam.Avoid, SearchReq)
-		}
-	} else {
-		lookupMode(reqParam.Mode, SearchReq)
+	case "driving":
+		lookupAvoid(reqParam.Avoid, searchReq)
 	}
-
 	//ルートを取得
-	routes, _, err := client.Directions(context.Background(), SearchReq)
+	routes, _, err := client.Directions(context.Background(), searchReq)
 	if err != nil || len(routes) == 0 {
 		return "", 0
 	}
-
-	return routes[0].Legs[0].Distance.HumanReadable, int(routes[0].Legs[0].Duration.Minutes())
+	distance := routes[0].Legs[0].Distance.HumanReadable
+	duration := int(routes[0].Legs[0].Duration.Minutes())
+	return distance, duration
 }
 
-//緯度と経度からタイムゾーンオフセットを取得する関数
-func getTimeZoneOffset(lat, lng string) (string, error) {
-	apiKey, err := envhandler.GetEnvVal("TIMEZONE_API_KEY")
-	if err != nil {
-		return "", err
+//convertDurationToStr converts duration in minute unit to datetime format in string.
+func convertDurationToStr(duration int) string {
+	var d string
+	//１時間以上の場合、〜時間〜分にフォーマットを変える
+	switch {
+	case duration >= 24*60:
+		d = strconv.Itoa(int(duration/(24*60))) + "日" +
+			strconv.Itoa(int(duration%(24*60)/60)) + "時間" +
+			strconv.Itoa(int(duration%(24*60)%60)) + "分"
+	case duration >= 60:
+		d = strconv.Itoa(int(duration/60)) + "時間" +
+			strconv.Itoa(int(duration%60)) + "分"
+	default:
+		d = strconv.Itoa(duration) + "分"
 	}
-	//timezone API用URL
-	reqURL := "https://maps.googleapis.com/maps/api/timezone/json?location=" +
-		lat + "," + lng + "&timestamp=" + strconv.Itoa(int(time.Now().Unix())) + "&key=" + apiKey
+	return d
+}
 
-	resp, err := http.Get(reqURL)
+type searchRoute struct {
+	reqParams    SimulParams
+	apiKey       string
+	client       *maps.Client
+	destinations map[string]model.DestinationData
+	err          error
+}
+
+//getReqParamFromCtx fetch request parameters from context.
+func (s *searchRoute) getReqParamFromCtx(req *http.Request) {
+	//Validation後の炉クエストパラメータを取得
+	reqParams, ok := req.Context().Value("reqParams").(SimulParams)
+	if !ok {
+		s.err = customerr.BaseErr{
+			Op:  "get reqParams from context",
+			Msg: errormsg.SomethingBad,
+			Err: fmt.Errorf("error while getting reqParams from context: %v", ok),
+		}
+		return
+	}
+	s.reqParams = reqParams
+}
+
+//getAPIkeyFromEnv fetch Google Maps API key from .env file.
+func (s *searchRoute) getAPIkeyFromEnv() {
+	//envファイルからAPIキー取得
+	apiKey, err := envhandler.GetEnvVal("MAP_API_KEY")
 	if err != nil {
-		log.Printf("Error while getting timezone response: %v", err)
-		return "", err
+		s.err = customerr.BaseErr{
+			Op:  "get APIkey from env file",
+			Msg: errormsg.SomethingBad,
+			Err: fmt.Errorf("error while getting APIkey from env file: %v", err),
+		}
+		return
 	}
-	//responseのフィールドを保存する変数
-	var tZResp TimeZoneResp
-	body, _ := ioutil.ReadAll(resp.Body)
-	err = json.Unmarshal(body, &tZResp)
+	s.apiKey = apiKey
+}
+
+//genNewClient generate new Google Maps API client.
+func (s *searchRoute) genNewClient() {
+	//API呼び出しクライアントを作成
+	client, err := maps.NewClient(maps.WithAPIKey(s.apiKey), maps.WithRateLimit(10))
 	if err != nil {
-		log.Printf("Error while json unmarshaling timezone response: %v", err)
-		return "", err
+		s.err = customerr.BaseErr{
+			Op:  "construct map API client",
+			Msg: errormsg.TriAgain,
+			Err: fmt.Errorf("couldn't use Directions API: %v", err),
+		}
+		return
 	}
-	err = resp.Body.Close()
-	offset := tZResp.RawOffset       //seconds
-	offsetHour := int(offset / 3600) //hours
-	if offsetHour == 0 {
-		return "Z", nil //UTC
-	} else if offsetHour > 0 {
-		//UTCより進んでいる場所
-		strOffset := "0" + strconv.Itoa(offsetHour)
-		strOffset = "+" + strOffset[len(strOffset)-2:] + ":00" //1桁なら+0(number):00, 2桁なら+1or2(number):00
-		return strOffset, nil
-	} else {
-		//UTCより遅れている場所
-		strOffset := "0" + strconv.Itoa(-offsetHour)
-		strOffset = "-" + strOffset[len(strOffset)-2:] + ":00"
-		return strOffset, nil
+	s.client = client
+
+}
+
+//executeSearch sets place_id, distance and duration value of route from 1 to 9.
+//place id is prefixed with "place_id:"(9 characters) and it's used in frontend
+//without prefix, so it's formatted to without prefix value.
+//if route isn't found, values will be "検索結果なし".
+func (s *searchRoute) executeSearch() {
+	//同時検索
+	for i := 1; i < 10; i++ {
+		destination := s.reqParams.Destinations[strconv.Itoa(i)]
+		if destination == "" {
+			continue
+		}
+		distance, duration := getDataFromAPI(s.client, destination, &s.reqParams)
+		//エラーもしくは検索結果がない場合
+		if distance == "" && duration == 0 {
+			s.destinations[strconv.Itoa(i)] = model.DestinationData{
+				PlaceId:  destination[9:],
+				Distance: "検索結果なし",
+				Duration: "検索結果なし",
+			}
+		} else {
+			d := convertDurationToStr(duration)
+			s.destinations[strconv.Itoa(i)] = model.DestinationData{
+				PlaceId:  destination[9:],
+				Distance: distance,
+				Duration: d,
+			}
+		}
 	}
+}
+
+func Search(w http.ResponseWriter, req *http.Request) {
+	var s searchRoute
+	s.getReqParamFromCtx(req)
+	s.getAPIkeyFromEnv()
+	s.genNewClient()
+	if s.err != nil {
+		e := s.err.(customerr.BaseErr)
+		http.Error(w, e.Msg, http.StatusInternalServerError)
+		log.Println(e.Err)
+		return
+	}
+	s.destinations = make(map[string]model.DestinationData)
+	s.executeSearch()
+
+	//レスポンスを作成
+	w.Header().Set("Content-Type", "application/json")
+	respJson, err := json.Marshal(s.destinations)
+	if err != nil {
+		http.Error(w, "問題が発生しました。もう一度操作しなおしてください", http.StatusInternalServerError)
+		return
+	}
+	w.Write(respJson)
 }

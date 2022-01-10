@@ -11,7 +11,7 @@ type DestinationData struct {
 	PlaceId string `json:"place_id" bson:"place_id"`
 	Address string `json:"address" bson:"address"`
 	//Distance and Duration are stored as string here. They are processed as a number
-	//at DoSimulSearch() in app/controllers/simulsearch/simul_search.go
+	//at Search() in app/controllers/simulsearch/simul_search.go
 	Distance string `json:"distance" bson:"distance"`
 	Duration string `json:"duration" bson:"duration"`
 }
