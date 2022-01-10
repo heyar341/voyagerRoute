@@ -8,7 +8,7 @@ import (
 
 func MakeCookieAndRedirect(w http.ResponseWriter, req *http.Request, cName, cVal, path string) {
 	b64CVal := base64.StdEncoding.EncodeToString([]byte(cVal))
-	re := regexp.MustCompile(`(\w*/)*`)
+	re := regexp.MustCompile(`(\w*/?)*`)
 	//path omitted after query parameter
 	pathWithoutQParam := re.FindString(path)
 	c := &http.Cookie{
