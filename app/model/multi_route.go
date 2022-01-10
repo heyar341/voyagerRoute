@@ -20,6 +20,12 @@ type MultiRoute struct {
 	Routes map[string]Route   `json:"routes" bson:"routes"`
 }
 
+//ルート編集保存requestのフィールドを保存するstruct
+type MultiRouteUpdateRequest struct {
+	MultiRoute
+	PreviousTitle string `json:"previous_title" bson:"previous_title"`
+}
+
 func (m *MultiRoute) SaveRoute(userID primitive.ObjectID) error {
 	routeDocument := bson.D{
 		{"user_id", userID},

@@ -37,12 +37,12 @@ func main() {
 	http.HandleFunc("/logout", auth.Logout)                                     //ログアウト用エンドポイント
 
 	//「まとめ検索」
-	http.HandleFunc("/multi_search", middleware.Auth(multiroute.MultiSearchTpl))                                 //検索画面
-	http.HandleFunc("/get_api_source", api.GetApiSource)                                                         //Google Maps API Javascriptの実行に必要なJavascriptファイルを取得するためのエンドポイント
-	http.HandleFunc("/routes_save", middleware.Auth(reqvalidator.SaveRoutesValidator(multiroute.SaveNewRoute)))  //保存用エンドポイント
-	http.HandleFunc("/show_route/", middleware.Auth(multiroute.ShowAndEditRoutesTpl))                            //確認編集画面
-	http.HandleFunc("/update_route", middleware.Auth(reqvalidator.UpdateRouteValidator(multiroute.UpdateRoute))) //編集用エンドポイント
-	http.HandleFunc("/delete_route", middleware.Auth(multiroute.DeleteRoute))                                    //削除用エンドポイント
+	http.HandleFunc("/multi_search", middleware.Auth(multiroute.Index))                                     //検索画面
+	http.HandleFunc("/get_api_source", api.GetApiSource)                                                    //Google Maps API Javascriptの実行に必要なJavascriptファイルを取得するためのエンドポイント
+	http.HandleFunc("/routes_save", middleware.Auth(reqvalidator.SaveRoutesValidator(multiroute.Save)))     //保存用エンドポイント
+	http.HandleFunc("/show_route/", middleware.Auth(multiroute.Show))                                       //確認編集画面
+	http.HandleFunc("/update_route", middleware.Auth(reqvalidator.UpdateRouteValidator(multiroute.Update))) //編集用エンドポイント
+	http.HandleFunc("/delete_route", middleware.Auth(multiroute.Delete))                                    //削除用エンドポイント
 
 	//「同時検索」
 	http.HandleFunc("/simul_search", middleware.Auth(simulsearch.SimulSearchTpl))                                                   //検索画面
