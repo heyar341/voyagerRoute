@@ -1,7 +1,7 @@
 package mypage
 
 import (
-	"app/internal/contexthandler"
+	"app/controllers"
 	"app/internal/cookiehandler"
 	"app/internal/customerr"
 	"app/model"
@@ -39,7 +39,8 @@ func getRouteTitles(userID primitive.ObjectID, fieldName string) []string {
 		return []string{}
 	}
 
-	var titles = make(map[string]time.Time)
+	var titles = make(titleSlice, len(titlesM))
+	i := 0
 	for title, tStamp := range titlesM {
 		t, ok := tStamp.(primitive.DateTime)
 		if !ok {
@@ -47,20 +48,14 @@ func getRouteTitles(userID primitive.ObjectID, fieldName string) []string {
 			return []string{}
 		}
 		timeStamp := t.Time() //time.Time型に変換
-		titles[title] = timeStamp
-	}
-
-	tSlice := make(titleSlice, len(titles))
-	i := 0
-	for k, v := range titles {
-		tSlice[i] = titleMap{k, v}
+		titles[i] = titleMap{titleName: title, timeStamp: timeStamp}
 		i++
 	}
 	//保存日時順にソート
-	sort.Sort(tSlice)
+	sort.Sort(titles)
 	//タイトル名を入れるsliceを作成
 	titleNames := make([]string, 0, len(titles))
-	for _, tMap := range tSlice {
+	for _, tMap := range titles {
 		titleNames = append(titleNames, tMap.titleName)
 	}
 
@@ -69,10 +64,10 @@ func getRouteTitles(userID primitive.ObjectID, fieldName string) []string {
 
 var mypageTpl *template.Template
 
-type tplProcess struct {
+type mypageController struct {
+	controllers.Controller
 	data map[string]interface{}
 	user model.User
-	err  error
 }
 
 func init() {
@@ -90,117 +85,117 @@ func processCookie(w http.ResponseWriter, c *http.Cookie, data map[string]interf
 }
 
 func ShowMypage(w http.ResponseWriter, req *http.Request) {
-	var t tplProcess
-	t.data = contexthandler.GetLoginStateFromCtx(req)
-	contexthandler.GetUserFromCtx(req, &t.user, &t.err)
-	if t.err != nil {
-		e := t.err.(customerr.BaseErr)
+	var m mypageController
+	m.data = m.GetLoginStateFromCtx(req)
+	m.GetUserFromCtx(req, &m.user)
+	if m.Err != nil {
+		e := m.Err.(customerr.BaseErr)
 		cookiehandler.MakeCookieAndRedirect(w, req, "msg", e.Msg, "/")
 		log.Printf("operation: %s, error: %v", e.Op, e.Err)
 		return
 	}
 
-	t.data["userName"] = t.user.UserName
+	m.data["userName"] = m.user.UserName
 	//successメッセージがある場合
 	c, err := req.Cookie("success")
 	if err == nil {
-		processCookie(w, c, t.data, "mypage.html")
+		processCookie(w, c, m.data, "mypage.html")
 		return
 	}
 	//エラーメッセージがある場合
 	c, err = req.Cookie("msg")
 	if err == nil {
-		processCookie(w, c, t.data, "mypage.html")
+		processCookie(w, c, m.data, "mypage.html")
 		return
 	}
-	mypageTpl.ExecuteTemplate(w, "mypage.html", t.data)
+	mypageTpl.ExecuteTemplate(w, "mypage.html", m.data)
 }
 
 func ShowAllRoutes(w http.ResponseWriter, req *http.Request) {
-	var t tplProcess
-	t.data = contexthandler.GetLoginStateFromCtx(req)
-	contexthandler.GetUserFromCtx(req, &t.user, &t.err)
-	if t.err != nil {
-		e := t.err.(customerr.BaseErr)
+	var m mypageController
+	m.data = m.GetLoginStateFromCtx(req)
+	m.GetUserFromCtx(req, &m.user)
+	if m.Err != nil {
+		e := m.Err.(customerr.BaseErr)
 		cookiehandler.MakeCookieAndRedirect(w, req, "msg", e.Msg, "/mypage")
 		log.Printf("operation: %s, error: %v", e.Op, e.Err)
 		return
 	}
-	titleNames := getRouteTitles(t.user.ID, "multi_route_titles")
-	t.data["userName"] = t.user.UserName
-	t.data["titles"] = titleNames
+	titleNames := getRouteTitles(m.user.ID, "multi_route_titles")
+	m.data["userName"] = m.user.UserName
+	m.data["titles"] = titleNames
 
 	//successメッセージがある場合
 	c, err := req.Cookie("success")
 	if err == nil {
-		processCookie(w, c, t.data, "show_routes.html")
+		processCookie(w, c, m.data, "show_routes.html")
 		return
 	}
 	//エラーメッセージがある場合
 	c, err = req.Cookie("msg")
 	if err == nil {
-		processCookie(w, c, t.data, "show_routes.html")
+		processCookie(w, c, m.data, "show_routes.html")
 		return
 	}
 
-	mypageTpl.ExecuteTemplate(w, "show_routes.html", t.data)
+	mypageTpl.ExecuteTemplate(w, "show_routes.html", m.data)
 }
 
 func ConfirmDelete(w http.ResponseWriter, req *http.Request) {
-	var t tplProcess
-	t.data = contexthandler.GetLoginStateFromCtx(req)
-	contexthandler.GetUserFromCtx(req, &t.user, &t.err)
-	if t.err != nil {
-		e := t.err.(customerr.BaseErr)
+	var m mypageController
+	m.data = m.GetLoginStateFromCtx(req)
+	m.GetUserFromCtx(req, &m.user)
+	if m.Err != nil {
+		e := m.Err.(customerr.BaseErr)
 		cookiehandler.MakeCookieAndRedirect(w, req, "msg", e.Msg, "/mypage/show_routes")
 		log.Printf("operation: %s, error: %v", e.Op, e.Err)
 		return
 	}
-	t.data["title"] = req.FormValue("title")
-	mypageTpl.ExecuteTemplate(w, "confirm_delete.html", t.data)
+	m.data["title"] = req.FormValue("title")
+	mypageTpl.ExecuteTemplate(w, "confirm_delete.html", m.data)
 }
 
 func ShowQuestionForm(w http.ResponseWriter, req *http.Request) {
-	var t tplProcess
-	t.data = contexthandler.GetLoginStateFromCtx(req)
-	contexthandler.GetUserFromCtx(req, &t.user, &t.err)
-	if t.err != nil {
-		e := t.err.(customerr.BaseErr)
+	var m mypageController
+	m.data = m.GetLoginStateFromCtx(req)
+	m.GetUserFromCtx(req, &m.user)
+	if m.Err != nil {
+		e := m.Err.(customerr.BaseErr)
 		cookiehandler.MakeCookieAndRedirect(w, req, "msg", e.Msg, "/mypage")
 		log.Printf("operation: %s, error: %v", e.Op, e.Err)
 		return
 	}
-	t.data["userName"] = t.user.UserName
-	t.data["email"] = t.user.Email
-	mypageTpl.ExecuteTemplate(w, "question_form.html", t.data)
+	m.data["userName"] = m.user.UserName
+	m.data["email"] = m.user.Email
+	mypageTpl.ExecuteTemplate(w, "question_form.html", m.data)
 }
 
 func ShowAllSimulRoutes(w http.ResponseWriter, req *http.Request) {
-	var t tplProcess
-	t.data = contexthandler.GetLoginStateFromCtx(req)
-	contexthandler.GetUserFromCtx(req, &t.user, &t.err)
-	if t.err != nil {
-		e := t.err.(customerr.BaseErr)
+	var m mypageController
+	m.data = m.GetLoginStateFromCtx(req)
+	m.GetUserFromCtx(req, &m.user)
+	if m.Err != nil {
+		e := m.Err.(customerr.BaseErr)
 		cookiehandler.MakeCookieAndRedirect(w, req, "msg", e.Msg, "/mypage")
 		log.Printf("operation: %s, error: %v", e.Op, e.Err)
 		return
 	}
-	titleNames := getRouteTitles(t.user.ID, "simul_route_titles")
-	t.data["userName"] = t.user.UserName
-	t.data["titles"] = titleNames
+	titleNames := getRouteTitles(m.user.ID, "simul_route_titles")
+	m.data["userName"] = m.user.UserName
+	m.data["titles"] = titleNames
 
 	//successメッセージがある場合
 	c, err := req.Cookie("success")
 	if err == nil {
-		processCookie(w, c, t.data, "show_simul_routes.html")
+		processCookie(w, c, m.data, "show_simul_routes.html")
 		return
 	}
 	//エラーメッセージがある場合
 	c, err = req.Cookie("msg")
 	if err == nil {
-		processCookie(w, c, t.data, "show_simul_routes.html")
+		processCookie(w, c, m.data, "show_simul_routes.html")
 		return
 	}
 
-	mypageTpl.ExecuteTemplate(w, "show_simul_routes.html", t.data)
+	mypageTpl.ExecuteTemplate(w, "show_simul_routes.html", m.data)
 }
