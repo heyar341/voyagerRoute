@@ -1,8 +1,8 @@
 package jsonconv
 
 import (
-	"app/customerr"
-	"app/errormsg"
+	"app/internal/customerr"
+	"app/internal/errormsg"
 	"encoding/json"
 	"fmt"
 )

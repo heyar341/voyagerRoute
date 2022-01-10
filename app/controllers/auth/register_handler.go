@@ -1,12 +1,12 @@
 package auth
 
 import (
-	"app/bsonconv"
 	"app/controllers"
-	"app/cookiehandler"
-	"app/customerr"
-	"app/errormsg"
-	"app/mailhandler"
+	"app/internal/bsonconv"
+	"app/internal/cookiehandler"
+	"app/internal/customerr"
+	"app/internal/errormsg"
+	"app/internal/mailhandler"
 	"app/model"
 	"fmt"
 	"log"

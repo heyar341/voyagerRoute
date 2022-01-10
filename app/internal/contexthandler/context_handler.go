@@ -1,7 +1,7 @@
 package contexthandler
 
 import (
-	"app/customerr"
+	"app/internal/customerr"
 	"app/model"
 	"fmt"
 	"log"

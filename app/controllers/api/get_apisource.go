@@ -1,8 +1,8 @@
 package api
 
 import (
-	"app/envhandler"
-	"app/errormsg"
+	"app/internal/envhandler"
+	"app/internal/errormsg"
 	"io/ioutil"
 	"log"
 	"net/http"

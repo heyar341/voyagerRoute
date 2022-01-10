@@ -1,7 +1,7 @@
 package controllers
 
 import (
-	"app/customerr"
+	"app/internal/customerr"
 	"fmt"
 	"net/http"
 )

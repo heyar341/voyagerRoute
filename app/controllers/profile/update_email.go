@@ -1,12 +1,12 @@
 package profile
 
 import (
-	"app/bsonconv"
-	"app/contexthandler"
 	"app/controllers"
-	"app/cookiehandler"
-	"app/customerr"
-	"app/mailhandler"
+	"app/internal/bsonconv"
+	"app/internal/contexthandler"
+	"app/internal/cookiehandler"
+	"app/internal/customerr"
+	"app/internal/mailhandler"
 	"app/model"
 	"fmt"
 	"log"

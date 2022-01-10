@@ -1,14 +1,14 @@
 package main
 
 import (
-	"app/contexthandler"
 	"app/controllers/api"
 	"app/controllers/auth"
 	"app/controllers/multiroute"
 	"app/controllers/mypage"
 	"app/controllers/profile"
 	"app/controllers/simulsearch"
-	"app/mailhandler"
+	"app/internal/contexthandler"
+	"app/internal/mailhandler"
 	"app/middleware"
 	"app/reqvalidator"
 	"encoding/base64"

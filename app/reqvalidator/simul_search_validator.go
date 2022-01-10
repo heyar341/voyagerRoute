@@ -2,7 +2,7 @@ package reqvalidator
 
 import (
 	"app/controllers/simulsearch"
-	"app/customerr"
+	"app/internal/customerr"
 	"context"
 	"encoding/json"
 	"fmt"
