@@ -30,7 +30,7 @@
                         <button class="btn-success" type="button">確認または編集</button>
                     </a>
                     <hr>
-                    <form action="/mypage/delete_route" method="POST">
+                    <form action="/mypage/delete_route/?search_type={{$.searchType}}" method="POST">
                         <button class="btn-danger" type="submit" name="title" value="{{$title}}">削除する</button>
                     </form>
                 </div><!-- card-body end .// -->

@@ -6,6 +6,7 @@ import (
 	"app/internal/customerr"
 	"app/model"
 	"encoding/base64"
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -70,8 +71,31 @@ type mypageController struct {
 	user model.User
 }
 
+var fieldNameMap map[string]string = map[string]string{
+	"simul_search": "simul_route_titles",
+	"multi_search": "multi_route_titles",
+}
+
 func init() {
 	mypageTpl = template.Must(template.Must(template.ParseGlob("templates/mypage/*.html")).ParseGlob("templates/includes/*.html"))
+}
+
+func (m *mypageController) getAndSetSearchType(req *http.Request) string {
+	searchType := req.URL.Query().Get("search_type")
+	switch searchType {
+	case "multi_search":
+		m.data["searchType"] = searchType
+	case "simul_search":
+		m.data["searchType"] = searchType
+	default:
+		m.Err = customerr.BaseErr{
+			Op:  "get search type from query parameter",
+			Msg: "不正なURLです。",
+			Err: fmt.Errorf("error while getting search type from query parameter"),
+		}
+		return ""
+	}
+	return searchType
 }
 
 func showMsgWithCookie(w http.ResponseWriter, c *http.Cookie, data map[string]interface{}, tName string) {
@@ -84,7 +108,23 @@ func showMsgWithCookie(w http.ResponseWriter, c *http.Cookie, data map[string]in
 	mypageTpl.ExecuteTemplate(w, tName, data)
 }
 
-func ShowMypage(w http.ResponseWriter, req *http.Request) {
+func (m *mypageController) existsCookie(w http.ResponseWriter, req *http.Request, tName string) bool {
+	//successメッセージがある場合
+	c, _ := req.Cookie("success")
+	if c != nil {
+		showMsgWithCookie(w, c, m.data, tName)
+		return true
+	}
+	//エラーメッセージがある場合
+	c, _ = req.Cookie("msg")
+	if c != nil {
+		showMsgWithCookie(w, c, m.data, tName)
+		return true
+	}
+	return false
+}
+
+func Mypage(w http.ResponseWriter, req *http.Request) {
 	var m mypageController
 	m.data = m.GetLoginStateFromCtx(req)
 	m.GetUserFromCtx(req, &m.user)
@@ -94,63 +134,42 @@ func ShowMypage(w http.ResponseWriter, req *http.Request) {
 		log.Printf("operation: %s, error: %v", e.Op, e.Err)
 		return
 	}
-
+	exsitsCookie := m.existsCookie(w, req, "mypage.html")
+	if exsitsCookie {
+		return
+	}
 	m.data["userName"] = m.user.UserName
-	//successメッセージがある場合
-	c, _ := req.Cookie("success")
-	if c != nil {
-		showMsgWithCookie(w, c, m.data, "mypage.html")
-		return
-	}
-	//エラーメッセージがある場合
-	c, _ = req.Cookie("msg")
-	if c != nil {
-		showMsgWithCookie(w, c, m.data, "mypage.html")
-		return
-	}
 	mypageTpl.ExecuteTemplate(w, "mypage.html", m.data)
 }
 
 func ShowAllRoutes(w http.ResponseWriter, req *http.Request) {
-	titleType := req.URL.Query().Get("search_type")
 	var m mypageController
 	m.data = m.GetLoginStateFromCtx(req)
 	m.GetUserFromCtx(req, &m.user)
+	m.getAndSetSearchType(req)
+	searchType := m.getAndSetSearchType(req)
 	if m.Err != nil {
 		e := m.Err.(customerr.BaseErr)
 		cookiehandler.MakeCookieAndRedirect(w, req, "msg", e.Msg, "/mypage")
 		log.Printf("operation: %s, error: %v", e.Op, e.Err)
 		return
 	}
+
 	var titleNames []string
-	if titleType == "multi_search" {
-		titleNames = getRouteTitles(m.user.ID, "multi_route_titles")
-		m.data["searchType"] = "multi_search"
+	titleNames = getRouteTitles(m.user.ID, fieldNameMap[searchType])
+	if searchType == "multi_search" {
 		m.data["cardColor"] = "#1A73E8"
-	} else if titleType == "simul_search" {
-		titleNames = getRouteTitles(m.user.ID, "simul_route_titles")
-		m.data["searchType"] = "simul_search"
+	} else if searchType == "simul_search" {
 		m.data["cardColor"] = "#0dcaf0"
-	} else {
-		http.Error(w, "不正なURLです。", http.StatusBadRequest)
-		return
 	}
 
 	m.data["userName"] = m.user.UserName
 	m.data["titles"] = titleNames
+	exsitsCookie := m.existsCookie(w, req, "show_routes.html")
+	if exsitsCookie {
+		return
+	}
 
-	//successメッセージがある場合
-	c, err := req.Cookie("success")
-	if err == nil {
-		showMsgWithCookie(w, c, m.data, "show_routes.html")
-		return
-	}
-	//エラーメッセージがある場合
-	c, err = req.Cookie("msg")
-	if err == nil {
-		showMsgWithCookie(w, c, m.data, "show_routes.html")
-		return
-	}
 	mypageTpl.ExecuteTemplate(w, "show_routes.html", m.data)
 }
 
@@ -158,9 +177,11 @@ func ConfirmDelete(w http.ResponseWriter, req *http.Request) {
 	var m mypageController
 	m.data = m.GetLoginStateFromCtx(req)
 	m.GetUserFromCtx(req, &m.user)
+	m.getAndSetSearchType(req)
+	searchType := m.getAndSetSearchType(req)
 	if m.Err != nil {
 		e := m.Err.(customerr.BaseErr)
-		cookiehandler.MakeCookieAndRedirect(w, req, "msg", e.Msg, "/mypage/show_routes")
+		cookiehandler.MakeCookieAndRedirect(w, req, "msg", e.Msg, "/mypage/show_routes/"+"?search_type="+searchType)
 		log.Printf("operation: %s, error: %v", e.Op, e.Err)
 		return
 	}
@@ -168,7 +189,7 @@ func ConfirmDelete(w http.ResponseWriter, req *http.Request) {
 	mypageTpl.ExecuteTemplate(w, "confirm_delete.html", m.data)
 }
 
-func ShowQuestionForm(w http.ResponseWriter, req *http.Request) {
+func QuestionForm(w http.ResponseWriter, req *http.Request) {
 	var m mypageController
 	m.data = m.GetLoginStateFromCtx(req)
 	m.GetUserFromCtx(req, &m.user)
