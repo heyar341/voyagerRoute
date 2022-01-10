@@ -40,7 +40,7 @@ func main() {
 	http.HandleFunc("/multi_search", middleware.Auth(multiroute.Index))                                     //検索画面
 	http.HandleFunc("/get_api_source", api.GetApiSource)                                                    //Google Maps API Javascriptの実行に必要なJavascriptファイルを取得するためのエンドポイント
 	http.HandleFunc("/routes_save", middleware.Auth(reqvalidator.SaveRoutesValidator(multiroute.Save)))     //保存用エンドポイント
-	http.HandleFunc("/show_route/", middleware.Auth(multiroute.Show))                                       //確認編集画面
+	http.HandleFunc("/multi_search/show_route/", middleware.Auth(multiroute.Show))                          //確認編集画面
 	http.HandleFunc("/update_route", middleware.Auth(reqvalidator.UpdateRouteValidator(multiroute.Update))) //編集用エンドポイント
 	http.HandleFunc("/delete_route", middleware.Auth(multiroute.Delete))                                    //削除用エンドポイント
 
@@ -52,12 +52,11 @@ func main() {
 	http.HandleFunc("/simul_search/update_route", middleware.Auth(reqvalidator.UpdateSimulRouteValidator(simulsearch.Update))) //編集用エンドポイント
 
 	//「マイページ」
-	http.HandleFunc("/mypage", middleware.Auth(mypage.ShowMypage))                                  //マイページ表示
-	http.HandleFunc("/mypage/show_routes", middleware.Auth(mypage.ShowAllRoutes))                   //保存したルート一覧
-	http.HandleFunc("/mypage/simul_search/show_routes", middleware.Auth(mypage.ShowAllSimulRoutes)) //保存した同時検索一覧
-	http.HandleFunc("/mypage/delete_route", middleware.Auth(mypage.ConfirmDelete))                  //削除確認
-	http.HandleFunc("/question_form", middleware.Auth(mypage.ShowQuestionForm))                     //お問い合わせ入力ページ
-	http.HandleFunc("/send_question", middleware.Auth(mailhandler.SendQuestion))                    //お問い合わせ送信用エンドポイント
+	http.HandleFunc("/mypage", middleware.Auth(mypage.ShowMypage))                 //マイページ表示
+	http.HandleFunc("/mypage/show_routes/", middleware.Auth(mypage.ShowAllRoutes)) //保存したルート一覧
+	http.HandleFunc("/mypage/delete_route", middleware.Auth(mypage.ConfirmDelete)) //削除確認
+	http.HandleFunc("/question_form", middleware.Auth(mypage.ShowQuestionForm))    //お問い合わせ入力ページ
+	http.HandleFunc("/send_question", middleware.Auth(mailhandler.SendQuestion))   //お問い合わせ送信用エンドポイント
 
 	//「プロフィール」
 	http.HandleFunc("/profile/username_edit_form", middleware.Auth(profile.EditUserNameForm)) //プロフィール画面
