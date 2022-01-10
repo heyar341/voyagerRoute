@@ -270,6 +270,7 @@ func Update(w http.ResponseWriter, req *http.Request) {
 		e := s.Err.(customerr.BaseErr)
 		http.Error(w, e.Msg, http.StatusInternalServerError)
 		log.Printf("operation: %s, error: %v", e.Op, e.Err)
+		return
 	}
 
 	//レスポンス作成
