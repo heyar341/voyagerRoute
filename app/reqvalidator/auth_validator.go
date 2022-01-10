@@ -2,9 +2,9 @@ package reqvalidator
 
 import (
 	"app/controllers"
-	"app/cookiehandler"
-	"app/customerr"
-	"app/mailhandler"
+	"app/internal/cookiehandler"
+	"app/internal/customerr"
+	"app/internal/mailhandler"
 	"context"
 	"fmt"
 	"log"

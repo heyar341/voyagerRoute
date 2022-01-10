@@ -1,9 +1,9 @@
 package profile
 
 import (
-	"app/contexthandler"
-	"app/cookiehandler"
-	"app/customerr"
+	"app/internal/contexthandler"
+	"app/internal/cookiehandler"
+	"app/internal/customerr"
 	"app/model"
 	"encoding/base64"
 	"html/template"

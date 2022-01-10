@@ -1,11 +1,11 @@
 package simulsearch
 
 import (
-	"app/bsonconv"
 	"app/controllers"
-	"app/cookiehandler"
-	"app/customerr"
-	"app/errormsg"
+	"app/internal/bsonconv"
+	"app/internal/cookiehandler"
+	"app/internal/customerr"
+	"app/internal/errormsg"
 	"app/model"
 	"encoding/json"
 	"fmt"

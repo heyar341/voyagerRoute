@@ -2,8 +2,8 @@ package auth
 
 import (
 	"app/controllers"
-	"app/cookiehandler"
-	"app/customerr"
+	"app/internal/cookiehandler"
+	"app/internal/customerr"
 	"app/model"
 	"fmt"
 	"log"

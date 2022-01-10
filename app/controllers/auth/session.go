@@ -1,7 +1,7 @@
 package auth
 
 import (
-	"app/envhandler"
+	"app/internal/envhandler"
 	"app/model"
 	"fmt"
 	"log"

@@ -1,8 +1,8 @@
 package middleware
 
 import (
-	"app/bsonconv"
 	"app/controllers/auth"
+	"app/internal/bsonconv"
 	"app/model"
 	"context"
 	"log"

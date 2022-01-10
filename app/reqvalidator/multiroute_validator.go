@@ -2,7 +2,7 @@ package reqvalidator
 
 import (
 	"app/controllers"
-	"app/customerr"
+	"app/internal/customerr"
 	"app/model"
 	"context"
 	"encoding/json"

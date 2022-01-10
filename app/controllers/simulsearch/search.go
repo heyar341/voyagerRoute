@@ -1,9 +1,9 @@
 package simulsearch
 
 import (
-	"app/customerr"
-	"app/envhandler"
-	"app/errormsg"
+	"app/internal/customerr"
+	"app/internal/envhandler"
+	"app/internal/errormsg"
 	"app/model"
 	"context"
 	"encoding/json"
