@@ -278,3 +278,40 @@ func Update(w http.ResponseWriter, req *http.Request) {
 	respMsg := map[string]string{"msg": "ok"}
 	json.NewEncoder(w).Encode(&respMsg)
 }
+
+//deleteRoute delete multi_route_title field from user document
+func (s *simulSearchController) deleteRoute(routeTitle string) {
+	if s.Err != nil {
+		return
+	}
+	err := model.UpdateSimulRouteTitles(s.user.ID, routeTitle, "$unset", "")
+	if err != nil {
+		s.Err = customerr.BaseErr{
+			Op:  "Deleting route title",
+			Msg: "エラーが発生しました。",
+			Err: fmt.Errorf("error while deleting %v from multi_route_titles: %w", routeTitle, err),
+		}
+		return
+	}
+}
+func Delete(w http.ResponseWriter, req *http.Request) {
+	var s simulSearchController
+	controllers.CheckHTTPMethod(req, &s.Err)
+	s.GetUserFromCtx(req, &s.user)
+	routeTitle := req.FormValue("title")
+	s.deleteRoute(routeTitle)
+
+	//レスポンス作成
+	if s.Err != nil {
+		e := s.Err.(customerr.BaseErr)
+		cookiehandler.MakeCookieAndRedirect(w, req, "msg", e.Msg, "/mypage/show_routes/?search_type=simul_search")
+		log.Printf("Error while deleting route title: %v", e.Err)
+		return
+	}
+
+	successMsg := "ルート「" + routeTitle + "」を削除しました。"
+	cookiehandler.MakeCookieAndRedirect(w, req, "success", successMsg, "/mypage/show_routes/?search_type=simul_search")
+	log.Printf("User [%v] deleted route [%v]", s.user.UserName, routeTitle)
+}
+
+////user collectionから削除 エラー解析に使うかもしれないので、route自体は削除せずに残しておく

@@ -13,10 +13,10 @@
 </div>
 <div class="d-flex">
     <div class="mx-auto d-flex">
-        <form action="/delete_route" method="POST">
+        <form action="/{{$.searchType}}/delete_route" method="POST">
             <button class="btn-danger mr-3" type="submit" name="title" value="{{.title}}">削除する</button>
         </form>
-        <a href="show_routes.html">
+        <a href="/mypage/show_routes/?search_type={{$.searchType}}">
             <button class="btn-success">戻る</button>
         </a>
     </div>

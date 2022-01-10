@@ -287,13 +287,13 @@ func Delete(w http.ResponseWriter, req *http.Request) {
 	//レスポンス作成
 	if m.Err != nil {
 		e := m.Err.(customerr.BaseErr)
-		cookiehandler.MakeCookieAndRedirect(w, req, "msg", e.Msg, "/mypage/show_routes")
+		cookiehandler.MakeCookieAndRedirect(w, req, "msg", e.Msg, "/mypage/show_routes/?search_type=multi_search")
 		log.Printf("Error while deleting route title: %v", e.Err)
 		return
 	}
 
 	successMsg := "ルート「" + routeTitle + "」を削除しました。"
-	cookiehandler.MakeCookieAndRedirect(w, req, "success", successMsg, "/mypage/show_routes")
+	cookiehandler.MakeCookieAndRedirect(w, req, "success", successMsg, "/mypage/show_routes/?search_type=multi_search")
 	log.Printf("User [%v] deleted route [%v]", m.user.UserName, routeTitle)
 }
 
