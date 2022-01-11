@@ -2,26 +2,18 @@ package main
 
 import (
 	"app/controllers/auth"
+	"app/controllers/home"
 	"app/controllers/multiroute"
 	"app/controllers/mypage"
 	"app/controllers/profile"
 	"app/controllers/simulsearch"
 	"app/internal/api"
-	"app/internal/contexthandler"
 	"app/internal/mailhandler"
 	"app/middleware"
 	"app/reqvalidator"
-	"encoding/base64"
 	"fmt"
-	"html/template"
 	"net/http"
 )
-
-var homeTpl *template.Template
-
-func init() {
-	homeTpl = template.Must(template.Must(template.ParseGlob("templates/home/home.html")).ParseGlob("templates/includes/*.html"))
-}
 
 func main() {
 
@@ -67,34 +59,7 @@ func main() {
 	http.HandleFunc("/profile/", middleware.Auth(profile.ShowProfile))               //プロフィール画面
 
 	//「ホーム」
-	http.HandleFunc("/", middleware.Auth(home))
+	http.HandleFunc("/", middleware.Auth(home.Show))
 
 	http.ListenAndServe(":8080", nil)
-}
-
-func home(w http.ResponseWriter, req *http.Request) {
-	data := contexthandler.GetLoginStateFromCtx(req)
-	//successメッセージがある場合
-	c, err := req.Cookie("success")
-	if err == nil {
-		processCookie(w, c, data)
-		return
-	}
-	//エラーメッセージがある場合
-	c, err = req.Cookie("msg")
-	if err == nil {
-		processCookie(w, c, data)
-		return
-	}
-	homeTpl.ExecuteTemplate(w, "home.html", data)
-}
-
-func processCookie(w http.ResponseWriter, c *http.Cookie, data map[string]interface{}) {
-	b64Str, err := base64.StdEncoding.DecodeString(c.Value)
-	if err != nil {
-		homeTpl.ExecuteTemplate(w, "home.html", data)
-		return
-	}
-	data[c.Name] = string(b64Str)
-	homeTpl.ExecuteTemplate(w, "home.html", data)
 }
