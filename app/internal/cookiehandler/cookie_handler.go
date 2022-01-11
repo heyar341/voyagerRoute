@@ -20,3 +20,13 @@ func MakeCookieAndRedirect(w http.ResponseWriter, req *http.Request, cName, cVal
 	http.SetCookie(w, c)
 	http.Redirect(w, req, path, http.StatusSeeOther)
 }
+
+func DeleteCookie(w http.ResponseWriter, name, path string) {
+	c := &http.Cookie{
+		Name:   name,
+		Value:  "",
+		Path:   path,
+		MaxAge: -1,
+	}
+	http.SetCookie(w, c)
+}

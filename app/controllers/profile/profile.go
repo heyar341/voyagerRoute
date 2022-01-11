@@ -5,8 +5,8 @@ import (
 	"app/internal/cookiehandler"
 	"app/internal/customerr"
 	"app/internal/mailhandler"
+	"app/internal/view"
 	"app/model"
-	"encoding/base64"
 	"fmt"
 	"html/template"
 	"log"
@@ -35,32 +35,6 @@ const (
 	editPasswordTpl = "password_edit.html"
 	profilePageTpl  = "profile.html"
 )
-
-func showMsgWithCookie(w http.ResponseWriter, c *http.Cookie, data map[string]interface{}, tplName string) {
-	b64Str, err := base64.StdEncoding.DecodeString(c.Value)
-	if err != nil {
-		profileTpl.ExecuteTemplate(w, tplName, data)
-		return
-	}
-	data[c.Name] = string(b64Str)
-	profileTpl.ExecuteTemplate(w, tplName, data)
-}
-
-func (p *profileController) existsCookie(w http.ResponseWriter, req *http.Request, tName string) bool {
-	//successメッセージがある場合
-	c, _ := req.Cookie("success")
-	if c != nil {
-		showMsgWithCookie(w, c, p.data, tName)
-		return true
-	}
-	//エラーメッセージがある場合
-	c, _ = req.Cookie("msg")
-	if c != nil {
-		showMsgWithCookie(w, c, p.data, tName)
-		return true
-	}
-	return false
-}
 
 const redirectURIToUpdateUsernameForm = "/profile/username_edit"
 
@@ -112,7 +86,8 @@ func EditUserName(w http.ResponseWriter, req *http.Request) {
 		}
 		p.data["userName"] = p.user.UserName
 
-		if p.existsCookie(w, req, editUserNameTpl) {
+		existsCookie := view.ExistsCookie(w, req, p.data, profileTpl, editUserNameTpl)
+		if existsCookie {
 			return
 		}
 
@@ -187,7 +162,8 @@ func EditEmail(w http.ResponseWriter, req *http.Request) {
 		newEmail := req.URL.Query().Get("newEmail")
 		p.data["newEmail"] = newEmail
 
-		if p.existsCookie(w, req, editEmailTpl) {
+		existsCookie := view.ExistsCookie(w, req, p.data, profileTpl, editEmailTpl)
+		if existsCookie {
 			return
 		}
 
@@ -304,7 +280,8 @@ func EditPassword(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 
-		if p.existsCookie(w, req, editPasswordTpl) {
+		existsCookie := view.ExistsCookie(w, req, p.data, profileTpl, editPasswordTpl)
+		if existsCookie {
 			return
 		}
 
@@ -348,7 +325,8 @@ func ShowProfile(w http.ResponseWriter, req *http.Request) {
 	p.data["userName"] = p.user.UserName
 	p.data["email"] = p.user.Email
 
-	if p.existsCookie(w, req, profilePageTpl) {
+	existsCookie := view.ExistsCookie(w, req, p.data, profileTpl, profilePageTpl)
+	if existsCookie {
 		return
 	}
 

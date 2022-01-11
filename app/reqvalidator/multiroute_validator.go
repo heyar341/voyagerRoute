@@ -1,7 +1,6 @@
 package reqvalidator
 
 import (
-	"app/controllers"
 	"app/internal/customerr"
 	"app/model"
 	"context"
@@ -87,7 +86,6 @@ func SaveRoutesValidator(SaveRoutes http.HandlerFunc) http.HandlerFunc {
 func UpdateRouteValidator(Update http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		var m multiRouteValidator
-		controllers.CheckHTTPMethod(req, &m.err)
 		//convertJSONToStructの第２引数はinterfaceなので、変数を宣言してポインタを渡す必要がある
 		var reqFields model.MultiRouteUpdateRequest
 		m.convertJSONToStruct(req, &reqFields)

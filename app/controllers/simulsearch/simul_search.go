@@ -296,7 +296,6 @@ func (s *simulSearchController) deleteRoute(routeTitle string) {
 }
 func Delete(w http.ResponseWriter, req *http.Request) {
 	var s simulSearchController
-	controllers.CheckHTTPMethod(req, &s.Err)
 	s.GetUserFromCtx(req, &s.user)
 	routeTitle := req.FormValue("title")
 	s.deleteRoute(routeTitle)

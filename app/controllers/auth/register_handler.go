@@ -7,6 +7,7 @@ import (
 	"app/internal/customerr"
 	"app/internal/errormsg"
 	"app/internal/mailhandler"
+	"app/internal/view"
 	"app/model"
 	"fmt"
 	"log"
@@ -156,7 +157,7 @@ func Register(w http.ResponseWriter, req *http.Request) {
 		data := map[string]interface{}{"isLoggedIn": false}
 		c, err := req.Cookie("msg")
 		if err == nil {
-			tplWithCookieMsg(w, c, data, "register.html")
+			view.ShowMsgWithCookie(w, c, data, authTpl, "register.html")
 			return
 		}
 		authTpl.ExecuteTemplate(w, "register.html", data)
