@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<head>
+    <meta charset="UTF-8">
+    <title>メールアドレス認証のお願い</title>
+    {{ template "imports" }}
+
+</head>
+<body>
+<!--navbarを埋め込み-->
+{{ template "navbar" . }} <!-- .を入れることでデータをnavbarに通せる -->
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <p>
+            認証用メールをご登録いただいたメールアドレスに送信しました。認証用メール受信後、１時間以内にメールアドレスの認証を行ってください。メールが届かない場合、お手数ですがもう一度最初から登録操作を行っていただきますようお願いいたします。
+        </p>
+    </div>
+</div>
+</body>
+</html>
