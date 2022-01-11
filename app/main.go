@@ -1,12 +1,12 @@
 package main
 
 import (
-	"app/controllers/api"
 	"app/controllers/auth"
 	"app/controllers/multiroute"
 	"app/controllers/mypage"
 	"app/controllers/profile"
 	"app/controllers/simulsearch"
+	"app/internal/api"
 	"app/internal/contexthandler"
 	"app/internal/mailhandler"
 	"app/middleware"
