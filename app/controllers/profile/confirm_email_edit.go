@@ -3,90 +3,20 @@ package profile
 import (
 	"app/controllers"
 	"app/internal/bsonconv"
-	"app/internal/contexthandler"
 	"app/internal/cookiehandler"
 	"app/internal/customerr"
-	"app/internal/mailhandler"
 	"app/model"
 	"fmt"
 	"log"
 	"net/http"
 	"time"
 
-	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-const REDIRECT_URI_TO_UPDATE_EMAIL_FORM = "/profile/email_edit_form"
-
-type updateEmailProcess struct {
-	user     model.User
-	newEmail string
-	err      error
-}
-
-//getEmailFromForm gets email from request's form
-func (u *updateEmailProcess) getEmailFromForm(req *http.Request) {
-	if u.err != nil {
-		return
-	}
-	newEmail := req.FormValue("email")
-	if !mailhandler.IsEmailValid(newEmail) {
-		u.err = customerr.BaseErr{
-			Op:  "check email address's validity",
-			Msg: "メールアドレスに不備があります。",
-			Err: fmt.Errorf("request email was invalid %v", newEmail),
-		}
-		return
-	}
-	u.newEmail = newEmail
-}
-
-//saveEditingEmailToDB saves editing email to DB
-func (u *updateEmailProcess) saveEditingEmailToDB(token string) {
-	if u.err != nil {
-		return
-	}
-	err := model.SaveEditingEmail(u.newEmail, token)
-	if err != nil {
-		u.err = customerr.BaseErr{
-			Op:  "Saving editing email to DB",
-			Msg: "エラーが発生しました。",
-			Err: fmt.Errorf("error while inserting editing email to editing_email collection %w", err),
-		}
-		return
-	}
-}
-
-func UpdateEmail(w http.ResponseWriter, req *http.Request) {
-	var u updateEmailProcess
-	controllers.CheckHTTPMethod(req, &u.err)
-	contexthandler.GetUserFromCtx(req, &u.user, &u.err)
-	u.getEmailFromForm(req)
-	//メールアドレス認証用のトークンを作成
-	token := uuid.New().String()
-	u.saveEditingEmailToDB(token)
-
-	if u.err != nil {
-		e := u.err.(customerr.BaseErr)
-		cookiehandler.MakeCookieAndRedirect(w, req, "msg", e.Msg, REDIRECT_URI_TO_UPDATE_EMAIL_FORM)
-		log.Printf("operation: %s, error: %v", e.Op, e.Err)
-		return
-	}
-	//認証依頼画面表示
-	http.Redirect(w, req, "/ask_confirm", http.StatusSeeOther)
-
-	//メールでトークン付きのURLを送る
-	err := mailhandler.SendConfirmEmail(token, u.newEmail, "confirm_email")
-	return
-	if err != nil {
-		log.Printf("Error while sending email at registering: %v", err)
-	}
-
-}
-
-type confirmUpdateEmail struct {
+type confirmUpdateEmailController struct {
+	controllers.Controller
 	user         model.User
 	editingEmail model.EditingEmail
 	token        string
@@ -94,7 +24,7 @@ type confirmUpdateEmail struct {
 }
 
 //getTokenFromURL gets token from URL parameter
-func (c *confirmUpdateEmail) getTokenFromURL(req *http.Request) {
+func (c *confirmUpdateEmailController) getTokenFromURL(req *http.Request) {
 	if c.err != nil {
 		return
 	}
@@ -110,7 +40,7 @@ func (c *confirmUpdateEmail) getTokenFromURL(req *http.Request) {
 }
 
 //getEditingEmailDocFromDB fetch editing email from DB
-func (c *confirmUpdateEmail) getEditingEmailDocFromDB() bson.M {
+func (c *confirmUpdateEmailController) getEditingEmailDocFromDB() bson.M {
 	if c.err != nil {
 		return nil
 	}
@@ -136,7 +66,7 @@ func (c *confirmUpdateEmail) getEditingEmailDocFromDB() bson.M {
 }
 
 //checkTokenExpire checks if token expires or not
-func (c *confirmUpdateEmail) checkTokenExpire() {
+func (c *confirmUpdateEmailController) checkTokenExpire() {
 	if c.err != nil {
 		return
 	}
@@ -152,7 +82,7 @@ func (c *confirmUpdateEmail) checkTokenExpire() {
 }
 
 //updateUserEmail updates email field in user document
-func (c *confirmUpdateEmail) updateUserEmail() {
+func (c *confirmUpdateEmailController) updateUserEmail() {
 	if c.err != nil {
 		return
 	}
@@ -168,9 +98,8 @@ func (c *confirmUpdateEmail) updateUserEmail() {
 }
 
 func ConfirmUpdateEmail(w http.ResponseWriter, req *http.Request) {
-	var c confirmUpdateEmail
-	controllers.CheckHTTPMethod(req, &c.err)
-	contexthandler.GetUserFromCtx(req, &c.user, &c.err)
+	var c confirmUpdateEmailController
+	c.GetUserFromCtx(req, &c.user)
 	c.getTokenFromURL(req)
 	d := c.getEditingEmailDocFromDB()
 	bsonconv.DocToStruct(d, &c.editingEmail, &c.err, "editing email")
@@ -179,7 +108,7 @@ func ConfirmUpdateEmail(w http.ResponseWriter, req *http.Request) {
 
 	if c.err != nil {
 		e := c.err.(customerr.BaseErr)
-		cookiehandler.MakeCookieAndRedirect(w, req, "msg", e.Msg, REDIRECT_URI_TO_UPDATE_EMAIL_FORM)
+		cookiehandler.MakeCookieAndRedirect(w, req, "msg", e.Msg, redirectURIToUpdateEmailForm)
 		log.Printf("operation: %s, error: %v", e.Op, e.Err)
 		return
 	}
