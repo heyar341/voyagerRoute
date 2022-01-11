@@ -20,12 +20,46 @@ type profileController struct {
 	controllers.Controller
 	user        model.User
 	updateValue string
+	data        map[string]interface{}
 }
 
 var profileTpl *template.Template
 
 func init() {
 	profileTpl = template.Must(template.Must(template.ParseGlob("templates/profile/*.html")).ParseGlob("templates/includes/*.html"))
+}
+
+const (
+	editUserNameTpl = "username_edit.html"
+	editEmailTpl    = "email_edit.html"
+	editPasswordTpl = "password_edit.html"
+	profilePageTpl  = "profile.html"
+)
+
+func showMsgWithCookie(w http.ResponseWriter, c *http.Cookie, data map[string]interface{}, tplName string) {
+	b64Str, err := base64.StdEncoding.DecodeString(c.Value)
+	if err != nil {
+		profileTpl.ExecuteTemplate(w, tplName, data)
+		return
+	}
+	data[c.Name] = string(b64Str)
+	profileTpl.ExecuteTemplate(w, tplName, data)
+}
+
+func (p *profileController) existsCookie(w http.ResponseWriter, req *http.Request, tName string) bool {
+	//successメッセージがある場合
+	c, _ := req.Cookie("success")
+	if c != nil {
+		showMsgWithCookie(w, c, p.data, tName)
+		return true
+	}
+	//エラーメッセージがある場合
+	c, _ = req.Cookie("msg")
+	if c != nil {
+		showMsgWithCookie(w, c, p.data, tName)
+		return true
+	}
+	return false
 }
 
 const redirectURIToUpdateUsernameForm = "/profile/username_edit"
@@ -68,7 +102,7 @@ func EditUserName(w http.ResponseWriter, req *http.Request) {
 	var p profileController
 	switch req.Method {
 	case "GET":
-		data := p.GetLoginStateFromCtx(req)
+		p.data = p.GetLoginStateFromCtx(req)
 		p.GetUserFromCtx(req, &p.user)
 		if p.Err != nil {
 			e := p.Err.(customerr.BaseErr)
@@ -76,14 +110,13 @@ func EditUserName(w http.ResponseWriter, req *http.Request) {
 			log.Printf("operation: %s, error: %v", e.Op, e.Err)
 			return
 		}
-		data["userName"] = p.user.UserName
-		c, _ := req.Cookie("msg")
-		if c != nil {
-			processCookie(w, c, data, "username_edit.html")
+		p.data["userName"] = p.user.UserName
+
+		if p.existsCookie(w, req, editUserNameTpl) {
 			return
 		}
 
-		profileTpl.ExecuteTemplate(w, "username_edit.html", data)
+		profileTpl.ExecuteTemplate(w, editUserNameTpl, p.data)
 
 	case "POST":
 		p.GetUserFromCtx(req, &p.user)
@@ -142,7 +175,7 @@ func EditEmail(w http.ResponseWriter, req *http.Request) {
 	var p profileController
 	switch req.Method {
 	case "GET":
-		data := p.GetLoginStateFromCtx(req)
+		p.data = p.GetLoginStateFromCtx(req)
 		p.GetUserFromCtx(req, &p.user)
 		if p.Err != nil {
 			e := p.Err.(customerr.BaseErr)
@@ -150,17 +183,15 @@ func EditEmail(w http.ResponseWriter, req *http.Request) {
 			log.Printf("operation: %s, error: %v", e.Op, e.Err)
 			return
 		}
-		data["email"] = p.user.Email
+		p.data["email"] = p.user.Email
 		newEmail := req.URL.Query().Get("newEmail")
-		data["newEmail"] = newEmail
+		p.data["newEmail"] = newEmail
 
-		c, _ := req.Cookie("msg")
-		if c != nil {
-			processCookie(w, c, data, "email_edit.html")
+		if p.existsCookie(w, req, editEmailTpl) {
 			return
 		}
 
-		profileTpl.ExecuteTemplate(w, "email_edit.html", data)
+		profileTpl.ExecuteTemplate(w, editEmailTpl, p.data)
 
 	case "POST":
 		p.GetUserFromCtx(req, &p.user)
@@ -175,8 +206,10 @@ func EditEmail(w http.ResponseWriter, req *http.Request) {
 			log.Printf("operation: %s, error: %v", e.Op, e.Err)
 			return
 		}
+
+		p.data = p.GetLoginStateFromCtx(req)
 		//認証依頼画面表示
-		http.Redirect(w, req, "/ask_confirm", http.StatusSeeOther)
+		profileTpl.ExecuteTemplate(w, "ask_confirm_email.html", p.data)
 
 		//メールでトークン付きのURLを送る
 		err := mailhandler.SendConfirmEmail(token, p.updateValue, "confirm_email")
@@ -262,7 +295,7 @@ func EditPassword(w http.ResponseWriter, req *http.Request) {
 	var p profileController
 	switch req.Method {
 	case "GET":
-		data := p.GetLoginStateFromCtx(req)
+		p.data = p.GetLoginStateFromCtx(req)
 		p.GetUserFromCtx(req, &p.user)
 		if p.Err != nil {
 			e := p.Err.(customerr.BaseErr)
@@ -271,12 +304,11 @@ func EditPassword(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 
-		c, _ := req.Cookie("msg")
-		if c != nil {
-			processCookie(w, c, data, "password_edit.html")
+		if p.existsCookie(w, req, editPasswordTpl) {
 			return
 		}
-		profileTpl.ExecuteTemplate(w, "password_edit.html", data)
+
+		profileTpl.ExecuteTemplate(w, editPasswordTpl, p.data)
 
 	case "POST":
 		p.GetUserFromCtx(req, &p.user)
@@ -303,19 +335,9 @@ func EditPassword(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func processCookie(w http.ResponseWriter, c *http.Cookie, data map[string]interface{}, tplName string) {
-	b64Str, err := base64.StdEncoding.DecodeString(c.Value)
-	if err != nil {
-		profileTpl.ExecuteTemplate(w, tplName, data)
-		return
-	}
-	data[c.Name] = string(b64Str)
-	profileTpl.ExecuteTemplate(w, tplName, data)
-}
-
 func ShowProfile(w http.ResponseWriter, req *http.Request) {
 	var p profileController
-	data := p.GetLoginStateFromCtx(req)
+	p.data = p.GetLoginStateFromCtx(req)
 	p.GetUserFromCtx(req, &p.user)
 	if p.Err != nil {
 		e := p.Err.(customerr.BaseErr)
@@ -323,19 +345,13 @@ func ShowProfile(w http.ResponseWriter, req *http.Request) {
 		log.Printf("operation: %s, error: %v", e.Op, e.Err)
 		return
 	}
-	data["userName"] = p.user.UserName
-	data["email"] = p.user.Email
-	c, _ := req.Cookie("success")
-	if c != nil {
-		processCookie(w, c, data, "profile.html")
-		return
-	}
-	c, _ = req.Cookie("msg")
-	if c != nil {
-		processCookie(w, c, data, "profile.html")
+	p.data["userName"] = p.user.UserName
+	p.data["email"] = p.user.Email
+
+	if p.existsCookie(w, req, profilePageTpl) {
 		return
 	}
 
-	profileTpl.ExecuteTemplate(w, "profile.html", data)
+	profileTpl.ExecuteTemplate(w, "profile.html", p.data)
 
 }
