@@ -3,19 +3,10 @@ let originFormattedAddress = routeInfo.origin_address;
 var searchResult = {};
 const simulSearchUpdateReq = Object.assign({}, routeInfo);
 simulSearchUpdateReq.previous_title = routeInfo.title;
-
+let searchFlag = false;
 var simulReq = {
     origin: "",
     destinations: {
-        1: "",
-        2: "",
-        3: "",
-        4: "",
-        5: "",
-        6: "",
-        7: "",
-        8: "",
-        9: "",
     },
     mode: "",
     departure_time: "",
@@ -36,7 +27,7 @@ simulReq.avoid = Object.assign([], routeInfo.avoid);
 //検索結果保存
 $(function () {
     $("#save-route").click(function () {
-        var keys = Object.keys(searchResult);
+        var keys = Object.keys(simulSearchUpdateReq);
         if (keys.length === 0) {
             window.alert("ルートを１つ以上設定してください。");
             return;
@@ -50,16 +41,18 @@ $(function () {
             return;
         }
         simulSearchUpdateReq.title = document.getElementById("route-title").value;
-        simulSearchUpdateReq.origin = simulReq.origin;
-        simulSearchUpdateReq.origin_address = originFormattedAddress;
-        simulSearchUpdateReq.mode = simulReq.mode;
-        simulSearchUpdateReq.departure_time = simulReq.departure_time;
-        simulSearchUpdateReq.latlng = simulReq.latlng;
-        simulSearchUpdateReq.avoid = simulReq.avoid;
-        simulSearchUpdateReq.destinations = searchResult;
-        for (var i = 1; i < 10; i++){
-            if (destinationFormattedAddress.hasOwnProperty(i)){
-                simulSearchUpdateReq.destinations[i].address = destinationFormattedAddress[i];
+        if (searchFlag) {
+            simulSearchUpdateReq.origin = simulReq.origin;
+            simulSearchUpdateReq.origin_address = originFormattedAddress;
+            simulSearchUpdateReq.mode = simulReq.mode;
+            simulSearchUpdateReq.departure_time = simulReq.departure_time;
+            simulSearchUpdateReq.latlng = simulReq.latlng;
+            simulSearchUpdateReq.avoid = simulReq.avoid;
+            simulSearchUpdateReq.destinations = searchResult;
+            for (var i = 1; i < 10; i++) {
+                if (destinationFormattedAddress.hasOwnProperty(i)) {
+                    simulSearchUpdateReq.destinations[i].address = destinationFormattedAddress[i];
+                }
             }
         }
         // 多重送信を防ぐため通信完了までボタンをdisableにする
@@ -140,6 +133,7 @@ $(function () {
             //通信成功
         })
             .done(function (simulSearchResult, textStatus, jqXHR) {
+                searchFlag = true;
                 searchResult = simulSearchResult;
                 for (var i = 1; i < 10; i++) {
                     if (simulSearchResult[i]) {
