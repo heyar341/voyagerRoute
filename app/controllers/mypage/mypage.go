@@ -4,8 +4,8 @@ import (
 	"app/controllers"
 	"app/internal/cookiehandler"
 	"app/internal/customerr"
+	"app/internal/view"
 	"app/model"
-	"encoding/base64"
 	"fmt"
 	"html/template"
 	"log"
@@ -98,32 +98,6 @@ func (m *mypageController) getAndSetSearchType(req *http.Request) string {
 	return searchType
 }
 
-func showMsgWithCookie(w http.ResponseWriter, c *http.Cookie, data map[string]interface{}, tName string) {
-	b64Str, err := base64.StdEncoding.DecodeString(c.Value)
-	if err != nil {
-		mypageTpl.ExecuteTemplate(w, tName, data)
-		return
-	}
-	data[c.Name] = string(b64Str)
-	mypageTpl.ExecuteTemplate(w, tName, data)
-}
-
-func (m *mypageController) existsCookie(w http.ResponseWriter, req *http.Request, tName string) bool {
-	//successメッセージがある場合
-	c, _ := req.Cookie("success")
-	if c != nil {
-		showMsgWithCookie(w, c, m.data, tName)
-		return true
-	}
-	//エラーメッセージがある場合
-	c, _ = req.Cookie("msg")
-	if c != nil {
-		showMsgWithCookie(w, c, m.data, tName)
-		return true
-	}
-	return false
-}
-
 func Mypage(w http.ResponseWriter, req *http.Request) {
 	var m mypageController
 	m.data = m.GetLoginStateFromCtx(req)
@@ -134,7 +108,7 @@ func Mypage(w http.ResponseWriter, req *http.Request) {
 		log.Printf("operation: %s, error: %v", e.Op, e.Err)
 		return
 	}
-	exsitsCookie := m.existsCookie(w, req, "mypage.html")
+	exsitsCookie := view.ExistsCookie(w, req, m.data, mypageTpl, "mypage.html")
 	if exsitsCookie {
 		return
 	}
@@ -165,7 +139,7 @@ func ShowAllRoutes(w http.ResponseWriter, req *http.Request) {
 
 	m.data["userName"] = m.user.UserName
 	m.data["titles"] = titleNames
-	exsitsCookie := m.existsCookie(w, req, "show_routes.html")
+	exsitsCookie := view.ExistsCookie(w, req, m.data, mypageTpl, "show_routes.html")
 	if exsitsCookie {
 		return
 	}

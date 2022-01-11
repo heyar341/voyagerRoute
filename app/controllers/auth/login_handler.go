@@ -6,6 +6,7 @@ import (
 	"app/internal/cookiehandler"
 	"app/internal/customerr"
 	"app/internal/errormsg"
+	"app/internal/view"
 	"app/model"
 	"fmt"
 	"log"
@@ -90,7 +91,7 @@ func Login(w http.ResponseWriter, req *http.Request) {
 		c, err := req.Cookie("msg")
 		//Cookie にmsgがある場合
 		if err == nil {
-			tplWithCookieMsg(w, c, data, "login.html")
+			view.ShowMsgWithCookie(w, c, data, authTpl, "login.html")
 			return
 		}
 		authTpl.ExecuteTemplate(w, "login.html", data)
