@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"app/controllers"
 	"app/internal/cookiehandler"
 	"app/internal/customerr"
 	"app/model"
@@ -66,7 +65,6 @@ func (l *logoutController) deleteSession(sessionID string) {
 
 func Logout(w http.ResponseWriter, req *http.Request) {
 	var l logoutController
-	controllers.CheckHTTPMethod(req, &l.err)
 	c := l.getCookieFromRequest(req)
 	sessionID := l.parseCookieToken(c)
 	l.deleteSession(sessionID)

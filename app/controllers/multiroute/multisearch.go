@@ -279,7 +279,6 @@ func Show(w http.ResponseWriter, req *http.Request) {
 
 func Delete(w http.ResponseWriter, req *http.Request) {
 	var m multiSearchController
-	controllers.CheckHTTPMethod(req, &m.Err)
 	m.GetUserFromCtx(req, &m.user)
 	routeTitle := req.FormValue("title")
 	m.deleteRoute(routeTitle)
