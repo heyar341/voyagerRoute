@@ -48,7 +48,7 @@ $(function () {
     })
       //通信成功
       .done(function (data, textStatus, jqXHR) {
-        window.location.href = "/mypage/show_routes";
+        window.location.href = "/mypage/show_routes/?search_type=multi_search";
         //通信失敗
       })
       .fail(function (xhr, status, error) {
