@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"googlemaps.github.io/maps"
@@ -313,28 +314,41 @@ func (s *searchRoute) genNewClient() {
 //if route isn't found, values will be "検索結果なし".
 func (s *searchRoute) executeSearch() {
 	//同時検索
+	wg := sync.WaitGroup{}
+	mux := sync.Mutex{}
 	for i := 1; i < 10; i++ {
-		destination := s.reqParams.Destinations[strconv.Itoa(i)]
-		if destination == "" {
-			continue
-		}
-		distance, duration := getDataFromAPI(s.client, destination, &s.reqParams)
-		//エラーもしくは検索結果がない場合
-		if distance == "" && duration == 0 {
-			s.destinations[strconv.Itoa(i)] = model.DestinationData{
-				PlaceId:  destination[9:],
-				Distance: "検索結果なし",
-				Duration: "検索結果なし",
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			mux.Lock()
+			destination := s.reqParams.Destinations[strconv.Itoa(i)]
+			mux.Unlock()
+			if destination == "" {
+				return
 			}
-		} else {
-			d := convertDurationToStr(duration)
-			s.destinations[strconv.Itoa(i)] = model.DestinationData{
-				PlaceId:  destination[9:],
-				Distance: distance,
-				Duration: d,
+			distance, duration := getDataFromAPI(s.client, destination, &s.reqParams)
+			//エラーもしくは検索結果がない場合
+			if distance == "" && duration == 0 {
+				mux.Lock()
+				s.destinations[strconv.Itoa(i)] = model.DestinationData{
+					PlaceId:  destination[9:],
+					Distance: "検索結果なし",
+					Duration: "検索結果なし",
+				}
+				mux.Unlock()
+			} else {
+				d := convertDurationToStr(duration)
+				mux.Lock()
+				s.destinations[strconv.Itoa(i)] = model.DestinationData{
+					PlaceId:  destination[9:],
+					Distance: distance,
+					Duration: d,
+				}
+				mux.Unlock()
 			}
-		}
+		}(i)
 	}
+	wg.Wait()
 }
 
 func Search(w http.ResponseWriter, req *http.Request) {
