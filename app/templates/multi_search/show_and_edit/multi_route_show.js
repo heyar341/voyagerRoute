@@ -337,10 +337,9 @@ class AutocompleteDirectionsHandler {
     );
     //保存されているルートのみ色付きラインを描画
     if (parseInt(routeNum) < Object.keys(routeInfo.routes).length) {
-      console.log(this.colorCode);
-      this.directionsRenderer.setOptions(
-        optionsForSelected(this.colorCode, this.routeNum)
-      );
+      this.directionsRenderer.setOptions({
+        polylineOptions: optionsForSelected(this.colorCode, this.routeNum),
+      });
       this.directionsRenderer.setDirections(routeInfo.routes[routeNum]);
       document.getElementById("one-result-panel" + routeNum).style.display =
         "block";
@@ -732,7 +731,7 @@ class AutocompleteDirectionsHandler {
           me.poly[i].addListener("click", callback);
         }
         //インデックス番号0のルートに色をつける
-        me.poly[0].setOptions(optionsForSelected(me.colorCode,me.routeNum));
+        me.poly[0].setOptions(optionsForSelected(me.colorCode, me.routeNum));
         me.directionsRenderer.setRouteIndex(0);
 
         //responseをRendererに渡して、パネルにルートを表示
