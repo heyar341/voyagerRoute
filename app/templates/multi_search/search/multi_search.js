@@ -183,6 +183,15 @@ function initMap() {
   });
 }
 
+
+class Elements {
+    constructor(routeNum) {
+        this.modeWalking = document.getElementById("changemode-walking" + routeNum);
+        this.modeTransit = document.getElementById("changemode-transit" + routeNum);
+        this.modeDriving = document.getElementById("changemode-driving" + routeNum);
+    }
+}
+
 class AutocompleteDirectionsHandler {
   constructor(map, routeNum) {
     /**
@@ -209,6 +218,7 @@ class AutocompleteDirectionsHandler {
     this.originLatitude = 0;
     this.originLongitue = 0;
     this.destinationPlaceId = "";
+    this.elements = new Elements(routeNum);
     this.timeDiffMin = 0;
     this.poly = [];
     this.inputFieldID = "";
@@ -282,18 +292,18 @@ class AutocompleteDirectionsHandler {
   setupClickListener(id, mode) {
     const radioButton = document.getElementById(id);
     radioButton.addEventListener("click", () => {
-      if (id === "changemode-transit" + this.routeNum) {
+      if (id === this.elements.modeTransit.id) {
         document.getElementById("transit-time" + this.routeNum).style.display =
           "block";
-      } else if (id !== "changemode-transit" + this.routeNum) {
+      } else if (id !== this.elements.modeTransit.id) {
         document.getElementById("transit-time" + this.routeNum).style.display =
           "none";
       }
-      if (id === "changemode-driving" + this.routeNum) {
+      if (id === this.elements.modeDriving.id) {
         document.getElementById(
           "driving-option" + this.routeNum
         ).style.display = "block";
-      } else if (id !== "changemode-driving" + this.routeNum) {
+      } else if (id !== this.elements.modeDriving.id) {
         document.getElementById(
           "driving-option" + this.routeNum
         ).style.display = "none";
@@ -313,7 +323,7 @@ class AutocompleteDirectionsHandler {
         window.alert("表示された選択肢の中から選んでください。");
         return;
       } else if (
-        document.getElementById("changemode-transit" + me.routeNum).checked &&
+        me.elements.modeTransit.checked &&
         place.formatted_address.indexOf("日本") !== -1
       ) {
         window.alert(
@@ -538,7 +548,7 @@ class AutocompleteDirectionsHandler {
       provideRouteAlternatives: true,
     };
     //公共交通機関を選択した場合
-    if (document.getElementById("changemode-transit" + this.routeNum).checked) {
+    if (this.elements.modeTransit.checked) {
       if (
         document
           .getElementById("origin-input" + me.routeNum)
@@ -591,7 +601,7 @@ class AutocompleteDirectionsHandler {
 
     //自動車ルートを指定した場合
     else if (
-      document.getElementById("changemode-driving" + this.routeNum).checked
+      this.elements.modeDriving.checked
     ) {
       //有料道路不使用の場合
       if (document.getElementById("avoid-toll" + this.routeNum).checked) {
