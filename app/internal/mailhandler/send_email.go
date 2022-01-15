@@ -1,15 +1,16 @@
 package mailhandler
 
 import (
-	"app/cookiehandler"
-	"app/envhandler"
+	"app/internal/cookiehandler"
+	"app/internal/envhandler"
 	"app/model"
 	"context"
 	"fmt"
-	"github.com/mailgun/mailgun-go/v4"
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/mailgun/mailgun-go/v4"
 )
 
 var mailDomain = "mail.googroutes.com"

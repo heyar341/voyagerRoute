@@ -1,14 +1,14 @@
 package bsonconv
 
 import (
-	"app/customerr"
+	"app/internal/customerr"
 	"fmt"
 
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-//ConvertDucToStruct converts a bson document to a struct
-func ConvertDucToStruct(d bson.M, s interface{}, e *error, modelName string) {
+//DocToStruct converts a bson document to a struct
+func DocToStruct(d bson.M, s interface{}, e *error, modelName string) {
 	if *e != nil {
 		return
 	}

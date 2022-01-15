@@ -1,9 +1,7 @@
 package reqvalidator
 
 import (
-	"app/controllers"
-	"app/controllers/multiroute"
-	"app/customerr"
+	"app/internal/customerr"
 	"app/model"
 	"context"
 	"encoding/json"
@@ -85,15 +83,13 @@ func SaveRoutesValidator(SaveRoutes http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-func UpdateRouteValidator(UpdateRoute http.HandlerFunc) http.HandlerFunc {
+func UpdateRouteValidator(Update http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		var m multiRouteValidator
-		controllers.CheckHTTPMethod(req, &m.err)
 		//convertJSONToStructの第２引数はinterfaceなので、変数を宣言してポインタを渡す必要がある
-		var reqFields multiroute.RouteUpdateRequest
+		var reqFields model.MultiRouteUpdateRequest
 		m.convertJSONToStruct(req, &reqFields)
 		m.checkContainedChar(reqFields.Title)
-
 		if m.err != nil {
 			e := m.err.(customerr.BaseErr)
 			http.Error(w, e.Msg, http.StatusBadRequest)
@@ -104,6 +100,6 @@ func UpdateRouteValidator(UpdateRoute http.HandlerFunc) http.HandlerFunc {
 		//contextに各フィールドの値を追加
 		ctx := req.Context()
 		ctx = context.WithValue(ctx, "reqFields", reqFields)
-		UpdateRoute.ServeHTTP(w, req.WithContext(ctx))
+		Update.ServeHTTP(w, req.WithContext(ctx))
 	}
 }

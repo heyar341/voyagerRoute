@@ -16,3 +16,7 @@
 
 #envファイル
 /app/env
+
+#Javascript APIのDirections ServiceとDirections APIのgolangクライアントにおけるJSONレスポンスを保存したファイル
+JavascriptAPI_response.txt
+golang_client_response.txt

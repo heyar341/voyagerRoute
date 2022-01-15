@@ -1,11 +1,13 @@
 package auth
 
 import (
-	"app/bsonconv"
-	"app/contexthandler"
-	"app/cookiehandler"
-	"app/customerr"
-	"app/mailhandler"
+	"app/controllers"
+	"app/internal/bsonconv"
+	"app/internal/cookiehandler"
+	"app/internal/customerr"
+	"app/internal/errormsg"
+	"app/internal/mailhandler"
+	"app/internal/view"
 	"app/model"
 	"fmt"
 	"log"
@@ -18,25 +20,25 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type registerProcess struct {
+type registerController struct {
+	controllers.Controller
 	userName        string
 	email           string
 	password        string
 	securedPassword []byte
-	err             error
 }
 
 //generateSecuredPassword generates a hashed password
-func (r *registerProcess) generateSecuredPassword() {
-	if r.err != nil {
+func (r *registerController) generateSecuredPassword() {
+	if r.Err != nil {
 		return
 	}
 	//パスワードをハッシュ化
 	securedPassword, err := bcrypt.GenerateFromPassword([]byte(r.password), 5)
 	if err != nil {
-		r.err = customerr.BaseErr{
+		r.Err = customerr.BaseErr{
 			Op:  "generate hashed password",
-			Msg: "エラーが発生しました。",
+			Msg: errormsg.SomethingBad,
 			Err: fmt.Errorf("error while hashing password :%w", err),
 		}
 		return
@@ -45,23 +47,23 @@ func (r *registerProcess) generateSecuredPassword() {
 }
 
 //saveRegisteringUserToDB inserts user document to DB
-func (r *registerProcess) saveRegisteringUserToDB(token string) {
-	if r.err != nil {
+func (r *registerController) saveRegisteringUserToDB(token string) {
+	if r.Err != nil {
 		return
 	}
 	//DBに保存
 	err := model.SaveRegisteringUser(r.userName, r.email, token, r.securedPassword)
 	if err != nil {
-		r.err = customerr.BaseErr{
+		r.Err = customerr.BaseErr{
 			Op:  "insert user to registering collection",
-			Msg: "エラーが発生しました。",
+			Msg: errormsg.SomethingBad,
 			Err: fmt.Errorf("error while inserting user to registering collecion :%w", err),
 		}
 		return
 	}
 }
 
-type confirmRegister struct {
+type confirmRegisterController struct {
 	registeringUser model.Registering
 	token           string
 	userID          primitive.ObjectID
@@ -69,7 +71,7 @@ type confirmRegister struct {
 }
 
 //getTokenFromURL gets token from query parameter
-func (cR *confirmRegister) getTokenFromURL(req *http.Request) {
+func (cR *confirmRegisterController) getTokenFromURL(req *http.Request) {
 	token := req.URL.Query()["token"][0]
 	if token == "" {
 		cR.err = customerr.BaseErr{
@@ -83,7 +85,7 @@ func (cR *confirmRegister) getTokenFromURL(req *http.Request) {
 }
 
 //findUserByToken fetch user document from DB using token
-func (cR *confirmRegister) findUserByToken() bson.M {
+func (cR *confirmRegisterController) findUserByToken() bson.M {
 	if cR.err != nil {
 		return nil
 	}
@@ -100,7 +102,7 @@ func (cR *confirmRegister) findUserByToken() bson.M {
 }
 
 //checkTokenExpire checks if token expires or not
-func (cR *confirmRegister) checkTokenExpire() {
+func (cR *confirmRegisterController) checkTokenExpire() {
 	if cR.err != nil {
 		return
 	}
@@ -117,7 +119,7 @@ func (cR *confirmRegister) checkTokenExpire() {
 }
 
 //saveNewUserToDB saves user document to users collection
-func (cR *confirmRegister) saveNewUserToDB() {
+func (cR *confirmRegisterController) saveNewUserToDB() {
 	if cR.err != nil {
 		return
 	}
@@ -125,7 +127,7 @@ func (cR *confirmRegister) saveNewUserToDB() {
 	if err != nil {
 		cR.err = customerr.BaseErr{
 			Op:  "insert user to users collection",
-			Msg: "エラーが発生しました。",
+			Msg: errormsg.SomethingBad,
 			Err: fmt.Errorf("error while inserting user to users collection: %w", err),
 		}
 		return
@@ -134,7 +136,7 @@ func (cR *confirmRegister) saveNewUserToDB() {
 }
 
 //generateNewSession generates new session
-func (cR *confirmRegister) generateNewSession(w http.ResponseWriter) {
+func (cR *confirmRegisterController) generateNewSession(w http.ResponseWriter) {
 	if cR.err != nil {
 		return
 	}
@@ -142,7 +144,7 @@ func (cR *confirmRegister) generateNewSession(w http.ResponseWriter) {
 	if err != nil {
 		cR.err = customerr.BaseErr{
 			Op:  "generate new session",
-			Msg: "エラーが発生しました。",
+			Msg: errormsg.SomethingBad,
 			Err: fmt.Errorf("error while generating a new session: %w", err),
 		}
 		return
@@ -150,23 +152,34 @@ func (cR *confirmRegister) generateNewSession(w http.ResponseWriter) {
 }
 
 func Register(w http.ResponseWriter, req *http.Request) {
-	var r registerProcess
-	contexthandler.GetStrValueFromCtx(req, &r.userName, &r.err, "username")
-	contexthandler.GetStrValueFromCtx(req, &r.email, &r.err, "email")
-	contexthandler.GetStrValueFromCtx(req, &r.password, &r.err, "password")
+	var r registerController
+	if req.Method == "GET" {
+		data := map[string]interface{}{"isLoggedIn": false}
+		c, err := req.Cookie("msg")
+		if err == nil {
+			view.ShowMsgWithCookie(w, c, data, authTpl, "register.html")
+			return
+		}
+		authTpl.ExecuteTemplate(w, "register.html", data)
+		return
+	}
+	r.GetStrValueFromCtx(req, &r.userName, "username")
+	r.GetStrValueFromCtx(req, &r.email, "email")
+	r.GetStrValueFromCtx(req, &r.password, "password")
 	r.generateSecuredPassword()
 	//メールアドレス認証用のトークンを作成
 	token := uuid.New().String()
 	r.saveRegisteringUserToDB(token)
-	if r.err != nil {
-		e := r.err.(customerr.BaseErr)
+	if r.Err != nil {
+		e := r.Err.(customerr.BaseErr)
 		cookiehandler.MakeCookieAndRedirect(w, req, "msg", e.Msg, "/register_form")
 		log.Printf("operation: %s, error: %v", e.Op, e.Err)
 		return
 	}
 
 	//認証依頼画面表示
-	http.Redirect(w, req, "/ask_confirm", http.StatusSeeOther)
+	data := map[string]interface{}{"isLoggedIn": false} //新規登録はログイン時にしないと想定
+	authTpl.ExecuteTemplate(w, "ask_confirm_email.html", data)
 
 	//「メールでトークン付きのURLを送る」
 	err := mailhandler.SendConfirmEmail(token, r.email, "confirm_register")
@@ -176,10 +189,10 @@ func Register(w http.ResponseWriter, req *http.Request) {
 }
 
 func ConfirmRegister(w http.ResponseWriter, req *http.Request) {
-	var cR confirmRegister
+	var cR confirmRegisterController
 	cR.getTokenFromURL(req)
 	d := cR.findUserByToken()
-	bsonconv.ConvertDucToStruct(d, &cR.registeringUser, &cR.err, "registeringUser")
+	bsonconv.DocToStruct(d, &cR.registeringUser, &cR.err, "registeringUser")
 	cR.checkTokenExpire()
 	cR.saveNewUserToDB()
 	cR.generateNewSession(w)

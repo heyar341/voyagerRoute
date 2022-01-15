@@ -1,8 +1,8 @@
 package middleware
 
 import (
-	"app/bsonconv"
 	"app/controllers/auth"
+	"app/internal/bsonconv"
 	"app/model"
 	"context"
 	"log"
@@ -74,6 +74,6 @@ func getLoginUser(userID primitive.ObjectID) (model.User, error) {
 	}
 	var user model.User
 	var e error
-	bsonconv.ConvertDucToStruct(d, &user, &e, "user")
+	bsonconv.DocToStruct(d, &user, &e, "user")
 	return user, nil
 }

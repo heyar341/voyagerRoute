@@ -2,7 +2,7 @@ package reqvalidator
 
 import (
 	"app/controllers/simulsearch"
-	"app/customerr"
+	"app/internal/customerr"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -77,7 +77,7 @@ func (s *simulSearchValidator) addPrefixToDestinations() {
 
 }
 
-func SimulSearchValidator(DoSimulSearch http.HandlerFunc) http.HandlerFunc {
+func SimulSearchValidator(Search http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		var s simulSearchValidator
 		s.checkHTTPMethod(req)
@@ -95,6 +95,6 @@ func SimulSearchValidator(DoSimulSearch http.HandlerFunc) http.HandlerFunc {
 		//contextに各フィールドの値を追加
 		ctx := req.Context()
 		ctx = context.WithValue(ctx, "reqParams", s.reqParams)
-		DoSimulSearch.ServeHTTP(w, req.WithContext(ctx))
+		Search.ServeHTTP(w, req.WithContext(ctx))
 	}
 }

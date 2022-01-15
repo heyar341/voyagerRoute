@@ -1,10 +1,9 @@
 package reqvalidator
 
 import (
-	"app/controllers"
-	"app/cookiehandler"
-	"app/customerr"
-	"app/mailhandler"
+	"app/internal/cookiehandler"
+	"app/internal/customerr"
+	"app/internal/mailhandler"
 	"context"
 	"fmt"
 	"log"
@@ -88,8 +87,12 @@ func (a *authValidator) checkEmail(email string) {
 
 func RegisterValidator(Register http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
+		if req.Method == "GET" {
+			ctx := req.Context()
+			Register.ServeHTTP(w, req.WithContext(ctx))
+			return
+		}
 		var a authValidator
-		controllers.CheckHTTPMethod(req, &a.err)
 		a.getUserNameFromForm(req)
 		a.getEmailFromForm(req)
 		a.checkEmail(a.email)
@@ -114,8 +117,13 @@ func RegisterValidator(Register http.HandlerFunc) http.HandlerFunc {
 
 func LoginValidator(Login http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
+		if req.Method == "GET" {
+			ctx := req.Context()
+			Login.ServeHTTP(w, req.WithContext(ctx))
+			return
+		}
 		var a authValidator
-		controllers.CheckHTTPMethod(req, &a.err)
+		//controllers.CheckHTTPMethod(req, &a.err)
 		a.getEmailFromForm(req)
 		a.getPasswordFromForm(req)
 
