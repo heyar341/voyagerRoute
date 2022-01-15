@@ -189,6 +189,10 @@ class Elements {
         this.modeWalking = document.getElementById("changemode-walking" + routeNum);
         this.modeTransit = document.getElementById("changemode-transit" + routeNum);
         this.modeDriving = document.getElementById("changemode-driving" + routeNum);
+
+
+      this.transitOption = document.getElementById("transit-time" + routeNum)
+      this.drivingOption = document.getElementById("driving-option" + routeNum)
     }
 }
 
@@ -293,20 +297,16 @@ class AutocompleteDirectionsHandler {
     const radioButton = document.getElementById(id);
     radioButton.addEventListener("click", () => {
       if (id === this.elements.modeTransit.id) {
-        document.getElementById("transit-time" + this.routeNum).style.display =
+        this.elements.transitOption.style.display =
           "block";
-      } else if (id !== this.elements.modeTransit.id) {
-        document.getElementById("transit-time" + this.routeNum).style.display =
+      } else {
+        this.elements.transitOption.style.display =
           "none";
       }
       if (id === this.elements.modeDriving.id) {
-        document.getElementById(
-          "driving-option" + this.routeNum
-        ).style.display = "block";
+        this.elements.drivingOption.style.display = "block";
       } else if (id !== this.elements.modeDriving.id) {
-        document.getElementById(
-          "driving-option" + this.routeNum
-        ).style.display = "none";
+        this.elements.drivingOption.style.display = "none";
       }
       this.travelMode = mode;
       this.route();
