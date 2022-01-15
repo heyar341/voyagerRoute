@@ -658,12 +658,7 @@ class AutocompleteDirectionsHandler {
           routePolyline.setPath(response.routes[i].overview_path);
 
           //
-          routePolyline.setOptions({
-            clickable: true,
-            strokeColor: "#808080", //線の色
-            strokeOpacity: 0.5, //線の透明度
-            strokeWeight: 7, //線の太さ
-          });
+          routePolyline.setOptions(optionsForAlternatives(me.routeNum));
           routePolyline.setMap(me.map);
           me.poly.push(routePolyline);
 
@@ -671,12 +666,7 @@ class AutocompleteDirectionsHandler {
           me.poly[i].addListener("click", callback);
         }
         //インデックス番号0のルートに色をつける
-        me.poly[0].setOptions({
-          clickable: true,
-          strokeColor: me.colorCode, //線の色
-          strokeOpacity: 0.5, //線の透明度
-          strokeWeight: 7, //線の太さ
-        });
+        me.poly[0].setOptions(optionsForSelected(me.routeNum));
         me.directionsRenderer.setRouteIndex(0);
 
         //responseをRendererに渡して、パネルにルートを表示
