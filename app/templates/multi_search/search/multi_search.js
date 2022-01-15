@@ -191,18 +191,27 @@ function initMap() {
 
 class Elements {
     constructor(routeNum) {
-        this.modeWalking = document.getElementById("changemode-walking" + routeNum);
-        this.modeTransit = document.getElementById("changemode-transit" + routeNum);
-        this.modeDriving = document.getElementById("changemode-driving" + routeNum);
-
-
+      // 経路オプションのラジオボタン
+      this.modeWalking = document.getElementById("changemode-walking" + routeNum);
+      this.modeTransit = document.getElementById("changemode-transit" + routeNum);
+      this.modeDriving = document.getElementById("changemode-driving" + routeNum);
+      // 公共交通機関のオプション指定
       this.transitOption = document.getElementById("transit-time" + routeNum);
+      this.departNow = document.getElementById("depart-now" + routeNum);
+      this.specifyDeparture = document.getElementById("depart-time" + routeNum);
+      this.specifyArrival = document.getElementById("arrival-time" + routeNum);
+
+      //自動車のオプション指定
       this.drivingOption = document.getElementById("driving-option" + routeNum);
+      this.avoidToll = document.getElementById("avoid-toll" + routeNum);
+      this.avoidHighway = document.getElementById("avoid-highway" + routeNum);
 
       //出発地の入力
       this.originInput = document.getElementById("origin-input" + routeNum);
       //目的地の入力
       this.destinationInput = document.getElementById("destination-input" + routeNum);
+
+      this.routeDecideButton = document.getElementById("route-decide" + me.routeNum);
     }
 }
 
@@ -255,6 +264,7 @@ class AutocompleteDirectionsHandler {
      * @param {Number} originLatitude - Autocomplete Serviceで地名から取得された緯度
      * @param {Number} originLongitude - Autocomplete Serviceで地名から取得された経度
      * @param {String} destinationPlaceId - Autocomplete Serviceで地名から変換された地点ID
+     * @param {Object} elements - classに関連するDOM要素
      * @param {Number} timeDiffMin - TimeZone APIから取得された出発地のoffset
      * @param {Array} poly - ルートごとのdirectionRendererオブジェクトの配列
      * @param {Object} travelMode - directionsRequestのオプションフィールド
@@ -401,8 +411,7 @@ class AutocompleteDirectionsHandler {
   setUpRouteSelectedListener(obj, directionsRenderer) {
     //documentに明記されていない
     directionsRenderer.addListener("routeindex_changed", function () {
-      document.getElementById("route-decide" + obj.routeNum).style.display =
-        "block";
+      obj.elements.routeDecideButton.style.display = "block";
       var target = directionsRenderer.getRouteIndex();
       for (var i = 0; i < obj.poly.length; i++) {
         if (i == target) {
@@ -416,15 +425,11 @@ class AutocompleteDirectionsHandler {
   }
 
   setUpDecideRouteListener(obj, directionsRenderer) {
-    document
-      .getElementById("route-decide" + obj.routeNum)
-      .addEventListener("click", function () {
+    obj.elements.routeDecideButton.addEventListener("click", function () {
         $("#add-route").attr("disabled", false);
         var target = directionsRenderer.getRouteIndex();
         //ルートを決定したら、toggleを閉じる
-        $("#toggle-" + obj.routeNum)
-          .next()
-          .slideToggle();
+        $("#toggle-" + obj.routeNum).next().slideToggle();
         //directionsRendererから目的のルート情報を取得してrouteObjインスタンスを作成
         var ruoteOjb = {
           geocoded_waypoints: directionsRenderer.directions.geocoded_waypoints,
@@ -572,9 +577,7 @@ class AutocompleteDirectionsHandler {
     //公共交通機関を選択した場合
     if (this.elements.modeTransit.checked) {
       if (
-        document
-          .getElementById("origin-input" + me.routeNum)
-          .value.indexOf("日本") !== -1
+          me.elements.originInput.value.indexOf("日本") !== -1
       ) {
         window.alert(MSG_CANNOT_USE_IN_JAPAN);
         return;
@@ -586,7 +589,7 @@ class AutocompleteDirectionsHandler {
       );
 
       //「すぐに出発」以外のボタンが押されている場合
-      if (!document.getElementById("depart-now" + me.routeNum).checked) {
+      if (!me.elements.departNow.checked) {
         //ブラウザのタイムゾーンでの指定時間
         var specTime = new Date(
           document.getElementById("date" + this.routeNum).value +
@@ -605,13 +608,11 @@ class AutocompleteDirectionsHandler {
         );
 
         //出発時間を指定した場合
-        if (document.getElementById("depart-time" + me.routeNum).checked) {
+        if (me.elements.specifyDeparture.checked) {
           me.directionsRequest.transitOptions.departureTime = specTime;
         }
         //到着時間を指定した場合
-        else if (
-          document.getElementById("arrival-time" + me.routeNum).checked
-        ) {
+        else if (me.elements.specifyArrival.checked) {
           me.directionsRequest.transitOptions.arrivalTime = specTime;
         }
       }
@@ -620,15 +621,13 @@ class AutocompleteDirectionsHandler {
     }
 
     //自動車ルートを指定した場合
-    else if (
-      this.elements.modeDriving.checked
-    ) {
+    else if (this.elements.modeDriving.checked) {
       //有料道路不使用の場合
-      if (document.getElementById("avoid-toll" + this.routeNum).checked) {
+      if (me.elements.avoidToll.checked) {
         this.directionsRequest.avoidTolls = true;
       }
       //高速道路不使用の場合
-      if (document.getElementById("avoid-highway" + this.routeNum).checked) {
+      if (me.elements.avoidHighway.checked) {
         this.directionsRequest.avoidHighways = true;
       }
     }
@@ -647,7 +646,7 @@ class AutocompleteDirectionsHandler {
           response.request.travelMode === "TRANSIT" &&
           response.routes[0].legs[0].start_address.match(/日本/)
         ) {
-          document.getElementById("route-decide" + me.routeNum).style.display =
+          me.elements.routeDecideButton.style.display =
             "none";
           alert(MSG_CANNOT_USE_IN_JAPAN);
           return;
@@ -701,7 +700,7 @@ class AutocompleteDirectionsHandler {
         }
         //STATUS != OKの場合
       } else {
-        document.getElementById("route-decide" + me.routeNum).style.display =
+        me.elements.routeDecideButton.style.display =
           "none";
         window.alert(
           "ルートが見つかりませんでした。出発地と目的地の距離が遠すぎる場合、結果が表示されない場合があります。"
