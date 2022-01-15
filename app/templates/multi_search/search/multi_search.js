@@ -103,7 +103,7 @@ window.onload = function () {
 };
 
 //地図上に路線図と道路状況を表示するlayerの表示制御
-function setUpLayersListener(id,layerController, m) {
+function setUpLayersListener(id, layerController, m) {
   return function () {
     const layerButton = document.getElementById(id);
     if (!layerButton.checked) {
@@ -111,7 +111,7 @@ function setUpLayersListener(id,layerController, m) {
     } else {
       layerController.setMap(m);
     }
-  }
+  };
 }
 
 function initMap() {
@@ -133,9 +133,21 @@ function initMap() {
   //地図上に路線図と道路状況を表示するlayer
   const transitLayer = new google.maps.TransitLayer();
   const trafficLayer = new google.maps.TrafficLayer();
-  map.controls[google.maps.ControlPosition.TOP_LEFT].push(document.getElementById("add-layers"));
-  document.getElementById("add-transport-layer").addEventListener("change", setUpLayersListener("add-transport-layer", transitLayer, map))
-  document.getElementById("add-traffic-layer").addEventListener("change", setUpLayersListener("add-traffic-layer", trafficLayer, map))
+  map.controls[google.maps.ControlPosition.TOP_LEFT].push(
+    document.getElementById("add-layers")
+  );
+  document
+    .getElementById("add-transport-layer")
+    .addEventListener(
+      "change",
+      setUpLayersListener("add-transport-layer", transitLayer, map)
+    );
+  document
+    .getElementById("add-traffic-layer")
+    .addEventListener(
+      "change",
+      setUpLayersListener("add-traffic-layer", trafficLayer, map)
+    );
 
   $("#add-route").attr("disabled", true);
   //１番目のルート要素をHTMLに追加
@@ -144,7 +156,12 @@ function initMap() {
   document.getElementById("date" + String(routeID)).min = ymd;
   document.getElementById("time" + String(routeID)).value = clock;
   //AutocompleteとDiretionsServiceのインスタンス化
-  new AutocompleteDirectionsHandler(map, String(routeID),placesService,infowindow);
+  new AutocompleteDirectionsHandler(
+    map,
+    String(routeID),
+    placesService,
+    infowindow
+  );
   $(".toggle-title").on("click", function () {
     $(this).toggleClass("active");
     $(this).next().slideToggle();
@@ -176,7 +193,12 @@ function initMap() {
     document.getElementById("date" + String(routeID)).value = ymd;
     document.getElementById("date" + String(routeID)).min = ymd;
     document.getElementById("time" + String(routeID)).value = clock;
-    new AutocompleteDirectionsHandler(map, String(routeID), placesService,infowindow);
+    new AutocompleteDirectionsHandler(
+      map,
+      String(routeID),
+      placesService,
+      infowindow
+    );
     $(".toggle-title").on("click", function () {
       $(".toggle-title").off("click");
       $(".toggle-title").on("click", function () {
@@ -188,42 +210,43 @@ function initMap() {
   });
 }
 
-
 class Elements {
-    constructor(routeNum) {
-      // 経路オプションのラジオボタン
-      this.modeWalking = document.getElementById("changemode-walking" + routeNum);
-      this.modeTransit = document.getElementById("changemode-transit" + routeNum);
-      this.modeDriving = document.getElementById("changemode-driving" + routeNum);
-      // 公共交通機関のオプション指定
-      this.transitOption = document.getElementById("transit-time" + routeNum);
-      this.departNow = document.getElementById("depart-now" + routeNum);
-      this.specifyDeparture = document.getElementById("depart-time" + routeNum);
-      this.specifyArrival = document.getElementById("arrival-time" + routeNum);
+  constructor(routeNum) {
+    // 経路オプションのラジオボタン
+    this.modeWalking = document.getElementById("changemode-walking" + routeNum);
+    this.modeTransit = document.getElementById("changemode-transit" + routeNum);
+    this.modeDriving = document.getElementById("changemode-driving" + routeNum);
+    // 公共交通機関のオプション指定
+    this.transitOption = document.getElementById("transit-time" + routeNum);
+    this.departNow = document.getElementById("depart-now" + routeNum);
+    this.specifyDeparture = document.getElementById("depart-time" + routeNum);
+    this.specifyArrival = document.getElementById("arrival-time" + routeNum);
 
-      //自動車のオプション指定
-      this.drivingOption = document.getElementById("driving-option" + routeNum);
-      this.avoidToll = document.getElementById("avoid-toll" + routeNum);
-      this.avoidHighway = document.getElementById("avoid-highway" + routeNum);
+    //自動車のオプション指定
+    this.drivingOption = document.getElementById("driving-option" + routeNum);
+    this.avoidToll = document.getElementById("avoid-toll" + routeNum);
+    this.avoidHighway = document.getElementById("avoid-highway" + routeNum);
 
-      //出発地の入力
-      this.originInput = document.getElementById("origin-input" + routeNum);
-      //目的地の入力
-      this.destinationInput = document.getElementById("destination-input" + routeNum);
+    //出発地の入力
+    this.originInput = document.getElementById("origin-input" + routeNum);
+    //目的地の入力
+    this.destinationInput = document.getElementById(
+      "destination-input" + routeNum
+    );
 
-      this.routeDecideButton = document.getElementById("route-decide" + routeNum);
-    }
+    this.routeDecideButton = document.getElementById("route-decide" + routeNum);
+  }
 }
 
-
-const MSG_CANNOT_USE_IN_JAPAN = "日本の公共交通機関情報はGoogleによる機能制限により、ご利用いただけません。" +
-                                "海外の公共交通機関情報はご利用いただけます。"
+const MSG_CANNOT_USE_IN_JAPAN =
+  "日本の公共交通機関情報はGoogleによる機能制限により、ご利用いただけません。" +
+  "海外の公共交通機関情報はご利用いただけます。";
 const AUTO_COMPLETE_FIELDS = [
-    "place_id",
-    "geometry",
-    "formatted_address",
-    "utc_offset_minutes",
-    ]
+  "place_id",
+  "geometry",
+  "formatted_address",
+  "utc_offset_minutes",
+];
 
 const defaultPolyLineOptions = {
   clickable: true,
@@ -232,11 +255,11 @@ const defaultPolyLineOptions = {
   strokeColor: "#808080",
   strokeOpacity: 0.7,
   strokeWeight: 7,
-}
+};
 
 function optionsForAlternatives(zIndex) {
   let polyLineOptions = Object.assign({}, defaultPolyLineOptions);
-  polyLineOptions.zIndex =  parseInt(zIndex);
+  polyLineOptions.zIndex = parseInt(zIndex);
   return polyLineOptions;
 }
 
@@ -249,8 +272,6 @@ function optionsForSelected(strokeColor, zIndex) {
   selectedPolyLine.zIndex = parseInt(zIndex) + 1;
   return selectedPolyLine;
 }
-
-
 
 class AutocompleteDirectionsHandler {
   constructor(map, routeNum, placesService, infowindow) {
@@ -292,7 +313,9 @@ class AutocompleteDirectionsHandler {
       document.getElementById("route-detail-panel" + this.routeNum)
     );
 
-    const originAutocomplete = new google.maps.places.Autocomplete(this.elements.originInput);
+    const originAutocomplete = new google.maps.places.Autocomplete(
+      this.elements.originInput
+    );
     //Places detailは高額料金がかかるので、必要なフィールドを指定して、料金を下げる
     originAutocomplete.setFields(AUTO_COMPLETE_FIELDS);
     const destinationAutocomplete = new google.maps.places.Autocomplete(
@@ -338,11 +361,9 @@ class AutocompleteDirectionsHandler {
     const radioButton = document.getElementById(id);
     radioButton.addEventListener("click", () => {
       if (id === this.elements.modeTransit.id) {
-        this.elements.transitOption.style.display =
-          "block";
+        this.elements.transitOption.style.display = "block";
       } else {
-        this.elements.transitOption.style.display =
-          "none";
+        this.elements.transitOption.style.display = "none";
       }
       if (id === this.elements.modeDriving.id) {
         this.elements.drivingOption.style.display = "block";
@@ -415,7 +436,9 @@ class AutocompleteDirectionsHandler {
       const target = directionsRenderer.getRouteIndex();
       for (let i = 0; i < obj.poly.length; i++) {
         if (i === target) {
-          obj.poly[i].setOptions(optionsForSelected(obj.colorCode, obj.routeNum));
+          obj.poly[i].setOptions(
+            optionsForSelected(obj.colorCode, obj.routeNum)
+          );
         } else {
           obj.poly[i].setOptions(optionsForAlternatives(obj.routeNum));
         }
@@ -426,26 +449,28 @@ class AutocompleteDirectionsHandler {
 
   setUpDecideRouteListener(obj, directionsRenderer) {
     obj.elements.routeDecideButton.addEventListener("click", function () {
-        $("#add-route").attr("disabled", false);
-        const target = directionsRenderer.getRouteIndex();
-        //ルートを決定したら、toggleを閉じる
-        $("#toggle-" + obj.routeNum).next().slideToggle();
-        //directionsRendererから目的のルート情報を取得してrouteObjインスタンスを作成
-        const ruoteOjb = {
-          geocoded_waypoints: directionsRenderer.directions.geocoded_waypoints,
-          request: directionsRenderer.directions.request,
-          routes: [directionsRenderer.directions.routes[target]],
-          status: directionsRenderer.directions.status,
-          __proto__: directionsRenderer.directions.__proto__,
-        };
-        //選択したルートオブジェクトをmultiSearchReqに追加
-        multiSearchReq["routes"][obj.routeNum] = ruoteOjb;
-        for (let i = 0; i < obj.poly.length; i++) {
-          if (i !== target) {
-            obj.poly[i].setMap(null);
-          }
+      $("#add-route").attr("disabled", false);
+      const target = directionsRenderer.getRouteIndex();
+      //ルートを決定したら、toggleを閉じる
+      $("#toggle-" + obj.routeNum)
+        .next()
+        .slideToggle();
+      //directionsRendererから目的のルート情報を取得してrouteObjインスタンスを作成
+      const ruoteOjb = {
+        geocoded_waypoints: directionsRenderer.directions.geocoded_waypoints,
+        request: directionsRenderer.directions.request,
+        routes: [directionsRenderer.directions.routes[target]],
+        status: directionsRenderer.directions.status,
+        __proto__: directionsRenderer.directions.__proto__,
+      };
+      //選択したルートオブジェクトをmultiSearchReqに追加
+      multiSearchReq["routes"][obj.routeNum] = ruoteOjb;
+      for (let i = 0; i < obj.poly.length; i++) {
+        if (i !== target) {
+          obj.poly[i].setMap(null);
         }
-      });
+      }
+    });
   }
 
   //マップ上のクリックを扱うメソッド
@@ -483,12 +508,12 @@ class AutocompleteDirectionsHandler {
           place.geometry &&
           place.geometry.location
         ) {
-            me.infowindow.open(me.map);
-            me.infowindow.setPosition(place.geometry.location);
-            me.infowindowContent.children["place-icon"].src = place.icon;
-            me.infowindowContent.children["place-name"].textContent = place.name;
-            me.infowindowContent.children["place-address"].textContent =
-                place.formatted_address;
+          me.infowindow.open(me.map);
+          me.infowindow.setPosition(place.geometry.location);
+          me.infowindowContent.children["place-icon"].src = place.icon;
+          me.infowindowContent.children["place-name"].textContent = place.name;
+          me.infowindowContent.children["place-address"].textContent =
+            place.formatted_address;
         }
       }
     );
@@ -496,47 +521,50 @@ class AutocompleteDirectionsHandler {
 
   getPlaceInfoForClick(placeId, me) {
     me.placesService.getDetails(
-        {
-          placeId: placeId,
-          fields: [
-            "icon",
-            "name",
-            "place_id",
-            "formatted_address",
-            "geometry",
-            "utc_offset_minutes",
-          ],
-        },
-        (place, status) => {
-          if (
-              status === "OK" &&
-              place &&
-              place.geometry &&
-              place.geometry.location
-          ) {
-            //入力が選択されていなければ、出発地として扱う
-            if (!me.focusedElementID) {
-              me.focusedElementID = "origin-input" + me.routeNum;
-            }
-            document.getElementById(me.focusedElementID).value =
-                place.formatted_address;
-            if (me.focusedElementID === "origin-input" + me.routeNum) {
-              me.originPlaceId = place.place_id;
-              //UTCとの時差をminutes単位で取得
-              me.timeDiffMin = place.utc_offset_minutes;
-            } else if (me.focusedElementID === "destination-input" + me.routeNum) {
-              me.destinationPlaceId = place.place_id;
-            }
-            me.infowindow.open(me.map);
-            me.infowindow.setPosition(place.geometry.location);
-            me.infowindowContent.children["place-icon"].src = place.icon;
-            me.infowindowContent.children["place-name"].textContent = place.name;
-            me.infowindowContent.children["place-address"].textContent =
-                place.formatted_address;
-
-            me.route();
+      {
+        placeId: placeId,
+        fields: [
+          "icon",
+          "name",
+          "place_id",
+          "formatted_address",
+          "geometry",
+          "utc_offset_minutes",
+        ],
+      },
+      (place, status) => {
+        if (
+          status === "OK" &&
+          place &&
+          place.geometry &&
+          place.geometry.location
+        ) {
+          //入力が選択されていなければ、出発地として扱う
+          if (!me.focusedElementID) {
+            me.focusedElementID = "origin-input" + me.routeNum;
           }
+          document.getElementById(me.focusedElementID).value =
+            place.formatted_address;
+          if (me.focusedElementID === "origin-input" + me.routeNum) {
+            me.originPlaceId = place.place_id;
+            //UTCとの時差をminutes単位で取得
+            me.timeDiffMin = place.utc_offset_minutes;
+          } else if (
+            me.focusedElementID ===
+            "destination-input" + me.routeNum
+          ) {
+            me.destinationPlaceId = place.place_id;
+          }
+          me.infowindow.open(me.map);
+          me.infowindow.setPosition(place.geometry.location);
+          me.infowindowContent.children["place-icon"].src = place.icon;
+          me.infowindowContent.children["place-name"].textContent = place.name;
+          me.infowindowContent.children["place-address"].textContent =
+            place.formatted_address;
+
+          me.route();
         }
+      }
     );
   }
 
@@ -579,9 +607,7 @@ class AutocompleteDirectionsHandler {
     };
     //公共交通機関を選択した場合
     if (this.elements.modeTransit.checked) {
-      if (
-          me.elements.originInput.value.indexOf("日本") !== -1
-      ) {
+      if (me.elements.originInput.value.indexOf("日本") !== -1) {
         window.alert(MSG_CANNOT_USE_IN_JAPAN);
         return;
       }
@@ -649,8 +675,7 @@ class AutocompleteDirectionsHandler {
           response.request.travelMode === "TRANSIT" &&
           response.routes[0].legs[0].start_address.match(/日本/)
         ) {
-          me.elements.routeDecideButton.style.display =
-            "none";
+          me.elements.routeDecideButton.style.display = "none";
           alert(MSG_CANNOT_USE_IN_JAPAN);
           return;
         }
@@ -703,8 +728,7 @@ class AutocompleteDirectionsHandler {
         }
         //STATUS != OKの場合
       } else {
-        me.elements.routeDecideButton.style.display =
-          "none";
+        me.elements.routeDecideButton.style.display = "none";
         window.alert(
           "ルートが見つかりませんでした。出発地と目的地の距離が遠すぎる場合、結果が表示されない場合があります。"
         );
