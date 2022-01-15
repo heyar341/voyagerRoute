@@ -191,8 +191,13 @@ class Elements {
         this.modeDriving = document.getElementById("changemode-driving" + routeNum);
 
 
-      this.transitOption = document.getElementById("transit-time" + routeNum)
-      this.drivingOption = document.getElementById("driving-option" + routeNum)
+      this.transitOption = document.getElementById("transit-time" + routeNum);
+      this.drivingOption = document.getElementById("driving-option" + routeNum);
+
+      //出発地の入力
+      this.originInput = document.getElementById("origin-input" + routeNum);
+      //目的地の入力
+      this.destinationInput = document.getElementById("destination-input" + routeNum);
     }
 }
 
@@ -234,13 +239,8 @@ class AutocompleteDirectionsHandler {
     this.directionsRenderer.setPanel(
       document.getElementById("route-detail-panel" + this.routeNum)
     );
-    //出発地の入力値
-    const originInput = document.getElementById("origin-input" + this.routeNum);
-    //目的地の入力値
-    const destinationInput = document.getElementById(
-      "destination-input" + this.routeNum
-    );
-    const originAutocomplete = new google.maps.places.Autocomplete(originInput);
+
+    const originAutocomplete = new google.maps.places.Autocomplete(this.elements.originInput);
     //Places detailは高額料金がかかるので、必要なフィールドを指定して、料金を下げる
     originAutocomplete.setFields([
       "place_id",
@@ -249,7 +249,7 @@ class AutocompleteDirectionsHandler {
       "utc_offset_minutes",
     ]);
     const destinationAutocomplete = new google.maps.places.Autocomplete(
-      destinationInput
+      this.elements.destinationInput
     );
     //Places detailは高額料金がかかるので、必要なフィールドを指定して、料金を下げる
     destinationAutocomplete.setFields([
