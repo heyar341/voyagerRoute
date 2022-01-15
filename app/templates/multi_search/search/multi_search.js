@@ -211,6 +211,33 @@ const AUTO_COMPLETE_FIELDS = [
     "utc_offset_minutes",
     ]
 
+const defaultPolyLineOptions = {
+  clickable: true,
+  //選択したルート以外の場合、色を#808080に設定(選択されている場合、色付きだから、
+  //元に戻すためには、全てのルートについて#808080に設定する必要あり。)
+  strokeColor: "#808080",
+  strokeOpacity: 0.7,
+  strokeWeight: 7,
+}
+
+function optionsForAlternatives(zIndex) {
+  let polyLineOptions = Object.assign({}, defaultPolyLineOptions);
+  polyLineOptions.zIndex =  parseInt(zIndex);
+  return polyLineOptions;
+}
+
+function optionsForSelected(strokeColor, zIndex) {
+  let selectedPolyLine = Object.assign({}, defaultPolyLineOptions);
+  //選択したルートの色をcolorCodeに従って変更
+  selectedPolyLine.strokeColor = strokeColor;
+  selectedPolyLine.strokeOpacity = 1.0;
+  //色付きラインを一番上に表示するため、zIndexを大きくする
+  selectedPolyLine.zIndex = parseInt(zIndex) + 1;
+  return selectedPolyLine;
+}
+
+
+
 class AutocompleteDirectionsHandler {
   constructor(map, routeNum) {
     /**
@@ -374,26 +401,9 @@ class AutocompleteDirectionsHandler {
       var target = directionsRenderer.getRouteIndex();
       for (var i = 0; i < obj.poly.length; i++) {
         if (i == target) {
-          obj.poly[i].setOptions({
-            //選択したルートの場合、色をcolorCodeに従って変更
-            clickable: true,
-            strokeColor: obj.colorCode,
-            strokeOpacity: 1.0,
-            strokeWeight: 7,
-            //色付きラインを一番上に表示するため、zIndexを他のルートより大きくする。
-            zIndex: parseInt(obj.routeNum) + 1,
-          });
+          obj.poly[i].setOptions(optionsForSelected(obj.colorCode, obj.routeNum));
         } else {
-          obj.poly[i].setOptions({
-            //選択したルート以外の場合、色を#808080に設定(選択されている場合、色付きだから、
-            //元に戻すためには、全てのルートについて#808080に設定する必要あり。)
-            clickable: true,
-            strokeColor: "#808080",
-            strokeOpacity: 0.7,
-            strokeWeight: 7,
-            //色付きラインを一番上に表示するため、zIndexを小さくする
-            zIndex: parseInt(obj.routeNum),
-          });
+          obj.poly[i].setOptions(optionsForAlternatives(obj.routeNum));
         }
         obj.poly[i].setMap(obj.map);
       }
@@ -506,26 +516,9 @@ class AutocompleteDirectionsHandler {
       me.directionsRenderer.setRouteIndex(idx);
       for (var j = 0; j < me.poly.length; j++) {
         if (j == idx) {
-          me.poly[j].setOptions({
-            //選択したルートの場合、色をcolorCodeに従って変更
-            clickable: true,
-            strokeColor: me.colorCode,
-            strokeOpacity: 1.0,
-            strokeWeight: 7,
-            //色付きラインを一番上に表示するため、zIndexを他のルートより大きくする。
-            zIndex: parseInt(me.routeNum) + 1,
-          });
+          me.poly[j].setOptions(optionsForSelected(me.colorCode, me.routeNum));
         } else {
-          me.poly[j].setOptions({
-            //選択したルート以外の場合、色を#808080に設定(選択されている場合、色付きだから、
-            //元に戻すためには、全てのルートについて#808080に設定する必要あり。
-            clickable: true,
-            strokeColor: "#808080",
-            strokeOpacity: 0.7,
-            strokeWeight: 7,
-            //色付きラインを一番上に表示するため、zIndexを小さくする
-            zIndex: parseInt(me.routeNum),
-          });
+          me.poly[j].setOptions(optionsForAlternatives(me.routeNum));
         }
         me.poly[j].setMap(me.map);
       }
