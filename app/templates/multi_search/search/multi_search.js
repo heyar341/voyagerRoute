@@ -272,7 +272,7 @@ class AutocompleteDirectionsHandler {
     this.elements = new Elements(routeNum);
     this.timeDiffMin = 0;
     this.poly = [];
-    this.inputFieldID = "";
+    this.focusedElementID = "";
     this.travelMode = google.maps.TravelMode.WALKING;
     this.directionsService = new google.maps.DirectionsService();
     this.directionsRenderer = new google.maps.DirectionsRenderer();
@@ -507,16 +507,16 @@ class AutocompleteDirectionsHandler {
               place.geometry.location
           ) {
             //入力が選択されていなければ、出発地として扱う
-            if (!me.inputFieldID) {
-              me.inputFieldID = "origin-input" + me.routeNum;
+            if (!me.focusedElementID) {
+              me.focusedElementID = "origin-input" + me.routeNum;
             }
-            document.getElementById(me.inputFieldID).value =
+            document.getElementById(me.focusedElementID).value =
                 place.formatted_address;
-            if (me.inputFieldID === "origin-input" + me.routeNum) {
+            if (me.focusedElementID === "origin-input" + me.routeNum) {
               me.originPlaceId = place.place_id;
               //UTCとの時差をminutes単位で取得
               me.timeDiffMin = place.utc_offset_minutes;
-            } else if (me.inputFieldID === "destination-input" + me.routeNum) {
+            } else if (me.focusedElementID === "destination-input" + me.routeNum) {
               me.destinationPlaceId = place.place_id;
             }
             me.infowindow.open(me.map);
@@ -537,7 +537,7 @@ class AutocompleteDirectionsHandler {
     const currentInput = document.getElementById(id);
     currentInput.addEventListener("focus", () => {
       currRouteNum = me.routeNum; //focusされたら、currRouteNumを選択されたルート番号に設定
-      me.inputFieldID = id;
+      me.focusedElementID = id;
     });
   }
 
