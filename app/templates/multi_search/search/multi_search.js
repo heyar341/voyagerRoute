@@ -201,6 +201,16 @@ class Elements {
     }
 }
 
+
+const MSG_CANNOT_USE_IN_JAPAN = "日本の公共交通機関情報はGoogleによる機能制限により、ご利用いただけません。" +
+                                "海外の公共交通機関情報はご利用いただけます。"
+const AUTO_COMPLETE_FIELDS = [
+    "place_id",
+    "geometry",
+    "formatted_address",
+    "utc_offset_minutes",
+    ]
+
 class AutocompleteDirectionsHandler {
   constructor(map, routeNum) {
     /**
@@ -242,22 +252,12 @@ class AutocompleteDirectionsHandler {
 
     const originAutocomplete = new google.maps.places.Autocomplete(this.elements.originInput);
     //Places detailは高額料金がかかるので、必要なフィールドを指定して、料金を下げる
-    originAutocomplete.setFields([
-      "place_id",
-      "geometry",
-      "formatted_address",
-      "utc_offset_minutes",
-    ]);
+    originAutocomplete.setFields(AUTO_COMPLETE_FIELDS);
     const destinationAutocomplete = new google.maps.places.Autocomplete(
       this.elements.destinationInput
     );
     //Places detailは高額料金がかかるので、必要なフィールドを指定して、料金を下げる
-    destinationAutocomplete.setFields([
-      "place_id",
-      "geometry",
-      "formatted_address",
-      "utc_offset_minutes",
-    ]);
+    destinationAutocomplete.setFields(AUTO_COMPLETE_FIELDS);
 
     //EventListenerの設定
     this.setupClickListener(
@@ -326,9 +326,7 @@ class AutocompleteDirectionsHandler {
         me.elements.modeTransit.checked &&
         place.formatted_address.indexOf("日本") !== -1
       ) {
-        window.alert(
-          "日本の公共交通機関情報はGoogleによる機能制限により、ご利用いただけません。海外の公共交通機関情報はご利用いただけます。"
-        );
+        window.alert(MSG_CANNOT_USE_IN_JAPAN);
         return;
       }
       if (mode === "ORIG") {
@@ -554,9 +552,7 @@ class AutocompleteDirectionsHandler {
           .getElementById("origin-input" + me.routeNum)
           .value.indexOf("日本") !== -1
       ) {
-        window.alert(
-          "日本の公共交通機関情報はGoogleによる機能制限により、ご利用いただけません。海外の公共交通機関情報はご利用いただけます。"
-        );
+        window.alert(MSG_CANNOT_USE_IN_JAPAN);
         return;
       }
       this.directionsRequest.transitOptions = {};
@@ -629,9 +625,7 @@ class AutocompleteDirectionsHandler {
         ) {
           document.getElementById("route-decide" + me.routeNum).style.display =
             "none";
-          alert(
-            "日本の公共交通機関情報はGoogleによる機能制限により、ご利用いただけません。海外の公共交通機関情報はご利用いただけます。"
-          );
+          alert(MSG_CANNOT_USE_IN_JAPAN);
           return;
         }
         //複数ルートが帰ってきた場合、それぞれについて、ラインを描画する
