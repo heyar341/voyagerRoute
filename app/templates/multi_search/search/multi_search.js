@@ -125,6 +125,11 @@ function initMap() {
       gestureHandling: "greedy", //地図埋め込み時Ctrボタン要求の無効化
     },
   });
+  const placesService = new google.maps.places.PlacesService(map);
+  const infowindow = new google.maps.InfoWindow();
+  const infowindowContent = document.getElementById("infowindow-content");
+  infowindow.setContent(infowindowContent);
+
   //地図上に路線図と道路状況を表示するlayer
   const transitLayer = new google.maps.TransitLayer();
   const trafficLayer = new google.maps.TrafficLayer();
@@ -139,7 +144,7 @@ function initMap() {
   document.getElementById("date" + String(routeID)).min = ymd;
   document.getElementById("time" + String(routeID)).value = clock;
   //AutocompleteとDiretionsServiceのインスタンス化
-  new AutocompleteDirectionsHandler(map, String(routeID));
+  new AutocompleteDirectionsHandler(map, String(routeID),placesService,infowindow);
   $(".toggle-title").on("click", function () {
     $(this).toggleClass("active");
     $(this).next().slideToggle();
@@ -171,7 +176,7 @@ function initMap() {
     document.getElementById("date" + String(routeID)).value = ymd;
     document.getElementById("date" + String(routeID)).min = ymd;
     document.getElementById("time" + String(routeID)).value = clock;
-    new AutocompleteDirectionsHandler(map, String(routeID));
+    new AutocompleteDirectionsHandler(map, String(routeID), placesService,infowindow);
     $(".toggle-title").on("click", function () {
       $(".toggle-title").off("click");
       $(".toggle-title").on("click", function () {
@@ -239,7 +244,7 @@ function optionsForSelected(strokeColor, zIndex) {
 
 
 class AutocompleteDirectionsHandler {
-  constructor(map, routeNum) {
+  constructor(map, routeNum, placesService, infowindow) {
     /**
      * Assign the project to an employee.
      * @param {String} routeNum - ルートのIndex番号
@@ -309,10 +314,9 @@ class AutocompleteDirectionsHandler {
     this.setUpRouteSelectedListener(this, this.directionsRenderer);
     this.setUpDecideRouteListener(this, this.directionsRenderer);
     //マップ上のクリックに対する処理の設定
-    this.placesService = new google.maps.places.PlacesService(map);
-    this.infowindow = new google.maps.InfoWindow();
+    this.placesService = placesService;
+    this.infowindow = infowindow;
     this.infowindowContent = document.getElementById("infowindow-content");
-    this.infowindow.setContent(this.infowindowContent);
     this.map.addListener("click", this.handleMapClick.bind(this));
     this.getFocusedElementID("origin-input" + this.routeNum, this);
     this.getFocusedElementID("destination-input" + this.routeNum, this);
@@ -344,7 +348,7 @@ class AutocompleteDirectionsHandler {
   setupPlaceChangedListener(autocomplete, mode, me) {
     autocomplete.bindTo("bounds", this.map);
     autocomplete.addListener("place_changed", () => {
-      me.infowindow.close(); //クリックした場所の詳細表示を削除
+      // me.infowindow.close(); //クリックした場所の詳細表示を削除
       const place = autocomplete.getPlace();
       if (!place.place_id) {
         window.alert("表示された選択肢の中から選んでください。");
@@ -370,7 +374,8 @@ class AutocompleteDirectionsHandler {
       //経度と緯度を設定
       me.originLatitude = place.geometry.location.lat();
       me.originLongitue = place.geometry.location.lng();
-      me.getPlaceInformation(place.place_id, me);
+      me.getPlaceInfo(place.place_id, me);
+      me.route();
     });
   }
 
@@ -440,21 +445,17 @@ class AutocompleteDirectionsHandler {
 
   //マップ上のクリックを扱うメソッド
   handleMapClick(clickedPlace) {
-    if (this.routeNum !== currRouteNum) {
-      return;
-    }
     const me = this;
+    // clickした場所の情報が入ったオブジェクトでplaceIdフィールドがある場合
     if ("placeId" in clickedPlace) {
-      // デフォルトのinfo windowを無効化
-      clickedPlace.stop();
       if (clickedPlace.placeId) {
-        this.getPlaceInformation(clickedPlace.placeId, me);
+        this.getPlaceInfoForClick(clickedPlace.placeId, me);
       }
     }
   }
 
   //クリックした場所の情報表示とルート検索を行うメソッド
-  getPlaceInformation(placeId, me) {
+  getPlaceInfo(placeId, me) {
     me.placesService.getDetails(
       {
         placeId: placeId,
@@ -474,30 +475,60 @@ class AutocompleteDirectionsHandler {
           place.geometry &&
           place.geometry.location
         ) {
-          //入力が選択されていなければ、出発地として扱う
-          if (!me.inputFieldID) {
-            me.inputFieldID = "origin-input" + me.routeNum;
-          }
-          document.getElementById(me.inputFieldID).value =
-            place.formatted_address;
-          if (me.inputFieldID === "origin-input" + me.routeNum) {
-            me.originPlaceId = place.place_id;
-            //UTCとの時差をminutes単位で取得
-            me.timeDiffMin = place.utc_offset_minutes;
-          } else if (me.inputFieldID === "destination-input" + me.routeNum) {
-            me.destinationPlaceId = place.place_id;
-          }
-          me.infowindow.close();
-          me.infowindow.setPosition(place.geometry.location);
-          me.infowindowContent.children["place-icon"].src = place.icon;
-          me.infowindowContent.children["place-name"].textContent = place.name;
-          me.infowindowContent.children["place-address"].textContent =
-            place.formatted_address;
-          me.infowindow.open(me.map);
-
-          me.route();
+            me.infowindow.open(me.map);
+            me.infowindow.setPosition(place.geometry.location);
+            me.infowindowContent.children["place-icon"].src = place.icon;
+            me.infowindowContent.children["place-name"].textContent = place.name;
+            me.infowindowContent.children["place-address"].textContent =
+                place.formatted_address;
         }
       }
+    );
+  }
+
+  getPlaceInfoForClick(placeId, me) {
+    me.placesService.getDetails(
+        {
+          placeId: placeId,
+          fields: [
+            "icon",
+            "name",
+            "place_id",
+            "formatted_address",
+            "geometry",
+            "utc_offset_minutes",
+          ],
+        },
+        (place, status) => {
+          if (
+              status === "OK" &&
+              place &&
+              place.geometry &&
+              place.geometry.location
+          ) {
+            //入力が選択されていなければ、出発地として扱う
+            if (!me.inputFieldID) {
+              me.inputFieldID = "origin-input" + me.routeNum;
+            }
+            document.getElementById(me.inputFieldID).value =
+                place.formatted_address;
+            if (me.inputFieldID === "origin-input" + me.routeNum) {
+              me.originPlaceId = place.place_id;
+              //UTCとの時差をminutes単位で取得
+              me.timeDiffMin = place.utc_offset_minutes;
+            } else if (me.inputFieldID === "destination-input" + me.routeNum) {
+              me.destinationPlaceId = place.place_id;
+            }
+            me.infowindow.open(me.map);
+            me.infowindow.setPosition(place.geometry.location);
+            me.infowindowContent.children["place-icon"].src = place.icon;
+            me.infowindowContent.children["place-name"].textContent = place.name;
+            me.infowindowContent.children["place-address"].textContent =
+                place.formatted_address;
+
+            me.route();
+          }
+        }
     );
   }
 
