@@ -422,7 +422,7 @@ class AutocompleteDirectionsHandler {
   setupTimeListener(id, rNum) {
     const timeNow = document.getElementById(id);
     timeNow.addEventListener("click", () => {
-      document.getElementById("date" + rNum).value = yyyy + "-" + mm + "-" + dd;
+      document.getElementById("date" + rNum).value = ymd;
       document.getElementById("time" + rNum).value = clock;
       this.route();
     });
