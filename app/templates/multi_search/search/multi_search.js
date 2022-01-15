@@ -1,5 +1,5 @@
 //ルート番号
-var routeID = 0;
+let routeID = 0;
 //ルート描画時の線の色を指定
 const colorMap = {
   0: "#00bfff",
@@ -18,13 +18,13 @@ const multiSearchReq = {
   routes: {},
 };
 // 入力中のルート番号を入れる
-var currRouteNum = "0";
+let currRouteNum = "0";
 
 //Ajax通信
 $(function () {
   $("#save-route").click(function () {
-    var keys = Object.keys(multiSearchReq.routes);
-    if (keys.length == 0) {
+    const keys = Object.keys(multiSearchReq.routes);
+    if (keys.length === 0) {
       window.alert("ルートを１つ以上設定してください。");
       return;
     }
@@ -32,13 +32,13 @@ $(function () {
       window.alert("ルート名は１文字以上入力してください。");
       return;
     }
-    multiSearchReq["title"] = document.getElementById("route-name").value;
     if (/[\.\$]/.test(document.getElementById("route-name").value)) {
       window.alert(".または$はルート名に使用できません。");
       return;
     }
+    multiSearchReq["title"] = document.getElementById("route-name").value;
     // 多重送信を防ぐため通信完了までボタンをdisableにする
-    var button = $(this);
+    const button = $(this);
     button.attr("disabled", true);
 
     $.ajax({
@@ -75,17 +75,17 @@ $(function () {
 });
 
 //現在時刻を取得し、時間指定要素に挿入
-var today = new Date();
-var yyyy = today.getFullYear();
-var mm = ("0" + (today.getMonth() + 1)).slice(-2); //getMonthは0 ~ 11
-var dd = ("0" + today.getDate()).slice(-2);
-var ymd = yyyy + "-" + mm + "-" + dd;
-var hr = ("0" + today.getHours()).slice(-2);
-var minu = ("0" + today.getMinutes()).slice(-2);
-var clock = hr + ":" + minu + ":00";
+let today = new Date();
+let yyyy = today.getFullYear();
+let mm = ("0" + (today.getMonth() + 1)).slice(-2); //getMonthは0 ~ 11
+let dd = ("0" + today.getDate()).slice(-2);
+let ymd = yyyy + "-" + mm + "-" + dd;
+let hr = ("0" + today.getHours()).slice(-2);
+let minu = ("0" + today.getMinutes()).slice(-2);
+let clock = hr + ":" + minu + ":00";
 
 //ブラウザのタイムゾーンのUTCからの時差をminutes単位で取得
-var tzoneOffsetminu = today.getTimezoneOffset();
+let tzoneOffsetminu = today.getTimezoneOffset();
 
 //Google Maps API実行ファイル読み込み
 window.onload = function () {
@@ -105,7 +105,7 @@ window.onload = function () {
 //地図上に路線図と道路状況を表示するlayerの表示制御
 function setUpLayersListener(id,layerController, m) {
   return function () {
-    var layerButton = document.getElementById(id);
+    const layerButton = document.getElementById(id);
     if (!layerButton.checked) {
       layerController.setMap(null);
     } else {
@@ -169,7 +169,7 @@ function initMap() {
   $("#add-route").on("click", function () {
     $("#add-route").attr("disabled", true);
     routeID++;
-    if (routeID == 9) {
+    if (routeID === 9) {
       document.getElementById("add-route").style.display = "none";
     }
     $("#search-box").append(genSearchBox(routeID, colorMap[routeID]));
@@ -211,7 +211,7 @@ class Elements {
       //目的地の入力
       this.destinationInput = document.getElementById("destination-input" + routeNum);
 
-      this.routeDecideButton = document.getElementById("route-decide" + me.routeNum);
+      this.routeDecideButton = document.getElementById("route-decide" + routeNum);
     }
 }
 
@@ -412,9 +412,9 @@ class AutocompleteDirectionsHandler {
     //documentに明記されていない
     directionsRenderer.addListener("routeindex_changed", function () {
       obj.elements.routeDecideButton.style.display = "block";
-      var target = directionsRenderer.getRouteIndex();
-      for (var i = 0; i < obj.poly.length; i++) {
-        if (i == target) {
+      const target = directionsRenderer.getRouteIndex();
+      for (let i = 0; i < obj.poly.length; i++) {
+        if (i === target) {
           obj.poly[i].setOptions(optionsForSelected(obj.colorCode, obj.routeNum));
         } else {
           obj.poly[i].setOptions(optionsForAlternatives(obj.routeNum));
@@ -427,11 +427,11 @@ class AutocompleteDirectionsHandler {
   setUpDecideRouteListener(obj, directionsRenderer) {
     obj.elements.routeDecideButton.addEventListener("click", function () {
         $("#add-route").attr("disabled", false);
-        var target = directionsRenderer.getRouteIndex();
+        const target = directionsRenderer.getRouteIndex();
         //ルートを決定したら、toggleを閉じる
         $("#toggle-" + obj.routeNum).next().slideToggle();
         //directionsRendererから目的のルート情報を取得してrouteObjインスタンスを作成
-        var ruoteOjb = {
+        const ruoteOjb = {
           geocoded_waypoints: directionsRenderer.directions.geocoded_waypoints,
           request: directionsRenderer.directions.request,
           routes: [directionsRenderer.directions.routes[target]],
@@ -440,8 +440,8 @@ class AutocompleteDirectionsHandler {
         };
         //選択したルートオブジェクトをmultiSearchReqに追加
         multiSearchReq["routes"][obj.routeNum] = ruoteOjb;
-        for (var i = 0; i < obj.poly.length; i++) {
-          if (i != target) {
+        for (let i = 0; i < obj.poly.length; i++) {
+          if (i !== target) {
             obj.poly[i].setMap(null);
           }
         }
@@ -450,6 +450,9 @@ class AutocompleteDirectionsHandler {
 
   //マップ上のクリックを扱うメソッド
   handleMapClick(clickedPlace) {
+    if (this.routeNum !== currRouteNum) {
+      return;
+    }
     const me = this;
     // clickした場所の情報が入ったオブジェクトでplaceIdフィールドがある場合
     if ("placeId" in clickedPlace) {
@@ -550,8 +553,8 @@ class AutocompleteDirectionsHandler {
   polyLineListenerCallback(idx, me) {
     return function () {
       me.directionsRenderer.setRouteIndex(idx);
-      for (var j = 0; j < me.poly.length; j++) {
-        if (j == idx) {
+      for (let j = 0; j < me.poly.length; j++) {
+        if (j === idx) {
           me.poly[j].setOptions(optionsForSelected(me.colorCode, me.routeNum));
         } else {
           me.poly[j].setOptions(optionsForAlternatives(me.routeNum));
@@ -591,7 +594,7 @@ class AutocompleteDirectionsHandler {
       //「すぐに出発」以外のボタンが押されている場合
       if (!me.elements.departNow.checked) {
         //ブラウザのタイムゾーンでの指定時間
-        var specTime = new Date(
+        let specTime = new Date(
           document.getElementById("date" + this.routeNum).value +
             "T" +
             document.getElementById("time" + this.routeNum).value
@@ -637,7 +640,7 @@ class AutocompleteDirectionsHandler {
       if (status === "OK") {
         //検索結果表示前に、現在の表示を全て削除
         if (me.poly.length > 0) {
-          for (var i = 0; i < me.poly.length; i++) {
+          for (let i = 0; i < me.poly.length; i++) {
             me.poly[i].setMap(null);
           }
           me.poly = [];
@@ -652,8 +655,8 @@ class AutocompleteDirectionsHandler {
           return;
         }
         //複数ルートが帰ってきた場合、それぞれについて、ラインを描画する
-        for (var i = 0; i < response.routes.length; i++) {
-          var routePolyline = new google.maps.Polyline();
+        for (let i = 0; i < response.routes.length; i++) {
+          let routePolyline = new google.maps.Polyline();
           routePolyline.setPath(response.routes[i].overview_path);
 
           //
@@ -661,7 +664,7 @@ class AutocompleteDirectionsHandler {
           routePolyline.setMap(me.map);
           me.poly.push(routePolyline);
 
-          var callback = me.polyLineListenerCallback(i, me);
+          let callback = me.polyLineListenerCallback(i, me);
           me.poly[i].addListener("click", callback);
         }
         //インデックス番号0のルートに色をつける
@@ -711,7 +714,7 @@ class AutocompleteDirectionsHandler {
 }
 
 function genSearchBox(routeId, color) {
-  var route_html_tpl = `<h2 class="toggle-title pl-3 pt-3 mb-0" id="toggle-${routeId}" style="background-color: ${color}">ルート${
+  const route_html_tpl = `<h2 class="toggle-title pl-3 pt-3 mb-0" id="toggle-${routeId}" style="background-color: ${color}">ルート${
     routeId + 1
   }</h2>
         <div class="search-fields">
